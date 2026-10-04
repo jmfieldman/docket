@@ -221,6 +221,8 @@ Each score has 4 levels, so each lane boundary falls between levels 2 and 3. No 
   ready ── decide(acknowledge) ──▶ acknowledged
   ready ── decide(defer) ─────────▶ deferred
   any open state ── thread resolved on GitHub ──▶ resolved_externally
+  queued ── unqueue ──▶ ready
+  queued ── decide(another option) ──▶ queued, acknowledged or deferred
   any closed state ── reopen ──▶ ready
 ```
 
@@ -238,6 +240,8 @@ Each score has 4 levels, so each lane boundary falls between levels 2 and 3. No 
 | `resolved_externally` | Closed | The thread was resolved on GitHub outside docket. | ingest |
 
 The user never sets `completed`. The applier sets it after it commits the fix and the verification passes.
+
+Until the applier starts a queued finding, the user can take it out of the queue (`unqueue`) or decide again. Either way the queued iteration stays in the history with the outcome `abandoned`. A finding in `fixing` cannot be unqueued: stop the applier first.
 
 ### Stale flag
 

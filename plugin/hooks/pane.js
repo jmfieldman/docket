@@ -407,10 +407,17 @@ export function register(on) {
       }
       const f = cached.data.finding
       const sources = cached.data.sources || {}
-      const editable = active && s.open && f.state !== 'queued' && f.state !== 'fixing'
+      // Queued findings stay editable: pick another option, or take them out of the queue.
+      const editable = active && s.open && f.state !== 'fixing'
+      const queuedAt = f.state === 'queued' ? (f.iterations.at(-1) || {}).queue : null
       rows.push(Markdown({ key: 'md-summary-' + f.id, text: capped(f.summary || '', 4000) }))
       if (f.location) dim('   ' + f.location.path + (f.location.startLine ? ':' + f.location.startLine : '') + (f.location.symbol ? '  ' + f.location.symbol : ''))
       if (f.severityRationale) dim('   Why it matters: ' + f.severityRationale)
+      if (f.state === 'queued') {
+        line('Queued' + (queuedAt ? ' at position ' + queuedAt.position : '') + ' with option ' + (f.iterations.at(-1) || {}).decision.optionId + '. Remove it from the queue, or pick another option.', { color: SEVERITY_COLOR.medium })
+        if (active) buttons([Button({ key: 'unqueue-' + f.id, label: 'x: Remove from queue', hotkey: 'x', onPress: () => act($, 'unqueue', { id: f.id }, 'Removed ' + f.id + ' from the queue.') })])
+      }
+      if (f.state === 'fixing') dim('   The applier is working on this finding.')
       if (f.research) {
         line('Verdict: ' + f.research.verdict.replace('_', ' ') + ' (' + f.research.confidence + ' confidence)', { bold: true })
         if (f.triage) dim('   ' + f.triage.complexityReason + ' · ' + f.triage.confidenceReason)

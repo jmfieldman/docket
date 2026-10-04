@@ -419,7 +419,8 @@ function card(s) {
 }
 
 function quickActions(s, lane) {
-  if (S.snap.state !== 'active' || s.state === 'queued' || s.state === 'fixing') return ''
+  if (S.snap.state !== 'active' || s.state === 'fixing') return ''
+  if (s.state === 'queued') return '<div class="actions"><button data-act="unqueue" data-arg-id="' + esc(s.id) + '">Remove from queue</button></div>'
   const id = esc(s.id)
   if (lane === 'research') return '<div class="actions"><button data-plan="research" data-ids="' + id + '">Research</button></div>'
   if (lane === 'quick' && s.recommended) {
@@ -455,7 +456,7 @@ function body(s) {
   if (f.location) html += '<p class="meta"><code>' + esc(f.location.path + (f.location.startLine ? ':' + f.location.startLine : '')) + '</code>' + (f.location.symbol ? ' · <code>' + esc(f.location.symbol) + '</code>' : '') + '</p>'
   if (f.research) {
     html += '<h4>Verdict: ' + esc(f.research.verdict.replace('_', ' ')) + ' (' + esc(f.research.confidence) + ' confidence)</h4><details data-analysis="' + id + '"' + (S.openAnalysis.has(f.id) ? ' open' : '') + '><summary class="meta">Analysis</summary><div class="md">' + md(f.research.analysis) + '</div></details>'
-    const editable = s.open && S.snap.state === 'active' && f.state !== 'queued' && f.state !== 'fixing'
+    const editable = s.open && S.snap.state === 'active' && f.state !== 'fixing'
     const sel = S.choice[f.id] || f.research.recommendedOptionId
     html += '<h4>Options</h4><div class="options">' + f.research.options.map((o) => {
       const br = o.blastRadius || {}
@@ -560,7 +561,7 @@ document.addEventListener('click', async (event) => {
     else { S.expanded.add(id); if (!S.details[id]) { render(); await loadDetail(id) } }
     return render()
   }
-  if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : null)
+  if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : d.act === 'unqueue' ? 'Removed ' + d.argId + ' from the queue' : null)
   if (d.plan) return runPlan(d.plan, d.ids ? { ids: d.ids.split(',') } : {})
   if (d.bulk) return bulkAccept()
   if (d.quick) {

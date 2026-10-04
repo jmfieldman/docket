@@ -160,6 +160,21 @@ describe('docket ui server', () => {
     assert.equal(same.body.result.warning, undefined)
   })
 
+  it('takes a queued finding out of the queue, and re-decides a queued finding', async () => {
+    // f-0001 is fixing (the applier took it); f-0002 is queued behind it.
+    assert.equal((await post('/api/action', { path: path(), name: 'unqueue', args: { id: 'f-0001' } })).status, 400)
+    const out = await post('/api/action', { path: path(), name: 'unqueue', args: { id: 'f-0002' } })
+    assert.equal(out.status, 200)
+    assert.equal(out.body.result.state, 'ready')
+    assert.equal(out.body.result.iterations.at(-1).outcome, 'abandoned')
+    assert.equal((await post('/api/action', { path: path(), name: 'unqueue', args: { id: 'f-0002' } })).status, 400)
+    const queued = await post('/api/action', { path: path(), name: 'decide', args: { id: 'f-0002', optionId: 'A' } })
+    assert.equal(queued.body.result.state, 'queued')
+    const changed = await post('/api/action', { path: path(), name: 'decide', args: { id: 'f-0002', optionId: 'B', instruction: 'Not worth it.' } })
+    assert.equal(changed.body.result.state, 'acknowledged')
+    assert.deepEqual(changed.body.result.iterations.map((it: any) => it.outcome).slice(-2), ['abandoned', 'acknowledged'])
+  })
+
   it('lists the repository worktrees from git', async () => {
     const { body } = await get('/api/worktrees?path=' + encodeURIComponent(path()))
     assert.equal(body.items.length >= 1, true)

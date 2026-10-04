@@ -26,6 +26,7 @@ import {
   setReplyStatus,
   setStale,
   startDiscussion,
+  unqueue,
   updateFinding,
   upsertSessionSource,
   upsertSource,
@@ -74,6 +75,7 @@ Research and discussion
 Decisions and apply
   decide <id> --option <A-F|custom> [--kind fix|acknowledge|defer] [--instruction <text>] [--origin panel|quick|session]
   accept <id>...                      Take the recommended option (origin quick)
+  unqueue <id>                        Take a queued finding out of the queue
   reopen <id> --reason <text>
   apply next [--session-id <s>] | apply queue
   apply commit <id> <sha> | apply verify <id> --data <json>
@@ -298,6 +300,8 @@ function run(ctx: Context, values: Values, args: string[]): { output: unknown; h
       if (ids.length === 0) badInput('accept needs at least one finding id')
       return { output: write((ws) => acceptRecommended(ws, ids)) }
     }
+    case 'unqueue':
+      return { output: write((ws) => unqueue(ws, need(id, 'finding id'), rev(values))) }
     case 'reopen':
       return { output: write((ws) => reopen(ws, need(id, 'finding id'), need(values.reason, '--reason'))) }
     case 'apply': {

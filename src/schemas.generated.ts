@@ -460,6 +460,7 @@ export const SCHEMAS: Record<string, object> = {
           "discussion_ended",
           "decision_written",
           "queued",
+          "unqueued",
           "apply_started",
           "apply_committed",
           "verification_written",

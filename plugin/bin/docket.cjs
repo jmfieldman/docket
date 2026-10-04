@@ -15845,6 +15845,7 @@ var SCHEMAS = {
           "discussion_ended",
           "decision_written",
           "queued",
+          "unqueued",
           "apply_started",
           "apply_committed",
           "verification_written",
@@ -17831,7 +17832,7 @@ function acceptRecommended(ws, ids) {
 }
 function decide(ws, id, input, rev2) {
   const finding2 = ws.readFinding(id);
-  if (!["new", "ready", "discussing", "needs_attention"].includes(finding2.state)) invalidState(finding2, "decide on");
+  if (!["new", "ready", "discussing", "needs_attention", "queued"].includes(finding2.state)) invalidState(finding2, "decide on");
   const optionId = requireString(input.optionId, "option");
   const option = optionId === "custom" ? void 0 : finding2.research?.options.find((o) => o.id === optionId);
   if (optionId !== "custom" && !option) badInput(`${id} has no option ${optionId}`);
@@ -17878,6 +17879,16 @@ function decide(ws, id, input, rev2) {
   setState(ws, finding2, kind === "acknowledge" ? "acknowledged" : "deferred", "ui");
   const saved = ws.saveFinding(finding2, rev2);
   ws.event("ui", "finding_closed", { findingId: id, iteration: n, to: saved.state, rev: saved.rev });
+  return saved;
+}
+function unqueue(ws, id, rev2) {
+  const finding2 = ws.readFinding(id);
+  if (finding2.state !== "queued") invalidState(finding2, "remove from the queue");
+  const last = finding2.iterations.at(-1);
+  abandonPending(ws, finding2);
+  setState(ws, finding2, finding2.research ? "ready" : "new", "ui");
+  const saved = ws.saveFinding(finding2, rev2);
+  ws.event("ui", "unqueued", { findingId: id, iteration: last?.n });
   return saved;
 }
 function reopen(ws, id, reason) {
@@ -18356,6 +18367,8 @@ function action(path, name, args = {}, options = {}) {
       if (!["panel", "quick"].includes(input.origin)) bad("origin must be panel or quick");
       return write((ws) => decide(ws, findingId(args.id), input, typeof args.rev === "number" ? args.rev : void 0));
     }
+    case "unqueue":
+      return write((ws) => unqueue(ws, findingId(args.id), typeof args.rev === "number" ? args.rev : void 0));
     case "reopen":
       return write((ws) => reopen(ws, findingId(args.id), typeof args.reason === "string" && args.reason.trim() ? args.reason : "Reopened from the panel."));
     case "unstale":
@@ -18844,7 +18857,8 @@ function card(s) {
 }
 
 function quickActions(s, lane) {
-  if (S.snap.state !== 'active' || s.state === 'queued' || s.state === 'fixing') return ''
+  if (S.snap.state !== 'active' || s.state === 'fixing') return ''
+  if (s.state === 'queued') return '<div class="actions"><button data-act="unqueue" data-arg-id="' + esc(s.id) + '">Remove from queue</button></div>'
   const id = esc(s.id)
   if (lane === 'research') return '<div class="actions"><button data-plan="research" data-ids="' + id + '">Research</button></div>'
   if (lane === 'quick' && s.recommended) {
@@ -18880,7 +18894,7 @@ function body(s) {
   if (f.location) html += '<p class="meta"><code>' + esc(f.location.path + (f.location.startLine ? ':' + f.location.startLine : '')) + '</code>' + (f.location.symbol ? ' \xB7 <code>' + esc(f.location.symbol) + '</code>' : '') + '</p>'
   if (f.research) {
     html += '<h4>Verdict: ' + esc(f.research.verdict.replace('_', ' ')) + ' (' + esc(f.research.confidence) + ' confidence)</h4><details data-analysis="' + id + '"' + (S.openAnalysis.has(f.id) ? ' open' : '') + '><summary class="meta">Analysis</summary><div class="md">' + md(f.research.analysis) + '</div></details>'
-    const editable = s.open && S.snap.state === 'active' && f.state !== 'queued' && f.state !== 'fixing'
+    const editable = s.open && S.snap.state === 'active' && f.state !== 'fixing'
     const sel = S.choice[f.id] || f.research.recommendedOptionId
     html += '<h4>Options</h4><div class="options">' + f.research.options.map((o) => {
       const br = o.blastRadius || {}
@@ -18985,7 +18999,7 @@ document.addEventListener('click', async (event) => {
     else { S.expanded.add(id); if (!S.details[id]) { render(); await loadDetail(id) } }
     return render()
   }
-  if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : null)
+  if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : d.act === 'unqueue' ? 'Removed ' + d.argId + ' from the queue' : null)
   if (d.plan) return runPlan(d.plan, d.ids ? { ids: d.ids.split(',') } : {})
   if (d.bulk) return bulkAccept()
   if (d.quick) {
@@ -19247,6 +19261,7 @@ Research and discussion
 Decisions and apply
   decide <id> --option <A-F|custom> [--kind fix|acknowledge|defer] [--instruction <text>] [--origin panel|quick|session]
   accept <id>...                      Take the recommended option (origin quick)
+  unqueue <id>                        Take a queued finding out of the queue
   reopen <id> --reason <text>
   apply next [--session-id <s>] | apply queue
   apply commit <id> <sha> | apply verify <id> --data <json>
@@ -19456,6 +19471,8 @@ function run(ctx, values, args) {
       if (ids.length === 0) badInput("accept needs at least one finding id");
       return { output: write((ws) => acceptRecommended(ws, ids)) };
     }
+    case "unqueue":
+      return { output: write((ws) => unqueue(ws, need(id, "finding id"), rev(values))) };
     case "reopen":
       return { output: write((ws) => reopen(ws, need(id, "finding id"), need(values.reason, "--reason"))) };
     case "apply": {

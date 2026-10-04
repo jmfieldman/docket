@@ -175,3 +175,28 @@ test('reports a docket that cannot run', async ($, on) => {
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   expect(await ui.find({ type: 'Text', text: 'Docket cannot read this worktree.' })).toBeDefined()
 })
+
+test('a queued finding can be taken out of the queue', async ($, on) => {
+  const queuedSnap = { ...active, summaries: [summary('f-0001', { state: 'queued' })] }
+  const queuedDetail = {
+    ...findingDetail,
+    finding: { ...findingDetail.finding, state: 'queued', iterations: [{ n: 1, outcome: 'queued', decision: { optionId: 'A', kind: 'fix' }, queue: { position: 1 } }] }
+  }
+  const calls: string[][] = [], opened: unknown[] = [], skills: string[] = []
+  on('process.run', ($: any, e: any) => {
+    const args = e.argv.slice(2)
+    calls.push(args)
+    const result = args[0] === 'finding' ? queuedDetail : args[0] === 'action' ? {} : queuedSnap
+    return { value: { exitCode: 0, stdout: JSON.stringify({ ok: true, result }), stderr: '' } }
+  })
+  stubSession(on, opened, skills)
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'f-f-0001' })
+  expect(await ui.find({ type: 'Text', text: /Queued at position 1 with option A/ })).toBeDefined()
+  // The options stay editable, so the user can also pick another one.
+  expect(await ui.find({ key: 'decide-f-0001' })).toBeDefined()
+  await ui.press({ key: 'unqueue-f-0001' })
+  const action = calls.find((c) => c[0] === 'action' && c[1] === 'unqueue') as string[]
+  expect(JSON.parse(action[3])).toEqual({ id: 'f-0001' })
+})

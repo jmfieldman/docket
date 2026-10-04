@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { pause, resume, start, status, type Context, type Unit } from './docket.ts'
 import { DocketError } from './errors.ts'
 import { readJson } from './fsio.ts'
-import { acceptRecommended, decide, draftReply, endDiscussion, markViewed, reopen, setReplyStatus, clearStale, type DecisionInput } from './findings.ts'
+import { acceptRecommended, decide, draftReply, endDiscussion, markViewed, reopen, unqueue, setReplyStatus, clearStale, type DecisionInput } from './findings.ts'
 import { readWorktree } from './git.ts'
 import { isOpen, type Finding, type OptionKind, type Origin } from './types.ts'
 import { sortSummaries, summarize } from './view.ts'
@@ -146,7 +146,7 @@ export function finding(path: string, id: string, options: ApiOptions = {}) {
 
 export type ActionName =
   | 'start' | 'pause' | 'resume' | 'view'
-  | 'accept' | 'decide' | 'reopen' | 'unstale' | 'endDiscussion'
+  | 'accept' | 'decide' | 'unqueue' | 'reopen' | 'unstale' | 'endDiscussion'
   | 'replyApprove' | 'replySkip' | 'replyEdit'
 
 export function action(path: string, name: ActionName, args: Record<string, any> = {}, options: ApiOptions = {}) {
@@ -177,6 +177,8 @@ export function action(path: string, name: ActionName, args: Record<string, any>
       if (!['panel', 'quick'].includes(input.origin as string)) bad('origin must be panel or quick')
       return write((ws) => decide(ws, findingId(args.id), input, typeof args.rev === 'number' ? args.rev : undefined))
     }
+    case 'unqueue':
+      return write((ws) => unqueue(ws, findingId(args.id), typeof args.rev === 'number' ? args.rev : undefined))
     case 'reopen':
       return write((ws) => reopen(ws, findingId(args.id), typeof args.reason === 'string' && args.reason.trim() ? args.reason : 'Reopened from the panel.'))
     case 'unstale':

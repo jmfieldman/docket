@@ -426,7 +426,8 @@ export function acceptRecommended(ws: Workspace, ids: string[]): Finding[] {
 
 export function decide(ws: Workspace, id: string, input: DecisionInput, rev?: number): Finding {
   const finding = ws.readFinding(id)
-  if (!['new', 'ready', 'discussing', 'needs_attention'].includes(finding.state)) invalidState(finding, 'decide on')
+  // A queued finding can be re-decided: the queued iteration is abandoned and replaced.
+  if (!['new', 'ready', 'discussing', 'needs_attention', 'queued'].includes(finding.state)) invalidState(finding, 'decide on')
   const optionId = requireString(input.optionId, 'option')
   const option = optionId === 'custom' ? undefined : finding.research?.options.find((o) => o.id === optionId)
   if (optionId !== 'custom' && !option) badInput(`${id} has no option ${optionId}`)
@@ -478,6 +479,22 @@ export function decide(ws: Workspace, id: string, input: DecisionInput, rev?: nu
   setState(ws, finding, kind === 'acknowledge' ? 'acknowledged' : 'deferred', 'ui')
   const saved = ws.saveFinding(finding, rev)
   ws.event('ui', 'finding_closed', { findingId: id, iteration: n, to: saved.state, rev: saved.rev })
+  return saved
+}
+
+/**
+ * Takes a queued finding out of the queue before the applier starts it. The
+ * queued iteration stays in the history as abandoned, and the finding waits
+ * for a new decision.
+ */
+export function unqueue(ws: Workspace, id: string, rev?: number): Finding {
+  const finding = ws.readFinding(id)
+  if (finding.state !== 'queued') invalidState(finding, 'remove from the queue')
+  const last = finding.iterations.at(-1)
+  abandonPending(ws, finding)
+  setState(ws, finding, finding.research ? 'ready' : 'new', 'ui')
+  const saved = ws.saveFinding(finding, rev)
+  ws.event('ui', 'unqueued', { findingId: id, iteration: last?.n })
   return saved
 }
 
