@@ -1,12 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { Ajv2020 } from 'ajv/dist/2020.js'
 import addFormatsModule from 'ajv-formats'
 import { DocketError } from './errors.ts'
-
-// src/ and dist/ both sit one level below the repo root, beside spec/.
-const schemaDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'spec', 'schema')
+import { SCHEMAS } from './schemas.generated.ts'
 
 export type SchemaName = 'unit' | 'sources' | 'finding' | 'event' | 'deferral'
 
@@ -17,9 +12,7 @@ function compiler(): Ajv2020 {
   ajv = new Ajv2020({ allErrors: true, strict: true })
   const addFormats = addFormatsModule as unknown as (instance: Ajv2020) => void
   addFormats(ajv)
-  for (const file of readdirSync(schemaDir)) {
-    ajv.addSchema(JSON.parse(readFileSync(join(schemaDir, file), 'utf8')), file)
-  }
+  for (const [file, schema] of Object.entries(SCHEMAS)) ajv.addSchema(schema, file)
   return ajv
 }
 

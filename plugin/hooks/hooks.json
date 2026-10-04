@@ -1,0 +1,15 @@
+{
+  "description": "Brief each session on open docket findings, only in worktrees where docket is active.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/docket\" brief --hook"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -161,6 +161,17 @@ function lookupPr(cwd: string): { number: number; url: string } {
   }
 }
 
+/** A Claude Code hook passes JSON on stdin; its `cwd` is the session's directory. */
+function hookCwd(): string | undefined {
+  if (process.stdin.isTTY) return undefined
+  try {
+    const input = JSON.parse(readFileSync(0, 'utf8') || '{}') as { cwd?: unknown }
+    return typeof input.cwd === 'string' ? input.cwd : undefined
+  } catch {
+    return undefined
+  }
+}
+
 const ACTIVATION: Record<string, (ctx: Context) => StatusReport> = { start, status, pause, resume, rebind }
 
 function humanList(result: ReturnType<typeof listFindings>): string {
@@ -337,7 +348,7 @@ function main(argv: string[]): number {
     return values.help ? 0 : 2
   }
   const ctx: Context = {
-    cwd: values.C ?? process.cwd(),
+    cwd: values.C ?? (values.hook ? hookCwd() : undefined) ?? process.cwd(),
     now: () => process.env.DOCKET_NOW ?? new Date().toISOString(),
     prLookup: !values['no-pr'] && process.env.DOCKET_NO_GH !== '1'
   }

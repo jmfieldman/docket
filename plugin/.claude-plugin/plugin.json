@@ -1,0 +1,10 @@
+{
+  "name": "docket",
+  "displayName": "Docket",
+  "version": "0.1.0",
+  "description": "Reviewer-agnostic findings resolution: ingest review comments, research options, decide fast, apply serially, defer what can wait.",
+  "author": { "name": "Jason Fieldman" },
+  "repository": "https://github.com/jmfieldman/orca-docket",
+  "license": "MIT",
+  "keywords": ["code-review", "pr", "findings", "orca"]
+}

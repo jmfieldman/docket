@@ -1,10 +1,12 @@
 import { execFileSync, spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, dirname } from 'node:path'
+import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'cli.ts')
+// DOCKET_CLI points the suite at another build, such as the bundled plugin/bin/docket.cjs.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const CLI = process.env.DOCKET_CLI ? resolve(ROOT, process.env.DOCKET_CLI) : join(ROOT, 'src', 'cli.ts')
 // Read the environment on every call: tests set DOCKET_HOME after this module loads.
 const env = () => {
   if (!process.env.DOCKET_HOME) throw new Error('tests must set DOCKET_HOME so nothing touches the real ~/.docket')
