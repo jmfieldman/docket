@@ -83,8 +83,9 @@ test('opens by itself where docket is active and draws findings by lane', async 
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface })
     expect(await ui.find({ type: 'Text', text: /Docket · fix\/login · active · PR #42/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'Quick · 1' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'Dig · 1' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Quick (low complexity, high confidence) · 1' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Dig (high complexity, low confidence) · 1' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '  → B Copy the token' })).toBeDefined()
     await ui.unmount()
   }
 })

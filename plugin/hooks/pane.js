@@ -10,14 +10,16 @@
 const PANE = 'docket'
 const POLL_MS = 2500
 
+// [lane, heading, where it sits on the two triage axes, what to do]
 const LANES = [
-  ['attention', 'Needs attention', 'The applier stopped. Re-decide or discuss.'],
-  ['quick', 'Quick', 'Simple and confident: accept and go.'],
-  ['decide', 'Decide', 'Small change, but a judgment call.'],
-  ['scope', 'Scope', 'Clear direction, large change: fix now or defer.'],
-  ['dig', 'Dig', 'Complex and unsure: discuss before deciding.'],
-  ['research', 'Needs research', 'Not researched yet.']
+  ['attention', 'Needs attention', '', 'The applier stopped. Re-decide or discuss.'],
+  ['quick', 'Quick', 'low complexity, high confidence', 'Accept and go.'],
+  ['decide', 'Decide', 'low complexity, low confidence', 'A small change, but a judgment call.'],
+  ['scope', 'Scope', 'high complexity, high confidence', 'Clear direction, large change: fix now or defer.'],
+  ['dig', 'Dig', 'high complexity, low confidence', 'Discuss before deciding.'],
+  ['research', 'Needs research', '', 'Not researched yet.']
 ]
+const SEVERITY_COLOR = { critical: '#ff5f5f', high: '#ff8700', medium: '#d7af00', low: '#5fafd7' }
 const OUTCOME = { completed: 'Completed', acknowledged: 'Acknowledged', deferred: 'Deferred', resolved_externally: 'Resolved on GitHub' }
 const STATE_LABEL = { queued: 'queued', fixing: 'fixing', discussing: 'discussing', needs_attention: 'needs attention' }
 
@@ -181,15 +183,6 @@ async function openPane($, focus) {
 
 // ---------- drawing helpers ----------
 
-function meter(value) {
-  return value ? '█'.repeat(value) + '·'.repeat(4 - value) : '····'
-}
-
-function clip(text, width) {
-  const s = String(text == null ? '' : text).replace(/\s+/g, ' ').trim()
-  return width > 1 && s.length > width ? s.slice(0, width - 1) + '…' : s
-}
-
 function capped(text, limit) {
   const s = String(text == null ? '' : text)
   return s.length > limit ? s.slice(0, limit - 1) + '…' : s
@@ -259,7 +252,6 @@ export function register(on) {
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
     const { Box, Text, Button, Input, Markdown } = $.ui.resolve(e)
-    const width = Math.max(30, (e.props && e.props.bodyColumns) || 60)
     const redraw = () => $.ui.invalidate('ui.render')
     const rows = []
     const line = (text, style) => rows.push(Text({ ...(style || {}), wrap: 'wrap', children: [capped(text, 9000)] }))
@@ -283,7 +275,7 @@ export function register(on) {
     const head = ['Docket', branch, { active: 'active', paused: 'paused', not_started: 'not started', branch_mismatch: 'branch changed' }[state] || state]
     if (unit.pr) head.push('PR #' + unit.pr.number)
     if (working) head.push('Claude is working')
-    line(clip(head.filter(Boolean).join(' · '), width), { bold: true })
+    line(head.filter(Boolean).join(' · '), { bold: true })
 
     if (state === 'not_started') {
       gap()
@@ -373,28 +365,37 @@ export function register(on) {
       if (s.open && STATE_LABEL[s.state]) flags.push(STATE_LABEL[s.state])
       if (s.stale) flags.push('stale')
       if (s.isNew) flags.push('new')
-      rows.push(Button({
-        key: 'f-' + s.id,
-        label: clip((open ? '▾ ' : '▸ ') + s.id + '  ' + s.title + (flags.length ? '  [' + flags.join(', ') + ']' : ''), width - 5),
-        plain: true,
-        ...hotkey,
-        onPress: async () => {
-          expanded = open ? null : s.id
-          redraw()
-          if (expanded && (!details[s.id] || details[s.id].rev !== s.rev)) {
-            await loadDetail($, s.id)
-            redraw()
-          }
-        }
+      // The button carries the id; the title beside it wraps instead of clipping.
+      rows.push(Box({
+        flexDirection: 'row',
+        columnGap: 1,
+        children: [
+          Button({
+            key: 'f-' + s.id,
+            label: (open ? '▾ ' : '▸ ') + s.id,
+            plain: true,
+            ...hotkey,
+            onPress: async () => {
+              expanded = open ? null : s.id
+              redraw()
+              if (expanded && (!details[s.id] || details[s.id].rev !== s.rev)) {
+                await loadDetail($, s.id)
+                redraw()
+              }
+            }
+          }),
+          Box({ flexGrow: 1, flexShrink: 1, children: [Text({ wrap: 'wrap', children: [s.title, flags.length ? Text({ dimColor: true, children: ['  [' + flags.join(', ') + ']'] }) : ''] })] })
+        ]
       }))
+      const sub = []
       if (s.open) {
-        const bits = [s.severity || s.reviewerSeverity || '']
-        if (s.lane) bits.push('cx ' + meter(s.complexity) + ' cf ' + meter(s.confidence))
-        if (s.recommended) bits.push('→ ' + s.recommended.id + ' ' + s.recommended.title)
-        dim('   ' + clip(bits.filter(Boolean).join(' · '), width - 4))
+        const severity = s.severity || 'unknown'
+        sub.push(Text({ color: SEVERITY_COLOR[severity], dimColor: !SEVERITY_COLOR[severity], bold: severity === 'critical', children: [severity] }))
+        if (s.recommended) sub.push(Text({ dimColor: true, children: ['  → ' + s.recommended.id + ' ' + s.recommended.title] }))
       } else {
-        dim('   ' + clip((OUTCOME[s.state] || s.state) + (s.resolutionSummary ? ' — ' + s.resolutionSummary : ''), width - 4))
+        sub.push(Text({ dimColor: true, children: [(OUTCOME[s.state] || s.state) + (s.resolutionSummary ? ' — ' + s.resolutionSummary : '')] }))
       }
+      rows.push(Box({ paddingLeft: 4, children: [Text({ wrap: 'wrap', children: sub })] }))
       if (open) detail(s)
     }
 
@@ -418,12 +419,13 @@ export function register(on) {
           const isSel = o.id === selected
           const br = o.blastRadius || {}
           const tag = [o.kind, o.effort, br.level, br.estimatedFiles != null ? '~' + br.estimatedFiles + ' files' : ''].filter(Boolean).join(' · ')
-          rows.push(Button({
-            key: 'opt-' + f.id + '-' + o.id,
-            label: clip((isSel ? '(•) ' : '( ) ') + o.id + '. ' + o.title + (o.id === f.research.recommendedOptionId ? ' ★' : '') + '  [' + tag + ']', width - 2),
-            plain: true,
-            dimColor: !isSel,
-            onPress: () => { choice[f.id] = o.id; redraw() }
+          rows.push(Box({
+            flexDirection: 'row',
+            columnGap: 1,
+            children: [
+              Button({ key: 'opt-' + f.id + '-' + o.id, label: (isSel ? '(•) ' : '( ) ') + o.id + '.', plain: true, dimColor: !isSel, onPress: () => { choice[f.id] = o.id; redraw() } }),
+              Box({ flexGrow: 1, flexShrink: 1, children: [Text({ wrap: 'wrap', dimColor: !isSel, children: [o.title + (o.id === f.research.recommendedOptionId ? ' ★' : ''), Text({ dimColor: true, children: ['  [' + tag + ']'] })] })] })
+            ]
           }))
           if (isSel) {
             rows.push(Markdown({ key: 'md-opt-' + f.id + '-' + o.id, text: capped(o.description || '', 4000) }))
@@ -485,7 +487,7 @@ export function register(on) {
       line('Review comments', { bold: true })
       for (const ref of f.sources.slice(0, 3)) {
         const src = sources[ref.sourceId] || {}
-        dim('   “' + clip(ref.excerpt, 600) + '” — ' + (src.author || ref.sourceId))
+        dim('   “' + capped(ref.excerpt, 3000) + '” — ' + (src.author || ref.sourceId))
       }
       if (!s.open) {
         if (f.resolution && f.resolution.reason) dim('   Reason: ' + f.resolution.reason)
@@ -528,11 +530,11 @@ export function register(on) {
         gap()
         dim('No open findings. Press c to see closed ones, or i to ingest new review comments.')
       }
-      for (const [lane, label, hint] of LANES) {
+      for (const [lane, label, axes, hint] of LANES) {
         const items = open.filter((s) => laneOf(s) === lane)
         if (!items.length) continue
         gap()
-        line(label + ' · ' + items.length, { bold: true })
+        line(label + (axes ? ' (' + axes + ')' : '') + ' · ' + items.length, { bold: true })
         dim(hint)
         const quickReady = lane === 'quick' ? items.filter((s) => s.state === 'ready' || s.state === 'discussing') : []
         if (active && quickReady.length > 1) {
