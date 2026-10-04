@@ -12,18 +12,21 @@ Reviewers post findings in many formats: inline code comments, one large PR comm
 | `docket` CLI | Not started | The only writer of docket files |
 | `docket-ingest` skill | Not started | Converts PR comments or a local report into findings, incrementally |
 | `docket-research` skill | Not started | Investigates each finding and writes options with pros and cons |
-| `docket-investigate` skill | Not started | Read-only session for one finding that needs discussion |
-| `docket-apply` skill | Not started | Applies decided findings in order, one commit each |
+| `docket-discuss` skill | Not started | Read-only conversation about one finding. Updates the finding as it goes. |
+| `docket-apply` skill | Not started | Applies decided findings in order, one commit each, then verifies and closes them |
 | `docket-reply` skill | Not started | Drafts replies to reviewers. Posts only after approval. |
-| Orca plugin | Not started | Right-pane panel to review findings, decide, and queue |
+| `docket-deferrals` skill | Not started | Lists deferred work across all repos and picks it up later |
+| Orca plugin | Not started | Right-pane panel to review findings, decide, quick fix, and queue |
 
 ## Data model
 
 Read [spec/SPEC.md](spec/SPEC.md). In summary:
 
 - Each git worktree has one docket at `$(git rev-parse --git-dir)/docket/`. The docket is deleted with the worktree.
-- Each finding is one file with its own state and `rev` counter.
-- Research and investigation only read code, so they run in parallel. Only the applier edits code, one finding at a time.
+- Deferred work goes to `${DOCKET_HOME:-~/.docket}/deferrals/` as self-contained markdown files, so it outlives the worktree.
+- Each finding is one file with its own state, `rev` counter, and history of iterations by commit.
+- A finding closes as `completed` (fixed and verified), `acknowledged` (no change, with a reason), `deferred`, or `resolved_externally`.
+- Research and discussion only read code, so they run in parallel. Only the applier edits code, one finding at a time.
 
 ## Validate the spec
 

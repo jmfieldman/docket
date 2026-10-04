@@ -50,6 +50,20 @@
         }
       ]
     },
+    "lastViewedAt": {
+      "description": "When the user last viewed the docket. Findings created after it show as new.",
+      "oneOf": [{ "type": "null" }, { "$ref": "common.schema.json#/$defs/timestamp" }]
+    },
+    "applier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": { "enum": ["idle", "running"] },
+        "terminalHandle": { "type": "string" },
+        "since": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    },
     "nextFindingNumber": { "type": "integer", "minimum": 1 },
     "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
     "updatedAt": { "$ref": "common.schema.json#/$defs/timestamp" }

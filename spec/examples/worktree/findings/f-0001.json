@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1, "id": "f-0001", "rev": 4, "state": "ready", "stale": null,
+  "title": "Retry loop has no upper bound",
+  "summary": "LoginClient.retry retries every 5xx response with no attempt limit. During an outage the client loops until the user leaves the screen.",
+  "explanation": "LoginClient wraps the sign-in request. On a 5xx it waits (exponential backoff, capped at 8 s) and sends the request again. Nothing counts attempts, so a long outage produces a request every 8 s per open client, and the spinner never ends.",
+  "severityRationale": "Medium. No data loss, but every stuck client adds load to an already failing service, and the user sees an endless spinner.",
+  "category": "reliability", "reviewerSeverity": "high",
+  "location": { "path": "Sources/Auth/LoginClient.swift", "symbol": "LoginClient.retry(_:)", "startLine": 88, "endLine": 104, "commit": "5555555555555555555555555555555555555555" },
+  "detectedAtCommit": "4444444444444444444444444444444444444444",
+  "sources": [ { "sourceId": "gh:thread:PRRT_kwDOexample", "excerpt": "This retry never stops on repeated 503s." } ],
+  "research": {
+    "verdict": "valid", "confidence": "high", "assessedSeverity": "medium",
+    "analysis": "The loop at LoginClient.swift:92 runs while status >= 500. Backoff exists; an attempt cap does not.",
+    "evidence": [ { "path": "Sources/Auth/LoginClient.swift", "symbol": "LoginClient.retry(_:)", "startLine": 92, "note": "while status >= 500" } ],
+    "options": [
+      { "id": "A", "kind": "fix", "title": "Cap at 3 attempts", "description": "Add maxAttempts = 3 and surface the last error to the caller.",
+        "pros": ["Smallest change", "Easy to test"], "cons": ["Fixed number"], "effort": "trivial",
+        "blastRadius": { "level": "surgical", "estimatedFiles": 2, "areas": ["Auth"], "publicApi": false, "migration": false, "featureFlag": false } },
+      { "id": "B", "kind": "fix", "title": "Cap from remote config", "description": "Read the cap from a config flag, default 3.",
+        "pros": ["Tunable during an incident"], "cons": ["Adds a flag to create and maintain"], "effort": "small",
+        "blastRadius": { "level": "contained", "estimatedFiles": 4, "areas": ["Auth", "Config"], "featureFlag": true } },
+      { "id": "C", "kind": "defer", "title": "Shared retry policy for all clients", "description": "Move every client onto one RetryPolicy type.",
+        "pros": ["Fixes the same bug in 6 other clients"], "cons": ["Large change, outside this PR"], "effort": "large",
+        "blastRadius": { "level": "sweeping", "estimatedFiles": 23, "areas": ["Networking", "Auth", "Payments"], "publicApi": true } },
+      { "id": "D", "kind": "acknowledge", "title": "Leave as is", "description": "The gateway sheds load during outages.",
+        "pros": ["No change"], "cons": ["Client still loops if the gateway is unreachable"], "effort": "trivial",
+        "blastRadius": { "level": "surgical", "estimatedFiles": 0 } }
+    ],
+    "recommendedOptionId": "A", "researchedAt": "2026-10-04T16:02:00Z", "researchedAtCommit": "5555555555555555555555555555555555555555"
+  },
+  "discussion": {
+    "sessionId": "0b7c1e52-6f0d-4f8e-9d2a-3c4b5a6d7e8f", "terminalHandle": "term_4f2a",
+    "startedAt": "2026-10-04T16:03:00Z", "lastActiveAt": "2026-10-04T16:06:00Z",
+    "entries": [
+      { "at": "2026-10-04T16:04:00Z", "head": "5555555555555555555555555555555555555555", "question": "Do other clients have the same loop?", "answer": "Yes, 6 others copy this loop. Added option C (defer a shared RetryPolicy).", "optionsChanged": true },
+      { "at": "2026-10-04T16:06:00Z", "head": "5555555555555555555555555555555555555555", "question": "Would option A change what the user sees?", "answer": "After the third failure the screen shows the existing generic error instead of spinning.", "optionsChanged": false }
+    ]
+  },
+  "iterations": [], "resolution": null, "reply": { "status": "none" },
+  "createdAt": "2026-10-04T16:00:00Z", "updatedAt": "2026-10-04T16:06:00Z"
+}

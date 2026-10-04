@@ -1,6 +1,0 @@
-{"ts":"2026-10-03T17:00:00Z","actor":"cli","type":"unit_created"}
-{"ts":"2026-10-03T17:31:00Z","actor":"ingest","type":"source_added","sourceId":"gh:comment:9001"}
-{"ts":"2026-10-03T17:31:00Z","actor":"ingest","type":"finding_created","findingId":"f-0001","sourceId":"gh:comment:9001","to":"new","rev":0}
-{"ts":"2026-10-03T17:46:00Z","actor":"ingest","type":"finding_merged","findingId":"f-0002","sourceId":"gh:thread:PRRT_kwDOexample"}
-{"ts":"2026-10-03T17:50:00Z","actor":"research","type":"state_changed","findingId":"f-0001","from":"new","to":"triaged","rev":2}
-{"ts":"2026-10-03T18:02:00Z","actor":"applier","type":"apply_committed","findingId":"f-0002","from":"applying","to":"applied","rev":6,"data":{"commit":"3333333333333333333333333333333333333333"}}

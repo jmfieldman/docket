@@ -5,22 +5,41 @@
   "description": "One finding. Stored at docket/findings/<id>.json. Each finding moves through its states independently of every other finding.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "id", "rev", "state", "title", "summary", "sources", "createdAt", "updatedAt"],
+  "required": ["schemaVersion", "id", "rev", "state", "title", "summary", "sources", "detectedAtCommit", "iterations", "createdAt", "updatedAt"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "id": { "$ref": "common.schema.json#/$defs/findingId" },
     "rev": { "type": "integer", "minimum": 0, "description": "Incremented on every write. Writers pass the rev they read; the CLI rejects a mismatch." },
     "state": { "$ref": "common.schema.json#/$defs/state" },
+    "stale": {
+      "description": "Set when the code or the source text under an open finding changed. Not a state.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reason", "since", "sinceCommit"],
+          "properties": {
+            "reason": { "type": "string" },
+            "since": { "$ref": "common.schema.json#/$defs/timestamp" },
+            "sinceCommit": { "$ref": "common.schema.json#/$defs/sha" }
+          }
+        }
+      ]
+    },
     "title": { "type": "string", "minLength": 1, "maxLength": 120 },
-    "summary": { "type": "string", "minLength": 1, "description": "The issue in neutral words, normalized from the reviewer's text." },
-    "category": { "enum": ["bug", "security", "performance", "reliability", "test", "design", "style", "docs", "question", "other"] },
+    "summary": { "type": "string", "minLength": 1, "description": "The issue in two or three neutral sentences." },
+    "explanation": { "type": "string", "description": "Markdown. Background for a reader who does not know this code." },
+    "severityRationale": { "type": "string", "description": "Why the issue matters, and how much." },
+    "category": { "$ref": "common.schema.json#/$defs/category" },
     "reviewerSeverity": {
       "enum": ["critical", "high", "medium", "low", "nit", "unknown"],
-      "description": "The severity the reviewer claimed. Research records its own assessment separately."
+      "description": "The severity the reviewer claimed. research.assessedSeverity holds docket's own assessment."
     },
     "location": {
       "oneOf": [{ "type": "null" }, { "$ref": "common.schema.json#/$defs/location" }]
     },
+    "detectedAtCommit": { "$ref": "common.schema.json#/$defs/sha" },
     "sources": {
       "type": "array",
       "minItems": 1,
@@ -39,69 +58,21 @@
     "research": {
       "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/research" }]
     },
-    "decision": {
-      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/decision" }]
+    "discussion": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/discussion" }]
     },
-    "notes": {
+    "iterations": {
       "type": "array",
-      "description": "Free-text notes from the user, oldest first.",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["at", "text"],
-        "properties": {
-          "at": { "$ref": "common.schema.json#/$defs/timestamp" },
-          "text": { "type": "string", "minLength": 1 }
-        }
-      }
+      "description": "One entry per decision, oldest first.",
+      "items": { "$ref": "#/$defs/iteration" }
     },
-    "investigation": {
-      "oneOf": [
-        { "type": "null" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["startedAt"],
-          "properties": {
-            "terminalHandle": { "type": "string" },
-            "startedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
-            "endedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
-          }
-        }
-      ]
-    },
-    "queue": {
-      "oneOf": [
-        { "type": "null" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["position", "queuedAt"],
-          "properties": {
-            "position": { "type": "integer", "minimum": 1 },
-            "queuedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
-          }
-        }
-      ]
-    },
-    "application": {
-      "oneOf": [
-        { "type": "null" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "commit": { "$ref": "common.schema.json#/$defs/sha" },
-            "appliedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
-            "bounceReason": { "type": "string", "description": "Why the applier set needs_attention." }
-          }
-        }
-      ]
+    "resolution": {
+      "description": "Set when the finding closes. Cleared on reopen; the history stays in iterations and events.",
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/resolution" }]
     },
     "reply": {
       "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/reply" }]
     },
-    "staleReason": { "oneOf": [{ "type": "null" }, { "type": "string" }] },
     "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
     "updatedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
   },
@@ -113,7 +84,7 @@
       "properties": {
         "verdict": { "enum": ["valid", "partially_valid", "not_valid", "unclear"] },
         "confidence": { "enum": ["low", "medium", "high"] },
-        "assessedSeverity": { "enum": ["critical", "high", "medium", "low", "nit"] },
+        "assessedSeverity": { "$ref": "common.schema.json#/$defs/severity" },
         "analysis": { "type": "string", "description": "Markdown. Why the verdict holds, with references to the code." },
         "evidence": {
           "type": "array",
@@ -123,6 +94,7 @@
             "required": ["path", "note"],
             "properties": {
               "path": { "type": "string" },
+              "symbol": { "type": "string" },
               "startLine": { "type": "integer", "minimum": 1 },
               "endLine": { "type": "integer", "minimum": 1 },
               "note": { "type": "string" }
@@ -132,10 +104,10 @@
         "options": {
           "type": "array",
           "minItems": 2,
-          "maxItems": 4,
+          "maxItems": 6,
           "items": { "$ref": "#/$defs/option" }
         },
-        "recommendedOptionId": { "type": "string", "pattern": "^[A-D]$" },
+        "recommendedOptionId": { "type": "string", "pattern": "^[A-F]$" },
         "researchedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
         "researchedAtCommit": { "$ref": "common.schema.json#/$defs/sha" }
       }
@@ -143,36 +115,177 @@
     "option": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "kind", "title", "description", "pros", "cons", "effort"],
+      "required": ["id", "kind", "title", "description", "pros", "cons", "effort", "blastRadius"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[A-D]$" },
-        "kind": {
-          "enum": ["fix", "dismiss"],
-          "description": "fix leads to decided → queued → applied. dismiss leads to dismissed."
-        },
+        "id": { "type": "string", "pattern": "^[A-F]$" },
+        "kind": { "$ref": "common.schema.json#/$defs/optionKind" },
         "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-        "description": { "type": "string", "description": "Markdown. What the applier will change, or why no change is needed." },
+        "description": { "type": "string", "description": "Markdown. What the applier will change, or why no change is needed now." },
         "pros": { "type": "array", "items": { "type": "string" } },
         "cons": { "type": "array", "items": { "type": "string" } },
-        "effort": { "enum": ["trivial", "small", "medium", "large"] }
+        "effort": { "enum": ["trivial", "small", "medium", "large"] },
+        "blastRadius": { "$ref": "common.schema.json#/$defs/blastRadius" }
+      }
+    },
+    "discussion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "entries"],
+      "properties": {
+        "sessionId": { "type": "string", "description": "Agent session ID, so the user can continue later." },
+        "terminalHandle": { "type": "string" },
+        "startedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "lastActiveAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["at", "head", "question", "answer"],
+            "properties": {
+              "at": { "$ref": "common.schema.json#/$defs/timestamp" },
+              "head": { "$ref": "common.schema.json#/$defs/sha" },
+              "question": { "type": "string", "description": "The user's question, condensed." },
+              "answer": { "type": "string", "description": "The agent's answer, condensed. Markdown." },
+              "optionsChanged": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "iteration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n", "decision", "decidedAt", "decidedAtCommit", "outcome"],
+      "properties": {
+        "n": { "type": "integer", "minimum": 1 },
+        "decision": { "$ref": "#/$defs/decision" },
+        "decidedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "decidedAtCommit": { "$ref": "common.schema.json#/$defs/sha" },
+        "queue": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["position", "queuedAt"],
+          "properties": {
+            "position": { "type": "integer", "minimum": 1 },
+            "queuedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+          }
+        },
+        "startedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "commits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sha", "message"],
+            "properties": {
+              "sha": { "$ref": "common.schema.json#/$defs/sha" },
+              "message": { "type": "string" }
+            }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "checks"],
+          "properties": {
+            "status": { "enum": ["passed", "failed", "skipped"] },
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "result"],
+                "properties": {
+                  "name": { "type": "string", "description": "A test command, or 'concern re-check'." },
+                  "result": { "enum": ["passed", "failed", "skipped"] },
+                  "detail": { "type": "string" }
+                }
+              }
+            },
+            "notes": { "type": "string" }
+          }
+        },
+        "alsoResolves": {
+          "type": "array",
+          "description": "Other findings this iteration's fix closes.",
+          "items": { "$ref": "common.schema.json#/$defs/findingId" },
+          "uniqueItems": true
+        },
+        "outcome": {
+          "enum": ["pending", "queued", "fixing", "completed", "needs_attention", "abandoned", "acknowledged", "deferred"],
+          "description": "pending: decided but not queued. abandoned: replaced by a later iteration before it finished."
+        },
+        "bounceReason": { "type": "string", "description": "Why the applier set needs_attention." },
+        "summary": { "type": "string", "description": "One line: what this iteration did." },
+        "endedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
       }
     },
     "decision": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["optionId", "decidedAt"],
+      "required": ["optionId", "kind"],
       "properties": {
         "optionId": {
           "type": "string",
-          "pattern": "^([A-D]|custom)$",
-          "description": "custom means the user wrote their own fix in instruction."
+          "pattern": "^([A-F]|custom)$",
+          "description": "custom means the user wrote the decision in instruction."
         },
-        "kind": { "enum": ["fix", "dismiss"], "description": "Required when optionId is custom." },
-        "instruction": { "type": "string", "description": "Extra direction for the applier, or the custom fix." },
-        "decidedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+        "kind": { "$ref": "common.schema.json#/$defs/optionKind" },
+        "instruction": { "type": "string", "description": "Extra direction for the applier, the custom fix, or the reason." },
+        "quick": { "type": "boolean", "description": "True when the user chose quick fix." }
       },
-      "if": { "required": ["optionId"], "properties": { "optionId": { "const": "custom" } } },
-      "then": { "required": ["kind", "instruction"], "properties": { "kind": true, "instruction": true } }
+      "allOf": [
+        {
+          "if": { "required": ["optionId"], "properties": { "optionId": { "const": "custom" } } },
+          "then": { "required": ["instruction"], "properties": { "instruction": true } }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "enum": ["acknowledge", "defer"] } } },
+          "then": { "required": ["instruction"], "properties": { "instruction": { "type": "string", "minLength": 1 } } }
+        }
+      ]
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "summary", "closedAt", "closedAtCommit"],
+      "properties": {
+        "outcome": { "$ref": "common.schema.json#/$defs/closedOutcome" },
+        "summary": { "type": "string", "minLength": 1, "description": "One line. Shown on collapsed closed findings." },
+        "reason": { "type": "string", "description": "Required for acknowledged and deferred." },
+        "closedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "closedAtCommit": { "$ref": "common.schema.json#/$defs/sha" },
+        "resolvedBy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["findingId", "iteration"],
+          "description": "Set when another finding's fix closed this one.",
+          "properties": {
+            "findingId": { "$ref": "common.schema.json#/$defs/findingId" },
+            "iteration": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "deferral": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "path"],
+          "properties": {
+            "id": { "$ref": "common.schema.json#/$defs/deferralId" },
+            "path": { "type": "string" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["outcome"], "properties": { "outcome": { "enum": ["acknowledged", "deferred"] } } },
+          "then": { "required": ["reason"], "properties": { "reason": { "type": "string", "minLength": 1 } } }
+        },
+        {
+          "if": { "required": ["outcome"], "properties": { "outcome": { "const": "deferred" } } },
+          "then": { "required": ["deferral"], "properties": { "deferral": true } }
+        }
+      ]
     },
     "reply": {
       "type": "object",
@@ -182,6 +295,7 @@
         "status": { "enum": ["none", "drafted", "approved", "posted", "skipped"] },
         "draft": { "type": "string" },
         "targetSourceId": { "$ref": "common.schema.json#/$defs/sourceId" },
+        "resolveThread": { "type": "boolean", "description": "Resolve the GitHub thread when the reply posts." },
         "postedUrl": { "type": "string" },
         "postedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
       }

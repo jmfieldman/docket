@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1, "id": "f-0004", "rev": 4, "state": "acknowledged", "stale": null,
+  "title": "Rename LoginClient to SignInClient",
+  "summary": "The reviewer prefers the product term 'sign in' in type names.",
+  "category": "style", "reviewerSeverity": "nit",
+  "location": { "path": "Sources/Auth/LoginClient.swift", "symbol": "LoginClient", "commit": "3333333333333333333333333333333333333333" },
+  "detectedAtCommit": "1111111111111111111111111111111111111111",
+  "sources": [ { "sourceId": "gh:comment:9001", "excerpt": "4. Nit: LoginClient should be SignInClient.", "ordinal": 3 } ],
+  "research": null, "discussion": null,
+  "iterations": [
+    { "n": 1, "decision": { "optionId": "custom", "kind": "acknowledge", "instruction": "Login is the established term in this module; a rename is noise in a bug-fix PR." },
+      "decidedAt": "2026-10-04T12:30:00Z", "decidedAtCommit": "3333333333333333333333333333333333333333", "outcome": "acknowledged", "summary": "Kept the name.", "endedAt": "2026-10-04T12:30:00Z" }
+  ],
+  "resolution": { "outcome": "acknowledged", "summary": "Kept LoginClient: established term in this module.", "reason": "Login is the established term in this module; a rename is noise in a bug-fix PR.", "closedAt": "2026-10-04T12:30:00Z", "closedAtCommit": "3333333333333333333333333333333333333333" },
+  "reply": { "status": "approved", "draft": "Keeping LoginClient for now: it is the established term in this module, and a rename would add noise to a bug-fix PR.", "targetSourceId": "gh:comment:9001", "resolveThread": false },
+  "createdAt": "2026-10-04T09:31:00Z", "updatedAt": "2026-10-04T12:31:00Z"
+}

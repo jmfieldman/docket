@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/deferral.schema.json",
+  "title": "Docket deferral frontmatter",
+  "description": "YAML frontmatter of a deferral file at ${DOCKET_HOME:-~/.docket}/deferrals/<id>.md. The body sections are defined in SPEC.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "title", "status", "createdAt", "origin", "codeRefs"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/deferralId" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "status": { "enum": ["open", "picked_up", "done", "dropped"] },
+    "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "severity": { "$ref": "common.schema.json#/$defs/severity" },
+    "category": { "$ref": "common.schema.json#/$defs/category" },
+    "blastRadius": { "$ref": "common.schema.json#/$defs/blastRadius" },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "branch", "findingId", "head"],
+      "properties": {
+        "repo": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["remoteUrl"],
+          "properties": {
+            "remoteUrl": { "type": "string" },
+            "owner": { "type": "string" },
+            "name": { "type": "string" }
+          }
+        },
+        "branch": { "type": "string" },
+        "pr": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["number", "url"],
+              "properties": {
+                "number": { "type": "integer", "minimum": 1 },
+                "url": { "type": "string" }
+              }
+            }
+          ]
+        },
+        "findingId": { "$ref": "common.schema.json#/$defs/findingId" },
+        "head": { "$ref": "common.schema.json#/$defs/sha" },
+        "sourceUrls": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "codeRefs": {
+      "type": "array",
+      "description": "Find code by symbol first; the line is a hint valid at commit.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "commit"],
+        "properties": {
+          "path": { "type": "string" },
+          "symbol": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "commit": { "$ref": "common.schema.json#/$defs/sha" }
+        }
+      }
+    },
+    "pickedUp": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["at", "ref"],
+          "properties": {
+            "at": { "$ref": "common.schema.json#/$defs/timestamp" },
+            "by": { "type": "string", "description": "Who or what picked it up, for example jason or monty." },
+            "ref": { "type": "string", "description": "Where the work went: a branch, a PR URL, a ticket, or a brain page." }
+          }
+        }
+      ]
+    },
+    "closed": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["at", "reason"],
+          "properties": {
+            "at": { "$ref": "common.schema.json#/$defs/timestamp" },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["status"], "properties": { "status": { "const": "picked_up" } } },
+      "then": { "required": ["pickedUp"], "properties": { "pickedUp": { "type": "object" } } }
+    },
+    {
+      "if": { "required": ["status"], "properties": { "status": { "enum": ["done", "dropped"] } } },
+      "then": { "required": ["closed"], "properties": { "closed": { "type": "object" } } }
+    }
+  ]
+}

@@ -7,21 +7,41 @@
     "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "findingId": { "type": "string", "pattern": "^f-[0-9]{4,}$" },
     "sourceId": { "type": "string", "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:).+" },
+    "deferralId": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$" },
     "state": {
       "enum": [
-        "new", "triaged", "investigating", "decided", "queued", "applying",
-        "applied", "dismissed", "needs_attention", "stale", "resolved_externally"
+        "new", "ready", "discussing", "queued", "fixing", "needs_attention",
+        "completed", "acknowledged", "deferred", "resolved_externally"
       ]
     },
+    "closedOutcome": { "enum": ["completed", "acknowledged", "deferred", "resolved_externally"] },
+    "optionKind": { "enum": ["fix", "acknowledge", "defer"] },
+    "severity": { "enum": ["critical", "high", "medium", "low", "nit"] },
+    "category": { "enum": ["bug", "security", "performance", "reliability", "test", "design", "style", "docs", "question", "other"] },
     "location": {
       "type": "object",
       "additionalProperties": false,
       "required": ["path"],
       "properties": {
         "path": { "type": "string", "minLength": 1 },
+        "symbol": { "type": "string", "description": "Function, type or test name. Survives line drift." },
         "startLine": { "type": "integer", "minimum": 1 },
         "endLine": { "type": "integer", "minimum": 1 },
         "commit": { "$ref": "#/$defs/sha" }
+      }
+    },
+    "blastRadius": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level"],
+      "properties": {
+        "level": { "enum": ["surgical", "contained", "broad", "sweeping"] },
+        "estimatedFiles": { "type": "integer", "minimum": 0 },
+        "areas": { "type": "array", "items": { "type": "string" } },
+        "publicApi": { "type": "boolean" },
+        "migration": { "type": "boolean" },
+        "featureFlag": { "type": "boolean" },
+        "notes": { "type": "string" }
       }
     }
   }

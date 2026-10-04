@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1, "id": "f-0002", "rev": 11, "state": "completed", "stale": null,
+  "title": "Refresh token written to the debug log",
+  "summary": "TokenStore logs the full refresh token when it refreshes.",
+  "explanation": "TokenStore.refresh() interpolates the token into a debug log line. Debug logs ship in TestFlight builds and are attached to bug reports.",
+  "severityRationale": "High. A leaked refresh token grants a session until it expires.",
+  "category": "security", "reviewerSeverity": "critical",
+  "location": { "path": "Sources/Auth/TokenStore.swift", "symbol": "TokenStore.refresh()", "startLine": 41, "commit": "2222222222222222222222222222222222222222" },
+  "detectedAtCommit": "1111111111111111111111111111111111111111",
+  "sources": [
+    { "sourceId": "gh:comment:9001", "excerpt": "2. TokenStore logs the refresh token.", "ordinal": 1 },
+    { "sourceId": "gh:thread:PRRT_kwDOexample", "excerpt": "This prints the token in debug builds. Android too?" }
+  ],
+  "research": {
+    "verdict": "valid", "confidence": "high", "assessedSeverity": "high",
+    "analysis": "TokenStore.swift:41 and TokenStore.kt:37 both log the raw token.",
+    "options": [
+      { "id": "A", "kind": "fix", "title": "Remove the log line", "description": "Delete the line on iOS.", "pros": ["Simple"], "cons": ["Loses refresh tracing"], "effort": "trivial", "blastRadius": { "level": "surgical", "estimatedFiles": 1 } },
+      { "id": "B", "kind": "fix", "title": "Log a redacted marker on both platforms", "description": "Use redact() on iOS and Android.", "pros": ["Keeps tracing"], "cons": ["Two platforms to touch"], "effort": "trivial", "blastRadius": { "level": "surgical", "estimatedFiles": 2, "areas": ["Auth"] } }
+    ],
+    "recommendedOptionId": "B", "researchedAt": "2026-10-04T12:10:00Z", "researchedAtCommit": "2222222222222222222222222222222222222222"
+  },
+  "discussion": null,
+  "iterations": [
+    {
+      "n": 1, "decision": { "optionId": "A", "kind": "fix", "quick": true }, "decidedAt": "2026-10-04T10:00:00Z", "decidedAtCommit": "1111111111111111111111111111111111111111",
+      "queue": { "position": 1, "queuedAt": "2026-10-04T10:00:00Z" }, "startedAt": "2026-10-04T10:01:00Z",
+      "commits": [ { "sha": "2222222222222222222222222222222222222222", "message": "fix: stop logging the refresh token" } ],
+      "verification": { "status": "passed", "checks": [ { "name": "swift test --filter TokenStoreTests", "result": "passed" }, { "name": "concern re-check", "result": "passed", "detail": "No token in iOS log output." } ] },
+      "outcome": "completed", "summary": "Removed the iOS log line.", "endedAt": "2026-10-04T10:05:00Z"
+    },
+    {
+      "n": 2, "decision": { "optionId": "B", "kind": "fix", "instruction": "Use the existing redact() helper." }, "decidedAt": "2026-10-04T12:15:00Z", "decidedAtCommit": "2222222222222222222222222222222222222222",
+      "queue": { "position": 1, "queuedAt": "2026-10-04T12:15:00Z" }, "startedAt": "2026-10-04T12:16:00Z",
+      "commits": [ { "sha": "3333333333333333333333333333333333333333", "message": "fix: redact the refresh token in Android logs" } ],
+      "verification": { "status": "passed", "checks": [ { "name": "./gradlew :auth:test", "result": "passed" }, { "name": "concern re-check", "result": "passed" } ] },
+      "alsoResolves": ["f-0003"],
+      "outcome": "completed", "summary": "Redacted the token on Android; also closed f-0003.", "endedAt": "2026-10-04T12:22:00Z"
+    }
+  ],
+  "resolution": { "outcome": "completed", "summary": "Token no longer logged on iOS (2222222) or Android (3333333).", "closedAt": "2026-10-04T12:22:00Z", "closedAtCommit": "3333333333333333333333333333333333333333" },
+  "reply": { "status": "drafted", "draft": "Fixed in 2222222 (iOS) and 3333333 (Android): the token is no longer logged.", "targetSourceId": "gh:thread:PRRT_kwDOexample", "resolveThread": true },
+  "createdAt": "2026-10-04T09:31:00Z", "updatedAt": "2026-10-04T12:22:00Z"
+}
