@@ -25,6 +25,18 @@ ln -s ~/Development/orca-docket/plugin/bin/docket /usr/local/bin/docket
 
 The launcher needs Node 22 or later.
 
+### Docket view
+
+`docket ui --open` starts the Docket web app on `127.0.0.1:4747` (in the background, if it is not already running) and opens the current worktree in Orca's browser, or in your default browser without Orca. `docket ui` runs it in the foreground. Writes need a custom header and a same-origin request, so other web pages cannot drive it.
+
+### Orca plugin
+
+1. In Orca, open **Settings → Plugins** and turn the plugin system on.
+2. Add `~/Development/orca-docket/orca-plugin` as a dev plugin path, then enable **Docket** and accept its permissions.
+3. Run **Docket: Open for this worktree** from the command palette. It starts the Docket view server and opens the focused worktree in Orca's browser.
+
+The plugin also adds a **Docket** panel to the right sidebar. Orca 1.4.220 does not let a panel read data from its own plugin yet ([stablyai/orca#12229](https://github.com/stablyai/orca/pull/12229) is open), so today the panel is a launcher. The panel uses the same page as the Docket view and switches to the full view inside the sidebar once Orca supports that call.
+
 ## Workflow
 
 1. Open a worktree for your branch. Run `/docket:start` (or press **Start docket** in the Orca panel). Until you do, docket is dormant in that worktree.
@@ -45,7 +57,10 @@ In any ordinary session in a worktree where docket is active, a session-start br
 | `src/` → `plugin/bin/docket.cjs` | The `docket` CLI, the only writer of docket files. Bundled with its dependencies and schemas. |
 | `plugin/skills/` | `start`, `ingest`, `research`, `discuss`, `apply`, `record`, `reply`, `deferrals` |
 | `plugin/hooks/hooks.json` | `SessionStart` brief, empty unless docket is active in the worktree |
-| `orca-plugin/` | Orca right-pane panel |
+| `ui/index.html` | The Docket view: findings by lane, decisions, discussion, history, replies. One page for the browser and the Orca panel. |
+| `src/ui-server.ts`, `src/api.ts` | `docket ui`: local HTTP server and the action layer behind every UI |
+| `orca-plugin/` | Orca plugin: "Docket: Open" command, right-sidebar panel, worker |
+| `scripts/demo.mjs` | `pnpm run demo`: a throwaway repo with findings in every lane, served on port 4848 |
 
 ## Data model
 

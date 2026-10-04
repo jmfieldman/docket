@@ -32,6 +32,7 @@ import {
 import type { OptionKind, Origin } from './types.ts'
 import { brief, listFindings, panelSnapshot } from './view.ts'
 import { withWorkspace, type Workspace } from './workspace.ts'
+import { DEFAULT_PORT, runUi } from './ui-server.ts'
 
 const USAGE = `Usage: docket [-C <path>] <command> [args] [options]
 
@@ -75,6 +76,10 @@ Replies
   reply draft <id> --text <t> [--target <sourceId>] [--resolve-thread]
   reply approve <id> | reply posted <id> --url <u> | reply skip <id>
 
+UI
+  ui [--open] [--port <n>]            Serve the Docket web UI on 127.0.0.1 (default port 4747);
+                                      --open starts it in the background and opens this worktree in Orca's browser
+
 Deferrals (any directory)
   deferrals list [--all] | deferrals show <id>
   deferrals pickup <id> --ref <where> [--by <who>]
@@ -116,7 +121,9 @@ function parse(argv: string[]) {
       state: { type: 'string' },
       all: { type: 'boolean', default: false },
       by: { type: 'string' },
-      ref: { type: 'string' }
+      ref: { type: 'string' },
+      port: { type: 'string' },
+      open: { type: 'boolean', default: false }
     }
   })
 }
@@ -179,7 +186,7 @@ function humanList(result: ReturnType<typeof listFindings>): string {
   const meter = (n: number | null) => (n === null ? '····' : '█'.repeat(n) + '·'.repeat(4 - n))
   return result.findings
     .map((s) => {
-      const lane = (s.lane ?? (s.open ? 'new' : s.state)).padEnd(19)
+      const lane = (s.open ? (s.state === 'new' || s.state === 'ready' ? (s.lane ?? 'new') : `${s.lane ?? 'new'}/${s.state}`) : s.state).padEnd(19)
       const tail = s.open ? (s.recommended ? `→ ${s.recommended.id} ${s.recommended.title}` : '') : (s.resolutionSummary ?? '')
       return `${s.id}  ${lane} cx ${meter(s.complexity)} cf ${meter(s.confidence)}  ${s.title}${s.stale ? '  [stale]' : ''}${s.isNew ? '  [new]' : ''}\n         ${tail}`
     })
@@ -353,6 +360,22 @@ function main(argv: string[]): number {
     prLookup: !values['no-pr'] && process.env.DOCKET_NO_GH !== '1'
   }
 
+  if (name === 'ui') {
+    const port = values.port ? Number(values.port) : DEFAULT_PORT
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+      console.error('docket: --port must be 1-65535')
+      return 2
+    }
+    runUi({ port, open: values.open, cwd: ctx.cwd }).then(
+      (code) => (process.exitCode = code),
+      (error: Error) => {
+        console.error(`docket: ${error.message}`)
+        process.exitCode = 1
+      }
+    )
+    return 0
+  }
+
   try {
     const activation = ACTIVATION[name]
     if (activation) {
@@ -377,4 +400,5 @@ function main(argv: string[]): number {
   }
 }
 
-process.exitCode = main(process.argv.slice(2))
+const code = main(process.argv.slice(2))
+if (process.exitCode === undefined) process.exitCode = code

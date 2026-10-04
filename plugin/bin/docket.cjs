@@ -1177,8 +1177,8 @@ var require_stringifyString = __commonJS({
             case "u":
               {
                 str += json.slice(start2, i);
-                const code = json.substr(i + 2, 4);
-                switch (code) {
+                const code2 = json.substr(i + 2, 4);
+                switch (code2) {
                   case "0000":
                     str += "\\0";
                     break;
@@ -1204,8 +1204,8 @@ var require_stringifyString = __commonJS({
                     str += "\\P";
                     break;
                   default:
-                    if (code.substr(0, 2) === "00")
-                      str += "\\x" + code.substr(2);
+                    if (code2.substr(0, 2) === "00")
+                      str += "\\x" + code2.substr(2);
                     else
                       str += json.substr(i, 6);
                 }
@@ -3704,22 +3704,22 @@ var require_errors = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/errors.js"(exports2) {
     "use strict";
     var YAMLError = class extends Error {
-      constructor(name, pos, code, message) {
+      constructor(name, pos, code2, message) {
         super();
         this.name = name;
-        this.code = code;
+        this.code = code2;
         this.message = message;
         this.pos = pos;
       }
     };
     var YAMLParseError = class extends YAMLError {
-      constructor(pos, code, message) {
-        super("YAMLParseError", pos, code, message);
+      constructor(pos, code2, message) {
+        super("YAMLParseError", pos, code2, message);
       }
     };
     var YAMLWarning = class extends YAMLError {
-      constructor(pos, code, message) {
-        super("YAMLWarning", pos, code, message);
+      constructor(pos, code2, message) {
+        super("YAMLWarning", pos, code2, message);
       }
     };
     var prettifyError = (src, lc) => (error) => {
@@ -4628,7 +4628,7 @@ var require_resolve_flow_scalar = __commonJS({
       const { offset, type, source, end } = scalar;
       let _type;
       let value;
-      const _onError = (rel, code, msg) => onError(offset + rel, code, msg);
+      const _onError = (rel, code2, msg) => onError(offset + rel, code2, msg);
       switch (type) {
         case "scalar":
           _type = Scalar.Scalar.PLAIN;
@@ -4826,9 +4826,9 @@ var require_resolve_flow_scalar = __commonJS({
     function parseCharCode(source, offset, length, onError) {
       const cc = source.substr(offset, length);
       const ok = cc.length === length && /^[0-9a-fA-F]+$/.test(cc);
-      const code = ok ? parseInt(cc, 16) : NaN;
+      const code2 = ok ? parseInt(cc, 16) : NaN;
       try {
-        return String.fromCodePoint(code);
+        return String.fromCodePoint(code2);
       } catch {
         const raw = source.substr(offset - 2, length + 2);
         onError(offset - 2, "BAD_DQ_ESCAPE", `Invalid escape sequence ${raw}`);
@@ -5150,12 +5150,12 @@ var require_composer = __commonJS({
         this.prelude = [];
         this.errors = [];
         this.warnings = [];
-        this.onError = (source, code, message, warning) => {
+        this.onError = (source, code2, message, warning) => {
           const pos = getErrorPos(source);
           if (warning)
-            this.warnings.push(new errors.YAMLWarning(pos, code, message));
+            this.warnings.push(new errors.YAMLWarning(pos, code2, message));
           else
-            this.errors.push(new errors.YAMLParseError(pos, code, message));
+            this.errors.push(new errors.YAMLParseError(pos, code2, message));
         };
         this.directives = new directives.Directives({ version: options.version || "1.2" });
         this.options = options;
@@ -5317,12 +5317,12 @@ var require_cst_scalar = __commonJS({
     var stringifyString = require_stringifyString();
     function resolveAsScalar(token, strict = true, onError) {
       if (token) {
-        const _onError = (pos, code, message) => {
+        const _onError = (pos, code2, message) => {
           const offset = typeof pos === "number" ? pos : Array.isArray(pos) ? pos[0] : pos.offset;
           if (onError)
-            onError(offset, code, message);
+            onError(offset, code2, message);
           else
-            throw new errors.YAMLParseError([offset, offset + 1], code, message);
+            throw new errors.YAMLParseError([offset, offset + 1], code2, message);
         };
         switch (token.type) {
           case "scalar":
@@ -7389,9 +7389,9 @@ var require_code = __commonJS({
     };
     exports2.Name = Name;
     var _Code = class extends _CodeOrName {
-      constructor(code) {
+      constructor(code2) {
         super();
-        this._items = typeof code === "string" ? [code] : code;
+        this._items = typeof code2 === "string" ? [code2] : code2;
       }
       toString() {
         return this.str;
@@ -7418,13 +7418,13 @@ var require_code = __commonJS({
     exports2._Code = _Code;
     exports2.nil = new _Code("");
     function _(strs, ...args) {
-      const code = [strs[0]];
+      const code2 = [strs[0]];
       let i = 0;
       while (i < args.length) {
-        addCodeArg(code, args[i]);
-        code.push(strs[++i]);
+        addCodeArg(code2, args[i]);
+        code2.push(strs[++i]);
       }
-      return new _Code(code);
+      return new _Code(code2);
     }
     exports2._ = _;
     var plus = new _Code("+");
@@ -7440,13 +7440,13 @@ var require_code = __commonJS({
       return new _Code(expr);
     }
     exports2.str = str;
-    function addCodeArg(code, arg) {
+    function addCodeArg(code2, arg) {
       if (arg instanceof _Code)
-        code.push(...arg._items);
+        code2.push(...arg._items);
       else if (arg instanceof Name)
-        code.push(arg);
+        code2.push(arg);
       else
-        code.push(interpolate(arg));
+        code2.push(interpolate(arg));
     }
     exports2.addCodeArg = addCodeArg;
     function optimize(expr) {
@@ -7630,7 +7630,7 @@ var require_scope = __commonJS({
         }, usedValues, getCode);
       }
       _reduceValues(values, valueCode, usedValues = {}, getCode) {
-        let code = code_1.nil;
+        let code2 = code_1.nil;
         for (const prefix in values) {
           const vs = values[prefix];
           if (!vs)
@@ -7643,16 +7643,16 @@ var require_scope = __commonJS({
             let c = valueCode(name);
             if (c) {
               const def = this.opts.es5 ? exports2.varKinds.var : exports2.varKinds.const;
-              code = (0, code_1._)`${code}${def} ${name} = ${c};${this.opts._n}`;
+              code2 = (0, code_1._)`${code2}${def} ${name} = ${c};${this.opts._n}`;
             } else if (c = getCode === null || getCode === void 0 ? void 0 : getCode(name)) {
-              code = (0, code_1._)`${code}${c}${this.opts._n}`;
+              code2 = (0, code_1._)`${code2}${c}${this.opts._n}`;
             } else {
               throw new ValueError(name);
             }
             nameSet.set(name, UsedValueState.Completed);
           });
         }
-        return code;
+        return code2;
       }
     };
     exports2.ValueScope = ValueScope;
@@ -7812,9 +7812,9 @@ var require_codegen = __commonJS({
       }
     };
     var AnyCode = class extends Node {
-      constructor(code) {
+      constructor(code2) {
         super();
-        this.code = code;
+        this.code = code2;
       }
       render({ _n }) {
         return `${this.code};` + _n;
@@ -7836,7 +7836,7 @@ var require_codegen = __commonJS({
         this.nodes = nodes;
       }
       render(opts) {
-        return this.nodes.reduce((code, n) => code + n.render(opts), "");
+        return this.nodes.reduce((code2, n) => code2 + n.render(opts), "");
       }
       optimizeNodes() {
         const { nodes } = this;
@@ -7884,10 +7884,10 @@ var require_codegen = __commonJS({
         this.condition = condition;
       }
       render(opts) {
-        let code = `if(${this.condition})` + super.render(opts);
+        let code2 = `if(${this.condition})` + super.render(opts);
         if (this.else)
-          code += "else " + this.else.render(opts);
-        return code;
+          code2 += "else " + this.else.render(opts);
+        return code2;
       }
       optimizeNodes() {
         super.optimizeNodes();
@@ -8008,12 +8008,12 @@ var require_codegen = __commonJS({
     Return.kind = "return";
     var Try = class extends BlockNode {
       render(opts) {
-        let code = "try" + super.render(opts);
+        let code2 = "try" + super.render(opts);
         if (this.catch)
-          code += this.catch.render(opts);
+          code2 += this.catch.render(opts);
         if (this.finally)
-          code += this.finally.render(opts);
-        return code;
+          code2 += this.finally.render(opts);
+        return code2;
       }
       optimizeNodes() {
         var _a, _b;
@@ -8130,18 +8130,18 @@ var require_codegen = __commonJS({
       }
       // returns code for object literal for the passed argument list of key-value pairs
       object(...keyValues) {
-        const code = ["{"];
+        const code2 = ["{"];
         for (const [key, value] of keyValues) {
-          if (code.length > 1)
-            code.push(",");
-          code.push(key);
+          if (code2.length > 1)
+            code2.push(",");
+          code2.push(key);
           if (key !== value || this.opts.es5) {
-            code.push(":");
-            (0, code_1.addCodeArg)(code, value);
+            code2.push(":");
+            (0, code_1.addCodeArg)(code2, value);
           }
         }
-        code.push("}");
-        return new code_1._Code(code);
+        code2.push("}");
+        return new code_1._Code(code2);
       }
       // `if` clause (or statement if `thenBody` and, optionally, `elseBody` are passed)
       if(condition, thenBody, elseBody) {
@@ -10460,22 +10460,22 @@ var require_utils = __commonJS({
     }
     function stringArrayToHexStripped(input) {
       let acc = "";
-      let code = 0;
+      let code2 = 0;
       let i = 0;
       for (i = 0; i < input.length; i++) {
-        code = input[i].charCodeAt(0);
-        if (code === 48) {
+        code2 = input[i].charCodeAt(0);
+        if (code2 === 48) {
           continue;
         }
-        if (!(code >= 48 && code <= 57 || code >= 65 && code <= 70 || code >= 97 && code <= 102)) {
+        if (!(code2 >= 48 && code2 <= 57 || code2 >= 65 && code2 <= 70 || code2 >= 97 && code2 <= 102)) {
           return "";
         }
         acc += input[i];
         break;
       }
       for (i += 1; i < input.length; i++) {
-        code = input[i].charCodeAt(0);
-        if (!(code >= 48 && code <= 57 || code >= 65 && code <= 70 || code >= 97 && code <= 102)) {
+        code2 = input[i].charCodeAt(0);
+        if (!(code2 >= 48 && code2 <= 57 || code2 >= 65 && code2 <= 70 || code2 >= 97 && code2 <= 102)) {
           return "";
         }
         acc += input[i];
@@ -10717,15 +10717,15 @@ var require_utils = __commonJS({
         if (isPathCharacter(ch)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i);
-          if (code < 128) {
-            output += isEscapeSafe(code) ? ch : BYTE_HEX[code];
-          } else if (code < 55296 || code > 57343) {
-            output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i + 1 < input.length) {
+          const code2 = input.charCodeAt(i);
+          if (code2 < 128) {
+            output += isEscapeSafe(code2) ? ch : BYTE_HEX[code2];
+          } else if (code2 < 55296 || code2 > 57343) {
+            output += percentEncodeNonAscii(code2);
+          } else if (code2 <= 56319 && i + 1 < input.length) {
             const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
-              output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
+              output += percentEncodeNonAscii(65536 + (code2 - 55296 << 10) + (low - 56320));
               i++;
             } else {
               output += percentEncodeNonAscii(65533);
@@ -10756,15 +10756,15 @@ var require_utils = __commonJS({
         if (isPathCharacter(ch) && (ch !== ":" || !firstSegment)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i);
-          if (code < 128) {
-            output += BYTE_HEX[code];
-          } else if (code < 55296 || code > 57343) {
-            output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i + 1 < input.length) {
+          const code2 = input.charCodeAt(i);
+          if (code2 < 128) {
+            output += BYTE_HEX[code2];
+          } else if (code2 < 55296 || code2 > 57343) {
+            output += percentEncodeNonAscii(code2);
+          } else if (code2 <= 56319 && i + 1 < input.length) {
             const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
-              output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
+              output += percentEncodeNonAscii(65536 + (code2 - 55296 << 10) + (low - 56320));
               i++;
             } else {
               output += percentEncodeNonAscii(65533);
@@ -10791,15 +10791,15 @@ var require_utils = __commonJS({
         if (isAllowed(ch)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i);
-          if (code < 128) {
-            output += BYTE_HEX[code];
-          } else if (code < 55296 || code > 57343) {
-            output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i + 1 < input.length) {
+          const code2 = input.charCodeAt(i);
+          if (code2 < 128) {
+            output += BYTE_HEX[code2];
+          } else if (code2 < 55296 || code2 > 57343) {
+            output += percentEncodeNonAscii(code2);
+          } else if (code2 <= 56319 && i + 1 < input.length) {
             const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
-              output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
+              output += percentEncodeNonAscii(65536 + (code2 - 55296 << 10) + (low - 56320));
               i++;
             } else {
               output += percentEncodeNonAscii(65533);
@@ -10844,15 +10844,15 @@ var require_utils = __commonJS({
         if (isQueryFragmentCharacter(ch)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i);
-          if (code < 128) {
-            output += isEscapeSafe(code) ? ch : BYTE_HEX[code];
-          } else if (code < 55296 || code > 57343) {
-            output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i + 1 < input.length) {
+          const code2 = input.charCodeAt(i);
+          if (code2 < 128) {
+            output += isEscapeSafe(code2) ? ch : BYTE_HEX[code2];
+          } else if (code2 < 55296 || code2 > 57343) {
+            output += percentEncodeNonAscii(code2);
+          } else if (code2 <= 56319 && i + 1 < input.length) {
             const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
-              output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
+              output += percentEncodeNonAscii(65536 + (code2 - 55296 << 10) + (low - 56320));
               i++;
             } else {
               output += percentEncodeNonAscii(65533);
@@ -14104,8 +14104,8 @@ var require_format = __commonJS({
             }
           }
           function getFormat(fmtDef) {
-            const code = fmtDef instanceof RegExp ? (0, codegen_1.regexpCode)(fmtDef) : opts.code.formats ? (0, codegen_1._)`${opts.code.formats}${(0, codegen_1.getProperty)(schema)}` : void 0;
-            const fmt = gen.scopeValue("formats", { key: schema, ref: fmtDef, code });
+            const code2 = fmtDef instanceof RegExp ? (0, codegen_1.regexpCode)(fmtDef) : opts.code.formats ? (0, codegen_1._)`${opts.code.formats}${(0, codegen_1.getProperty)(schema)}` : void 0;
+            const fmt = gen.scopeValue("formats", { key: schema, ref: fmtDef, code: code2 });
             if (typeof fmtDef == "object" && !(fmtDef instanceof RegExp)) {
               return [fmtDef.type || "string", fmtDef.validate, (0, codegen_1._)`${fmt}.validate`];
             }
@@ -15351,8 +15351,8 @@ var require_dist2 = __commonJS({
 });
 
 // src/cli.ts
-var import_node_child_process4 = require("node:child_process");
-var import_node_fs5 = require("node:fs");
+var import_node_child_process7 = require("node:child_process");
+var import_node_fs7 = require("node:fs");
 var import_node_util = require("node:util");
 
 // src/apply.ts
@@ -15362,10 +15362,10 @@ var import_node_child_process3 = require("node:child_process");
 var DocketError = class extends Error {
   code;
   exitCode;
-  constructor(code, message, exitCode = 1) {
+  constructor(code2, message, exitCode = 1) {
     super(message);
     this.name = "DocketError";
-    this.code = code;
+    this.code = code2;
     this.exitCode = exitCode;
   }
 };
@@ -17053,8 +17053,8 @@ function lockHolderAlive(lockDir) {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    const code = error.code;
-    return code === "EPERM" || code === "ENOENT";
+    const code2 = error.code;
+    return code2 === "EPERM" || code2 === "ENOENT";
   }
 }
 function withLock(lockDir, fn) {
@@ -17070,8 +17070,8 @@ function withLock(lockDir, fn) {
         (0, import_node_fs.renameSync)(staging, lockDir);
         break;
       } catch (error) {
-        const code = error.code;
-        if (code !== "EEXIST" && code !== "ENOTEMPTY" && code !== "EISDIR") throw error;
+        const code2 = error.code;
+        if (code2 !== "EEXIST" && code2 !== "ENOTEMPTY" && code2 !== "EISDIR") throw error;
         const holder = readHolder(lockDir);
         const age = (0, import_node_fs.existsSync)(lockDir) ? Date.now() - (0, import_node_fs.statSync)(lockDir).mtimeMs : 0;
         if (!lockHolderAlive(lockDir) || age > LOCK_STALE_MS) {
@@ -17326,16 +17326,16 @@ function makeWorkspace(ctx, worktree, docketDir, initialUnit) {
       return readJson(findingPath(id));
     },
     allFindings: () => ws.findingIds().map((id) => ws.readFinding(id)),
-    saveFinding: (finding, expectedRev) => {
-      if (expectedRev !== void 0 && (0, import_node_fs3.existsSync)(findingPath(finding.id))) {
-        const stored = readJson(findingPath(finding.id));
+    saveFinding: (finding2, expectedRev) => {
+      if (expectedRev !== void 0 && (0, import_node_fs3.existsSync)(findingPath(finding2.id))) {
+        const stored = readJson(findingPath(finding2.id));
         if (stored.rev !== expectedRev) {
-          throw new DocketError("rev_conflict", `${finding.id} changed since you read it (rev ${expectedRev}, now ${stored.rev}). Read it again.`, EXIT.revConflict);
+          throw new DocketError("rev_conflict", `${finding2.id} changed since you read it (rev ${expectedRev}, now ${stored.rev}). Read it again.`, EXIT.revConflict);
         }
       }
-      const next = { ...finding, rev: finding.rev + 1, updatedAt: now };
+      const next = { ...finding2, rev: finding2.rev + 1, updatedAt: now };
       assertValid("finding", next);
-      writeJsonAtomic(findingPath(finding.id), next);
+      writeJsonAtomic(findingPath(finding2.id), next);
       return next;
     },
     readSources: () => readJson((0, import_node_path3.join)(docketDir, "sources.json")),
@@ -17395,19 +17395,19 @@ function optionBlock(option) {
     ])
   ].join("\n");
 }
-function buildBody(ws, finding, option, reason, doneWhen) {
+function buildBody(ws, finding2, option, reason, doneWhen) {
   const sources = ws.readSources().sources;
   const short = (sha) => sha.slice(0, 7);
   const refs = [];
-  if (finding.location) {
-    const l = finding.location;
+  if (finding2.location) {
+    const l = finding2.location;
     refs.push(`\`${l.path}\`${l.symbol ? `, \`${l.symbol}\`` : ""}${l.startLine ? ` (line ${l.startLine} at ${short(l.commit ?? ws.head)})` : ""}`);
   }
-  for (const e of finding.research?.evidence ?? []) {
+  for (const e of finding2.research?.evidence ?? []) {
     refs.push(`\`${e.path}\`${e.symbol ? `, \`${e.symbol}\`` : ""}: ${e.note}${e.startLine ? ` (line ${e.startLine} at ${short(ws.head)})` : ""}`);
   }
-  const others = (finding.research?.options ?? []).filter((o) => o.id !== option?.id && o.kind !== "acknowledge");
-  const comments = finding.sources.map((s) => {
+  const others = (finding2.research?.options ?? []).filter((o) => o.id !== option?.id && o.kind !== "acknowledge");
+  const comments = finding2.sources.map((s) => {
     const source = sources[s.sourceId];
     const who = [source?.author, source?.url].filter(Boolean).join(", ");
     return `${s.excerpt.split("\n").map((line) => `> ${line}`).join("\n")}
@@ -17417,11 +17417,11 @@ function buildBody(ws, finding, option, reason, doneWhen) {
   return [
     "## Summary",
     "",
-    finding.summary,
+    finding2.summary,
     "",
     "## Background",
     "",
-    finding.explanation ?? finding.research?.analysis ?? finding.summary,
+    finding2.explanation ?? finding2.research?.analysis ?? finding2.summary,
     "",
     "## Why it was deferred",
     "",
@@ -17449,38 +17449,38 @@ It came up while working on branch \`${ws.unit.branch}\`${ws.unit.pr ? ` (${ws.u
     comments.join("\n\n")
   ].join("\n");
 }
-function writeDeferral(ws, finding, input) {
+function writeDeferral(ws, finding2, input) {
   const home = deferralsHome();
   (0, import_node_fs4.mkdirSync)((0, import_node_path4.join)(home, "archive"), { recursive: true });
-  const title = input.option?.title && input.option.kind === "defer" ? input.option.title : finding.title;
+  const title = input.option?.title && input.option.kind === "defer" ? input.option.title : finding2.title;
   const date = ws.now.slice(0, 10);
   const base = `${date}-${slugify(title)}`;
   let id = base;
   for (let n = 2; (0, import_node_fs4.existsSync)((0, import_node_path4.join)(home, `${id}.md`)) || (0, import_node_fs4.existsSync)((0, import_node_path4.join)(home, "archive", `${id}.md`)); n++) id = `${base}-${n}`;
   const codeRefs = [];
-  if (finding.location) {
-    const l = finding.location;
+  if (finding2.location) {
+    const l = finding2.location;
     codeRefs.push(stripUndefined({ path: l.path, symbol: l.symbol, line: l.startLine, commit: l.commit ?? ws.head }));
   }
-  for (const e of finding.research?.evidence ?? []) {
+  for (const e of finding2.research?.evidence ?? []) {
     codeRefs.push(stripUndefined({ path: e.path, symbol: e.symbol, line: e.startLine, commit: ws.head }));
   }
   const sources = ws.readSources().sources;
-  const sourceUrls = finding.sources.map((s) => sources[s.sourceId]?.url).filter((u) => Boolean(u));
+  const sourceUrls = finding2.sources.map((s) => sources[s.sourceId]?.url).filter((u) => Boolean(u));
   const frontmatter = stripUndefined({
     schemaVersion: 1,
     id,
     title,
     status: "open",
     createdAt: ws.now,
-    severity: finding.research?.assessedSeverity,
-    category: finding.category,
+    severity: finding2.research?.assessedSeverity,
+    category: finding2.category,
     blastRadius: input.option?.blastRadius,
     origin: stripUndefined({
       repo: ws.unit.repo,
       branch: ws.unit.branch,
       pr: ws.unit.pr,
-      findingId: finding.id,
+      findingId: finding2.id,
       head: ws.head,
       sourceUrls: sourceUrls.length ? sourceUrls : void 0
     }),
@@ -17490,7 +17490,7 @@ function writeDeferral(ws, finding, input) {
   });
   assertValid("deferral", frontmatter);
   const path = (0, import_node_path4.join)(home, `${id}.md`);
-  (0, import_node_fs4.writeFileSync)(path, render(frontmatter, buildBody(ws, finding, input.option, input.reason, input.doneWhen)));
+  (0, import_node_fs4.writeFileSync)(path, render(frontmatter, buildBody(ws, finding2, input.option, input.reason, input.doneWhen)));
   return { id, path };
 }
 function stripUndefined(value) {
@@ -17544,8 +17544,8 @@ var isOpen = (state) => OPEN_STATES.includes(state);
 function badInput(message) {
   throw new DocketError("bad_input", message, EXIT.badInput);
 }
-function invalidState(finding, action) {
-  throw new DocketError("invalid_state", `cannot ${action} ${finding.id}: it is ${finding.state}`, EXIT.invalidState);
+function invalidState(finding2, action2) {
+  throw new DocketError("invalid_state", `cannot ${action2} ${finding2.id}: it is ${finding2.state}`, EXIT.invalidState);
 }
 function compact(value) {
   return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== void 0));
@@ -17560,17 +17560,17 @@ function laneFor(complexity, confidence) {
   if (simple) return confident ? "quick" : "decide";
   return confident ? "scope" : "dig";
 }
-function setState(ws, finding, to, actor) {
-  if (finding.state === to) return;
-  ws.event(actor, "state_changed", { findingId: finding.id, from: finding.state, to });
-  finding.state = to;
+function setState(ws, finding2, to, actor) {
+  if (finding2.state === to) return;
+  ws.event(actor, "state_changed", { findingId: finding2.id, from: finding2.state, to });
+  finding2.state = to;
 }
-function openIteration(finding) {
-  const last = finding.iterations.at(-1);
+function openIteration(finding2) {
+  const last = finding2.iterations.at(-1);
   return last && ["pending", "queued", "fixing", "needs_attention"].includes(last.outcome) ? last : void 0;
 }
-function abandonPending(ws, finding) {
-  const last = finding.iterations.at(-1);
+function abandonPending(ws, finding2) {
+  const last = finding2.iterations.at(-1);
   if (last && (last.outcome === "pending" || last.outcome === "queued")) {
     last.outcome = "abandoned";
     last.endedAt = ws.now;
@@ -17615,12 +17615,12 @@ function deleteSource(ws, sourceId) {
   ws.event("ingest", "source_deleted", { sourceId });
   return { sourceId, findingIds: record.findingIds };
 }
-function linkSource(ws, sourceId, findingId) {
+function linkSource(ws, sourceId, findingId2) {
   const sources = ws.readSources();
   const record = sources.sources[sourceId];
   if (!record) badInput(`source ${sourceId} is not recorded; run \`docket source upsert\` first`);
-  if (!record.findingIds.includes(findingId)) {
-    record.findingIds.push(findingId);
+  if (!record.findingIds.includes(findingId2)) {
+    record.findingIds.push(findingId2);
     ws.saveSources(sources);
   }
 }
@@ -17630,7 +17630,7 @@ function addFinding(ws, input) {
   if (!Array.isArray(input.sources) || input.sources.length === 0) badInput("sources needs at least one entry");
   const id = `f-${String(ws.unit.nextFindingNumber).padStart(4, "0")}`;
   for (const ref of input.sources) linkSource(ws, ref.sourceId, id);
-  const finding = compact({
+  const finding2 = compact({
     schemaVersion: 1,
     id,
     rev: -1,
@@ -17654,30 +17654,30 @@ function addFinding(ws, input) {
     createdAt: ws.now,
     updatedAt: ws.now
   });
-  const saved = ws.saveFinding(finding);
+  const saved = ws.saveFinding(finding2);
   ws.saveUnit({ ...ws.unit, nextFindingNumber: ws.unit.nextFindingNumber + 1 });
   ws.event("ingest", "finding_created", { findingId: id, sourceId: input.sources[0]?.sourceId, to: "new", rev: saved.rev });
   return saved;
 }
 function mergeSourceIntoFinding(ws, id, ref, rev2) {
-  const finding = ws.readFinding(id);
+  const finding2 = ws.readFinding(id);
   requireString(ref.sourceId, "sourceId");
   linkSource(ws, ref.sourceId, id);
-  if (!finding.sources.some((s) => s.sourceId === ref.sourceId)) {
-    finding.sources.push(compact({ sourceId: ref.sourceId, excerpt: ref.excerpt, ordinal: ref.ordinal }));
+  if (!finding2.sources.some((s) => s.sourceId === ref.sourceId)) {
+    finding2.sources.push(compact({ sourceId: ref.sourceId, excerpt: ref.excerpt, ordinal: ref.ordinal }));
   }
-  const saved = ws.saveFinding(finding, rev2);
+  const saved = ws.saveFinding(finding2, rev2);
   ws.event("ingest", "finding_merged", { findingId: id, sourceId: ref.sourceId, rev: saved.rev });
   return saved;
 }
 var UPDATABLE = ["title", "summary", "explanation", "severityRationale", "category", "reviewerSeverity", "location"];
 function updateFinding(ws, id, patch, rev2) {
-  const finding = ws.readFinding(id);
+  const finding2 = ws.readFinding(id);
   for (const key of Object.keys(patch)) {
     if (!UPDATABLE.includes(key)) badInput(`cannot update ${key}; allowed: ${UPDATABLE.join(", ")}`);
-    finding[key] = patch[key];
+    finding2[key] = patch[key];
   }
-  const saved = ws.saveFinding(finding, rev2);
+  const saved = ws.saveFinding(finding2, rev2);
   ws.event("ingest", "finding_updated", { findingId: id, rev: saved.rev, data: { fields: Object.keys(patch) } });
   return saved;
 }
@@ -17702,83 +17702,83 @@ function checkOptions(options, recommendedOptionId) {
   if (!ids.includes(recommendedOptionId)) badInput(`recommendedOptionId ${recommendedOptionId} is not one of ${ids.join(", ")}`);
 }
 function writeResearch(ws, id, input, rev2) {
-  const finding = ws.readFinding(id);
-  if (!isOpen(finding.state) || finding.state === "queued" || finding.state === "fixing") invalidState(finding, "research");
+  const finding2 = ws.readFinding(id);
+  if (!isOpen(finding2.state) || finding2.state === "queued" || finding2.state === "fixing") invalidState(finding2, "research");
   if (!input?.research || !input.triage) badInput("research and triage are required");
   checkOptions(input.research.options, input.research.recommendedOptionId);
-  finding.research = { ...input.research, researchedAt: ws.now, researchedAtCommit: ws.head };
-  finding.triage = buildTriage(ws, input.triage);
-  if (input.explanation !== void 0) finding.explanation = input.explanation;
-  if (input.severityRationale !== void 0) finding.severityRationale = input.severityRationale;
-  finding.stale = null;
-  if (finding.state !== "discussing") setState(ws, finding, "ready", "research");
-  const saved = ws.saveFinding(finding, rev2);
+  finding2.research = { ...input.research, researchedAt: ws.now, researchedAtCommit: ws.head };
+  finding2.triage = buildTriage(ws, input.triage);
+  if (input.explanation !== void 0) finding2.explanation = input.explanation;
+  if (input.severityRationale !== void 0) finding2.severityRationale = input.severityRationale;
+  finding2.stale = null;
+  if (finding2.state !== "discussing") setState(ws, finding2, "ready", "research");
+  const saved = ws.saveFinding(finding2, rev2);
   ws.event("research", "research_written", { findingId: id, rev: saved.rev });
   ws.event("research", "triage_written", { findingId: id, data: { lane: saved.triage?.lane } });
   return saved;
 }
 function setStale(ws, id, reason, actor = "ingest") {
-  const finding = ws.readFinding(id);
-  if (!isOpen(finding.state)) return finding;
-  finding.stale = { reason: requireString(reason, "reason"), since: ws.now, sinceCommit: ws.head };
-  const saved = ws.saveFinding(finding);
+  const finding2 = ws.readFinding(id);
+  if (!isOpen(finding2.state)) return finding2;
+  finding2.stale = { reason: requireString(reason, "reason"), since: ws.now, sinceCommit: ws.head };
+  const saved = ws.saveFinding(finding2);
   ws.event(actor, "stale_flag_set", { findingId: id, data: { reason } });
   return saved;
 }
 function clearStale(ws, id) {
-  const finding = ws.readFinding(id);
-  if (!finding.stale) return finding;
-  finding.stale = null;
-  const saved = ws.saveFinding(finding);
+  const finding2 = ws.readFinding(id);
+  if (!finding2.stale) return finding2;
+  finding2.stale = null;
+  const saved = ws.saveFinding(finding2);
   ws.event("research", "stale_flag_cleared", { findingId: id });
   return saved;
 }
 function startDiscussion(ws, id, input) {
-  const finding = ws.readFinding(id);
-  if (!["new", "ready", "needs_attention", "discussing"].includes(finding.state)) invalidState(finding, "discuss");
-  const previous = finding.discussion;
-  finding.discussion = compact({
+  const finding2 = ws.readFinding(id);
+  if (!["new", "ready", "needs_attention", "discussing"].includes(finding2.state)) invalidState(finding2, "discuss");
+  const previous = finding2.discussion;
+  finding2.discussion = compact({
     sessionId: input.sessionId ?? previous?.sessionId,
     terminalHandle: input.terminalHandle ?? previous?.terminalHandle,
     startedAt: previous?.startedAt ?? ws.now,
     lastActiveAt: ws.now,
     entries: previous?.entries ?? []
   });
-  setState(ws, finding, "discussing", "dispatcher");
-  const saved = ws.saveFinding(finding);
+  setState(ws, finding2, "discussing", "dispatcher");
+  const saved = ws.saveFinding(finding2);
   ws.event("discuss", "discussion_started", { findingId: id });
   return saved;
 }
 function addDiscussionEntry(ws, id, input, rev2) {
-  const finding = ws.readFinding(id);
-  if (!isOpen(finding.state)) invalidState(finding, "discuss");
-  if (!finding.discussion) finding.discussion = { startedAt: ws.now, entries: [] };
+  const finding2 = ws.readFinding(id);
+  if (!isOpen(finding2.state)) invalidState(finding2, "discuss");
+  if (!finding2.discussion) finding2.discussion = { startedAt: ws.now, entries: [] };
   const optionsChanged = input.options !== void 0 || input.recommendedOptionId !== void 0;
   if (optionsChanged) {
-    if (!finding.research) badInput("write research before revising options");
-    const options = input.options ?? finding.research.options;
-    const recommended = input.recommendedOptionId ?? finding.research.recommendedOptionId;
+    if (!finding2.research) badInput("write research before revising options");
+    const options = input.options ?? finding2.research.options;
+    const recommended = input.recommendedOptionId ?? finding2.research.recommendedOptionId;
     checkOptions(options, recommended);
-    finding.research = { ...finding.research, options, recommendedOptionId: recommended };
+    finding2.research = { ...finding2.research, options, recommendedOptionId: recommended };
   }
-  if (input.triage) finding.triage = buildTriage(ws, input.triage);
-  finding.discussion.entries.push(
+  if (input.triage) finding2.triage = buildTriage(ws, input.triage);
+  finding2.discussion.entries.push(
     compact({ at: ws.now, head: ws.head, question: requireString(input.question, "question"), answer: requireString(input.answer, "answer"), optionsChanged: optionsChanged || void 0 })
   );
-  finding.discussion.lastActiveAt = ws.now;
-  finding.stale = null;
-  const saved = ws.saveFinding(finding, rev2);
+  finding2.discussion.lastActiveAt = ws.now;
+  finding2.stale = null;
+  const saved = ws.saveFinding(finding2, rev2);
   ws.event("discuss", "discussion_entry", { findingId: id, rev: saved.rev });
   if (optionsChanged) ws.event("discuss", "options_revised", { findingId: id });
   if (input.triage) ws.event("discuss", "triage_written", { findingId: id, data: { lane: saved.triage?.lane } });
   return saved;
 }
 function endDiscussion(ws, id) {
-  const finding = ws.readFinding(id);
-  if (finding.state !== "discussing") return finding;
-  setState(ws, finding, finding.research ? "ready" : "new", "discuss");
-  if (finding.discussion) finding.discussion.lastActiveAt = ws.now;
-  const saved = ws.saveFinding(finding);
+  const finding2 = ws.readFinding(id);
+  if (finding2.state !== "discussing") return finding2;
+  setState(ws, finding2, finding2.research ? "ready" : "new", "discuss");
+  if (finding2.discussion) finding2.discussion.lastActiveAt = ws.now;
+  const saved = ws.saveFinding(finding2);
   ws.event("discuss", "discussion_ended", { findingId: id });
   return saved;
 }
@@ -17795,16 +17795,16 @@ function firstLine(text, max = 100) {
   return line.length > max ? `${line.slice(0, max - 1)}\u2026` : line;
 }
 function decide(ws, id, input, rev2) {
-  const finding = ws.readFinding(id);
-  if (!["new", "ready", "discussing", "needs_attention"].includes(finding.state)) invalidState(finding, "decide on");
+  const finding2 = ws.readFinding(id);
+  if (!["new", "ready", "discussing", "needs_attention"].includes(finding2.state)) invalidState(finding2, "decide on");
   const optionId = requireString(input.optionId, "option");
-  const option = optionId === "custom" ? void 0 : finding.research?.options.find((o) => o.id === optionId);
+  const option = optionId === "custom" ? void 0 : finding2.research?.options.find((o) => o.id === optionId);
   if (optionId !== "custom" && !option) badInput(`${id} has no option ${optionId}`);
   const kind = input.kind ?? option?.kind ?? badInput("kind is required for a custom decision");
   if (optionId === "custom" && !input.instruction) badInput("instruction is required for a custom decision");
   const origin = input.origin ?? "panel";
-  abandonPending(ws, finding);
-  const n = finding.iterations.length + 1;
+  abandonPending(ws, finding2);
+  const n = finding2.iterations.length + 1;
   const iteration = compact({
     n,
     origin,
@@ -17813,14 +17813,14 @@ function decide(ws, id, input, rev2) {
     decidedAtCommit: ws.head,
     outcome: "pending"
   });
-  finding.iterations.push(iteration);
+  finding2.iterations.push(iteration);
   ws.event(origin === "session" ? "session" : "ui", "decision_written", { findingId: id, iteration: n, data: { optionId, kind, origin } });
   if (kind === "fix") {
     iteration.queue = { position: nextQueuePosition(ws), queuedAt: ws.now };
     iteration.outcome = "queued";
-    setState(ws, finding, "queued", "ui");
-    finding.stale = null;
-    const saved2 = ws.saveFinding(finding, rev2);
+    setState(ws, finding2, "queued", "ui");
+    finding2.stale = null;
+    const saved2 = ws.saveFinding(finding2, rev2);
     ws.event("ui", "queued", { findingId: id, iteration: n, data: { position: iteration.queue.position } });
     return saved2;
   }
@@ -17829,59 +17829,59 @@ function decide(ws, id, input, rev2) {
   if (kind === "acknowledge") {
     iteration.outcome = "acknowledged";
     iteration.summary = `Acknowledged: ${firstLine(reason, 80)}`;
-    finding.resolution = { outcome: "acknowledged", summary: iteration.summary, reason, closedAt: ws.now, closedAtCommit: ws.head };
+    finding2.resolution = { outcome: "acknowledged", summary: iteration.summary, reason, closedAt: ws.now, closedAtCommit: ws.head };
   } else {
-    const deferral = writeDeferral(ws, finding, { option, reason, doneWhen: input.doneWhen });
+    const deferral = writeDeferral(ws, finding2, { option, reason, doneWhen: input.doneWhen });
     iteration.outcome = "deferred";
     iteration.summary = `Deferred: ${option?.title ?? firstLine(reason, 80)}`;
-    finding.resolution = { outcome: "deferred", summary: iteration.summary, reason, closedAt: ws.now, closedAtCommit: ws.head, deferral };
+    finding2.resolution = { outcome: "deferred", summary: iteration.summary, reason, closedAt: ws.now, closedAtCommit: ws.head, deferral };
     ws.event("ui", "deferral_written", { findingId: id, iteration: n, data: { id: deferral.id } });
   }
-  finding.stale = null;
-  setState(ws, finding, kind === "acknowledge" ? "acknowledged" : "deferred", "ui");
-  const saved = ws.saveFinding(finding, rev2);
+  finding2.stale = null;
+  setState(ws, finding2, kind === "acknowledge" ? "acknowledged" : "deferred", "ui");
+  const saved = ws.saveFinding(finding2, rev2);
   ws.event("ui", "finding_closed", { findingId: id, iteration: n, to: saved.state, rev: saved.rev });
   return saved;
 }
 function reopen(ws, id, reason) {
-  const finding = ws.readFinding(id);
-  if (isOpen(finding.state)) invalidState(finding, "reopen");
-  finding.resolution = null;
-  if (finding.reply && finding.reply.status !== "posted") finding.reply = { status: "none" };
-  setState(ws, finding, finding.research ? "ready" : "new", "ui");
-  const saved = ws.saveFinding(finding);
+  const finding2 = ws.readFinding(id);
+  if (isOpen(finding2.state)) invalidState(finding2, "reopen");
+  finding2.resolution = null;
+  if (finding2.reply && finding2.reply.status !== "posted") finding2.reply = { status: "none" };
+  setState(ws, finding2, finding2.research ? "ready" : "new", "ui");
+  const saved = ws.saveFinding(finding2);
   ws.event("ui", "finding_reopened", { findingId: id, data: { reason: requireString(reason, "reason") } });
   return saved;
 }
 function resolveExternally(ws, id, note) {
-  const finding = ws.readFinding(id);
-  if (!isOpen(finding.state)) return finding;
-  if (finding.state === "fixing") invalidState(finding, "resolve externally");
-  abandonPending(ws, finding);
-  finding.resolution = { outcome: "resolved_externally", summary: note ?? "Thread resolved on GitHub outside docket.", closedAt: ws.now, closedAtCommit: ws.head };
-  finding.stale = null;
-  setState(ws, finding, "resolved_externally", "ingest");
-  const saved = ws.saveFinding(finding);
+  const finding2 = ws.readFinding(id);
+  if (!isOpen(finding2.state)) return finding2;
+  if (finding2.state === "fixing") invalidState(finding2, "resolve externally");
+  abandonPending(ws, finding2);
+  finding2.resolution = { outcome: "resolved_externally", summary: note ?? "Thread resolved on GitHub outside docket.", closedAt: ws.now, closedAtCommit: ws.head };
+  finding2.stale = null;
+  setState(ws, finding2, "resolved_externally", "ingest");
+  const saved = ws.saveFinding(finding2);
   ws.event("ingest", "finding_closed", { findingId: id, to: "resolved_externally", rev: saved.rev });
   return saved;
 }
 function draftReply(ws, id, input) {
-  const finding = ws.readFinding(id);
-  if (isOpen(finding.state)) invalidState(finding, "draft a reply for");
-  const target = input.targetSourceId ?? finding.sources[0]?.sourceId;
-  if (target && !finding.sources.some((s) => s.sourceId === target)) badInput(`${target} is not a source of ${id}`);
-  finding.reply = compact({ status: "drafted", draft: requireString(input.text, "text"), targetSourceId: target, resolveThread: input.resolveThread });
-  const saved = ws.saveFinding(finding);
+  const finding2 = ws.readFinding(id);
+  if (isOpen(finding2.state)) invalidState(finding2, "draft a reply for");
+  const target = input.targetSourceId ?? finding2.sources[0]?.sourceId;
+  if (target && !finding2.sources.some((s) => s.sourceId === target)) badInput(`${target} is not a source of ${id}`);
+  finding2.reply = compact({ status: "drafted", draft: requireString(input.text, "text"), targetSourceId: target, resolveThread: input.resolveThread });
+  const saved = ws.saveFinding(finding2);
   ws.event("reply", "reply_drafted", { findingId: id });
   return saved;
 }
 function setReplyStatus(ws, id, status2, postedUrl) {
-  const finding = ws.readFinding(id);
-  const reply = finding.reply ?? { status: "none" };
+  const finding2 = ws.readFinding(id);
+  const reply = finding2.reply ?? { status: "none" };
   if (status2 === "approved" && reply.status !== "drafted") badInput(`${id} has no drafted reply to approve`);
   if (status2 === "posted" && reply.status !== "approved") badInput(`${id} reply must be approved before it is posted`);
-  finding.reply = compact({ ...reply, status: status2, postedUrl: status2 === "posted" ? postedUrl : reply.postedUrl, postedAt: status2 === "posted" ? ws.now : reply.postedAt });
-  const saved = ws.saveFinding(finding);
+  finding2.reply = compact({ ...reply, status: status2, postedUrl: status2 === "posted" ? postedUrl : reply.postedUrl, postedAt: status2 === "posted" ? ws.now : reply.postedAt });
+  const saved = ws.saveFinding(finding2);
   if (status2 !== "skipped") ws.event("reply", status2 === "approved" ? "reply_approved" : "reply_posted", { findingId: id });
   return saved;
 }
@@ -17915,19 +17915,19 @@ function git2(ws, args) {
     throw new DocketError("bad_input", `git ${args.join(" ")} failed`, EXIT.badInput);
   }
 }
-function currentIteration(finding) {
-  const it = finding.iterations.at(-1);
-  if (!it) throw new DocketError("invalid_state", `${finding.id} has no decision`, EXIT.invalidState);
+function currentIteration(finding2) {
+  const it = finding2.iterations.at(-1);
+  if (!it) throw new DocketError("invalid_state", `${finding2.id} has no decision`, EXIT.invalidState);
   return it;
 }
-function requireFixing(finding) {
-  if (finding.state !== "fixing") {
-    throw new DocketError("invalid_state", `${finding.id} is ${finding.state}, not fixing. Run \`docket apply next\` first.`, EXIT.invalidState);
+function requireFixing(finding2) {
+  if (finding2.state !== "fixing") {
+    throw new DocketError("invalid_state", `${finding2.id} is ${finding2.state}, not fixing. Run \`docket apply next\` first.`, EXIT.invalidState);
   }
-  return currentIteration(finding);
+  return currentIteration(finding2);
 }
-function chosenOption(finding, it) {
-  return finding.research?.options.find((o) => o.id === it.decision.optionId);
+function chosenOption(finding2, it) {
+  return finding2.research?.options.find((o) => o.id === it.decision.optionId);
 }
 function queued(ws) {
   return ws.allFindings().filter((f) => f.state === "queued").sort((a, b) => (currentIteration(a).queue?.position ?? 0) - (currentIteration(b).queue?.position ?? 0));
@@ -17935,22 +17935,22 @@ function queued(ws) {
 function nextTask(ws, terminalHandle) {
   const inProgress = ws.allFindings().find((f) => f.state === "fixing");
   const pending = queued(ws);
-  const finding = inProgress ?? pending.shift();
-  if (!finding) {
+  const finding2 = inProgress ?? pending.shift();
+  if (!finding2) {
     if (ws.unit.applier?.state !== "idle") {
       ws.saveUnit({ ...ws.unit, applier: { state: "idle", since: ws.now } });
     }
     return null;
   }
-  const iteration = currentIteration(finding);
-  let saved = finding;
+  const iteration = currentIteration(finding2);
+  let saved = finding2;
   if (!inProgress) {
     iteration.outcome = "fixing";
     iteration.startedAt = ws.now;
-    ws.event("applier", "state_changed", { findingId: finding.id, from: "queued", to: "fixing" });
-    finding.state = "fixing";
-    saved = ws.saveFinding(finding);
-    ws.event("applier", "apply_started", { findingId: finding.id, iteration: iteration.n });
+    ws.event("applier", "state_changed", { findingId: finding2.id, from: "queued", to: "fixing" });
+    finding2.state = "fixing";
+    saved = ws.saveFinding(finding2);
+    ws.event("applier", "apply_started", { findingId: finding2.id, iteration: iteration.n });
   }
   ws.saveUnit({ ...ws.unit, applier: compact({ state: "running", terminalHandle: terminalHandle ?? ws.unit.applier?.terminalHandle, since: ws.unit.applier?.state === "running" ? ws.unit.applier.since : ws.now }) });
   const it = currentIteration(saved);
@@ -17993,12 +17993,12 @@ function flagOverlaps(ws, sha, exclude, actor) {
   return flagged;
 }
 function addCommit(ws, id, ref, actor = "applier") {
-  const finding = ws.readFinding(id);
-  const it = requireFixing(finding);
+  const finding2 = ws.readFinding(id);
+  const it = requireFixing(finding2);
   const sha = git2(ws, ["rev-parse", "--verify", `${ref}^{commit}`]);
   const message = git2(ws, ["log", "-1", "--format=%s", sha]);
   it.commits = [...(it.commits ?? []).filter((c) => c.sha !== sha), { sha, message }];
-  const saved = ws.saveFinding(finding);
+  const saved = ws.saveFinding(finding2);
   ws.event(actor, "apply_committed", { findingId: id, iteration: it.n, data: { commit: sha } });
   const staleFlagged = flagOverlaps(ws, sha, /* @__PURE__ */ new Set([id, ...it.alsoResolves ?? []]), actor);
   return { finding: saved, commit: { sha, message }, staleFlagged };
@@ -18010,10 +18010,10 @@ function checkVerification(input) {
   return compact({ status: input.status, checks: input.checks.map((c) => compact({ ...c })), notes: input.notes });
 }
 function writeVerification(ws, id, input, actor = "applier") {
-  const finding = ws.readFinding(id);
-  const it = requireFixing(finding);
+  const finding2 = ws.readFinding(id);
+  const it = requireFixing(finding2);
   it.verification = checkVerification(input);
-  const saved = ws.saveFinding(finding);
+  const saved = ws.saveFinding(finding2);
   ws.event(actor, "verification_written", { findingId: id, iteration: it.n, data: { status: input.status } });
   return saved;
 }
@@ -18041,8 +18041,8 @@ function closeAlsoResolved(ws, by, it, lastSha, actor) {
   }
 }
 function completeTask(ws, id, input, actor = "applier") {
-  const finding = ws.readFinding(id);
-  const it = requireFixing(finding);
+  const finding2 = ws.readFinding(id);
+  const it = requireFixing(finding2);
   const lastSha = it.commits?.at(-1)?.sha;
   if (!lastSha) badInput(`${id} has no commit; run \`docket apply commit ${id} <sha>\` first`);
   if (!it.verification) badInput(`${id} has no verification; run \`docket apply verify ${id}\` first`);
@@ -18055,24 +18055,24 @@ function completeTask(ws, id, input, actor = "applier") {
   it.summary = input.summary;
   it.endedAt = ws.now;
   ws.event(actor, "state_changed", { findingId: id, from: "fixing", to: "completed" });
-  finding.state = "completed";
-  finding.stale = null;
-  finding.resolution = { outcome: "completed", summary: input.summary, closedAt: ws.now, closedAtCommit: lastSha };
-  closeAlsoResolved(ws, finding, it, lastSha, actor);
-  const saved = ws.saveFinding(finding);
+  finding2.state = "completed";
+  finding2.stale = null;
+  finding2.resolution = { outcome: "completed", summary: input.summary, closedAt: ws.now, closedAtCommit: lastSha };
+  closeAlsoResolved(ws, finding2, it, lastSha, actor);
+  const saved = ws.saveFinding(finding2);
   ws.event(actor, "finding_closed", { findingId: id, iteration: it.n, to: "completed", rev: saved.rev });
   return saved;
 }
 function bounceTask(ws, id, reason, actor = "applier") {
-  const finding = ws.readFinding(id);
-  const it = requireFixing(finding);
+  const finding2 = ws.readFinding(id);
+  const it = requireFixing(finding2);
   if (!reason?.trim()) badInput("reason is required");
   it.outcome = "needs_attention";
   it.bounceReason = reason;
   it.endedAt = ws.now;
   ws.event(actor, "state_changed", { findingId: id, from: "fixing", to: "needs_attention" });
-  finding.state = "needs_attention";
-  const saved = ws.saveFinding(finding);
+  finding2.state = "needs_attention";
+  const saved = ws.saveFinding(finding2);
   ws.event(actor, "apply_bounced", { findingId: id, iteration: it.n, data: { reason } });
   return saved;
 }
@@ -18090,8 +18090,8 @@ function recordSessionWork(ws, id, input) {
   ws.saveFinding(decided);
   for (const ref of input.commits) addCommit(ws, id, ref, "session");
   writeVerification(ws, id, verification, "session");
-  const finding = verification.status === "failed" ? bounceTask(ws, id, verification.notes ?? "Verification failed.", "session") : completeTask(ws, id, compact({ summary: input.summary, also: input.also }), "session");
-  return compact({ finding, warning });
+  const finding2 = verification.status === "failed" ? bounceTask(ws, id, verification.notes ?? "Verification failed.", "session") : completeTask(ws, id, compact({ summary: input.summary, also: input.also }), "session");
+  return compact({ finding: finding2, warning });
 }
 function queueSummary(ws) {
   const items = ws.allFindings().filter((f) => f.state === "queued" || f.state === "fixing");
@@ -18104,26 +18104,26 @@ function queueSummary(ws) {
 // src/view.ts
 var LANE_ORDER = { untriaged: 0, quick: 1, decide: 2, scope: 3, dig: 4 };
 var SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, nit: 4, unknown: 5 };
-function summarize(finding, unit) {
-  const recommended = finding.research?.options.find((o) => o.id === finding.research?.recommendedOptionId);
+function summarize(finding2, unit) {
+  const recommended = finding2.research?.options.find((o) => o.id === finding2.research?.recommendedOptionId);
   return {
-    id: finding.id,
-    rev: finding.rev,
-    title: finding.title,
-    state: finding.state,
-    open: isOpen(finding.state),
-    lane: finding.triage?.lane ?? null,
-    complexity: finding.triage?.complexity ?? null,
-    confidence: finding.triage?.confidence ?? null,
-    severity: finding.research?.assessedSeverity ?? finding.reviewerSeverity ?? null,
+    id: finding2.id,
+    rev: finding2.rev,
+    title: finding2.title,
+    state: finding2.state,
+    open: isOpen(finding2.state),
+    lane: finding2.triage?.lane ?? null,
+    complexity: finding2.triage?.complexity ?? null,
+    confidence: finding2.triage?.confidence ?? null,
+    severity: finding2.research?.assessedSeverity ?? finding2.reviewerSeverity ?? null,
     recommended: recommended ? { id: recommended.id, kind: recommended.kind, title: recommended.title } : null,
-    stale: finding.stale?.reason ?? null,
-    isNew: unit.lastViewedAt === null || finding.createdAt > unit.lastViewedAt,
-    iterations: finding.iterations.length,
-    lastOrigin: finding.iterations.at(-1)?.origin ?? null,
-    resolutionSummary: finding.resolution?.summary ?? null,
-    closedAt: finding.resolution?.closedAt ?? null,
-    replyStatus: finding.reply?.status ?? "none"
+    stale: finding2.stale?.reason ?? null,
+    isNew: unit.lastViewedAt === null || finding2.createdAt > unit.lastViewedAt,
+    iterations: finding2.iterations.length,
+    lastOrigin: finding2.iterations.at(-1)?.origin ?? null,
+    resolutionSummary: finding2.resolution?.summary ?? null,
+    closedAt: finding2.resolution?.closedAt ?? null,
+    replyStatus: finding2.reply?.status ?? "none"
   };
 }
 function sortSummaries(items) {
@@ -18143,12 +18143,12 @@ function listFindings(ws, which) {
   for (const s of all) counts[s.state] = (counts[s.state] ?? 0) + 1;
   return { unit: ws.unit, counts, findings };
 }
-function panelSnapshot(ws, unpushed) {
+function panelSnapshot(ws, unpushed2) {
   const findings = ws.allFindings();
   return {
     unit: ws.unit,
     head: ws.head,
-    unpushedCommits: unpushed,
+    unpushedCommits: unpushed2,
     summaries: sortSummaries(findings.map((f) => summarize(f, ws.unit))),
     findings: Object.fromEntries(findings.map((f) => [f.id, f]))
   };
@@ -18186,6 +18186,1148 @@ function brief(ctx, read) {
     );
     if (ws.unit.applier?.state === "running") lines.push("- The docket applier is running in this worktree. Tell the user before you edit code.");
     return lines.join("\n");
+  });
+}
+
+// src/ui-server.ts
+var import_node_child_process6 = require("node:child_process");
+var import_node_http = require("node:http");
+
+// src/api.ts
+var import_node_fs6 = require("node:fs");
+var import_node_path6 = require("node:path");
+
+// src/orca.ts
+var import_node_child_process4 = require("node:child_process");
+var import_node_fs5 = require("node:fs");
+var import_node_path5 = require("node:path");
+var APP_CLI = "/Applications/Orca.app/Contents/Resources/bin/orca";
+function findOrca() {
+  if (process.env.DOCKET_ORCA) return process.env.DOCKET_ORCA === "none" ? null : process.env.DOCKET_ORCA;
+  for (const dir of (process.env.PATH ?? "").split(import_node_path5.delimiter)) {
+    if (dir && (0, import_node_fs5.existsSync)((0, import_node_path5.join)(dir, "orca"))) return (0, import_node_path5.join)(dir, "orca");
+  }
+  return (0, import_node_fs5.existsSync)(APP_CLI) ? APP_CLI : null;
+}
+function orcaJson(args) {
+  const orca = findOrca();
+  if (!orca) throw new DocketError("orca_missing", "The Orca CLI was not found. Install Orca, or set DOCKET_ORCA.");
+  let out;
+  try {
+    out = (0, import_node_child_process4.execFileSync)(orca, [...args, "--json"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 15e3 });
+  } catch (error) {
+    const e = error;
+    out = e.stdout ?? "";
+    if (!out.trim()) throw new DocketError("orca_failed", `orca ${args.join(" ")} failed: ${e.stderr?.trim() ?? "no output"}`);
+  }
+  const parsed = JSON.parse(out);
+  if (parsed.ok === false) throw new DocketError("orca_failed", parsed.error?.message ?? `orca ${args.join(" ")} failed`);
+  return parsed.result ?? parsed;
+}
+function listOrcaWorktrees() {
+  const result = orcaJson(["worktree", "list"]);
+  const items = Array.isArray(result) ? result : result.worktrees ?? [];
+  return items.filter((w) => typeof w.path === "string" && !w.isBare).map((w) => ({
+    path: w.path,
+    displayName: w.displayName ?? w.path,
+    branch: typeof w.branch === "string" ? w.branch.replace(/^refs\/heads\//, "") : null,
+    repo: typeof w.projectId === "string" ? w.projectId.replace(/^github:/, "") : null,
+    isArchived: Boolean(w.isArchived)
+  }));
+}
+function createTerminal(worktreePath, title, command, focus) {
+  const args = ["terminal", "create", "--worktree", `path:${worktreePath}`, "--title", title, "--command", command];
+  if (focus) args.push("--focus");
+  const result = orcaJson(args);
+  const handle = result?.handle ?? result?.terminal?.handle ?? result?.terminalHandle ?? result?.startupTerminal?.handle;
+  if (typeof handle !== "string") throw new DocketError("orca_failed", "orca terminal create returned no handle");
+  return handle;
+}
+function terminalAlive(handle) {
+  try {
+    const result = orcaJson(["terminal", "list"]);
+    const terminals = Array.isArray(result) ? result : result.terminals ?? [];
+    return terminals.some((t) => t.handle === handle && t.connected !== false && t.orphaned !== true);
+  } catch {
+    return false;
+  }
+}
+function sendToTerminal(handle, text) {
+  orcaJson(["terminal", "send", "--terminal", handle, "--text", text, "--enter"]);
+}
+function focusTerminal(handle) {
+  orcaJson(["terminal", "switch", "--terminal", handle]);
+}
+function openBrowserTab(url) {
+  try {
+    orcaJson(["tab", "create", "--url", url]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// src/api.ts
+var import_node_child_process5 = require("node:child_process");
+var FINDING_ID = /^f-\d{4,}$/;
+var SESSION_ID = /^[A-Za-z0-9_-]{8,128}$/;
+function ctxFor(path, options = {}) {
+  if (typeof path !== "string" || !path.startsWith("/")) throw new DocketError("bad_input", "path must be an absolute worktree path", EXIT.badInput);
+  return { cwd: path, now: options.now ?? (() => (/* @__PURE__ */ new Date()).toISOString()), prLookup: options.prLookup ?? true };
+}
+function bad(message) {
+  throw new DocketError("bad_input", message, EXIT.badInput);
+}
+function findingId(value) {
+  if (typeof value !== "string" || !FINDING_ID.test(value)) bad("a finding id such as f-0001 is required");
+  return value;
+}
+function peek(path) {
+  try {
+    const wt = readWorktree(path);
+    const unitPath = (0, import_node_path6.join)(wt.gitDir, "docket", "unit.json");
+    if (!(0, import_node_fs6.existsSync)(unitPath)) return { state: "not_started", open: 0 };
+    const unit = readJson(unitPath);
+    return { state: unit.status, open: 0 };
+  } catch {
+    return { state: "unknown", open: 0 };
+  }
+}
+function worktrees() {
+  const orca = findOrca();
+  if (!orca) return { orca: false, items: [] };
+  const items = listOrcaWorktrees().filter((w) => !w.isArchived).map((w) => ({ ...w, docket: peek(w.path).state }));
+  return { orca: true, items };
+}
+function unpushed(cwd) {
+  try {
+    return Number((0, import_node_child_process5.execFileSync)("git", ["rev-list", "--count", "@{upstream}..HEAD"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
+  } catch {
+    return null;
+  }
+}
+function snapshot(path, options = {}) {
+  const ctx = ctxFor(path, options);
+  const current = status(ctx);
+  const base = { state: current.state, message: current.message, worktree: current.worktree };
+  if (current.state !== "active" && current.state !== "paused") return { ...base, unit: null, summaries: [], counts: {}, deferralsOpen: openDeferralCount() };
+  return withWorkspace(ctx, "read", (ws) => {
+    const findings = ws.allFindings();
+    const counts = {};
+    for (const f of findings) counts[f.state] = (counts[f.state] ?? 0) + 1;
+    const summaries = sortSummaries(findings.map((f) => summarize(f, ws.unit))).map((s) => {
+      const f = findings.find((x) => x.id === s.id);
+      return {
+        ...s,
+        options: s.open ? (f.research?.options ?? []).map((o) => ({ id: o.id, kind: o.kind, title: o.title, effort: o.effort, blast: o.blastRadius.level })) : [],
+        discussionLive: Boolean(f.discussion?.terminalHandle) && f.state === "discussing",
+        lastIterationOutcome: f.iterations.at(-1)?.outcome ?? null,
+        bounceReason: f.state === "needs_attention" ? f.iterations.at(-1)?.bounceReason ?? null : null
+      };
+    });
+    return { ...base, unit: ws.unit, head: ws.head, unpushedCommits: unpushed(ws.worktree.root), counts, summaries, deferralsOpen: openDeferralCount() };
+  });
+}
+function openDeferralCount() {
+  try {
+    return listDeferrals(false).length;
+  } catch {
+    return 0;
+  }
+}
+function finding(path, id, options = {}) {
+  return withWorkspace(ctxFor(path, options), "read", (ws) => {
+    const f = ws.readFinding(findingId(id));
+    const sources = ws.readSources().sources;
+    return {
+      finding: f,
+      sources: Object.fromEntries(f.sources.map((s) => [s.sourceId, sources[s.sourceId] ?? null]))
+    };
+  });
+}
+function action(path, name, args = {}, options = {}) {
+  const ctx = ctxFor(path, options);
+  const write = (fn) => withWorkspace(ctx, "write", fn);
+  switch (name) {
+    case "start":
+      return start(ctx);
+    case "pause":
+      return pause(ctx);
+    case "resume":
+      return resume(ctx);
+    case "view":
+      return write(markViewed);
+    case "accept": {
+      const ids = args.ids;
+      if (!Array.isArray(ids) || ids.length === 0) bad("ids must be a non-empty array");
+      return write(
+        (ws) => ids.map((raw) => {
+          const fid = findingId(raw);
+          const f = ws.readFinding(fid);
+          const optionId = f.research?.recommendedOptionId ?? bad(`${fid} has no recommendation; research it first`);
+          return decide(ws, fid, { optionId, origin: "quick" });
+        })
+      );
+    }
+    case "decide": {
+      const input = {
+        optionId: typeof args.optionId === "string" ? args.optionId : bad("optionId is required"),
+        kind: args.kind,
+        instruction: typeof args.instruction === "string" && args.instruction.trim() ? args.instruction : void 0,
+        origin: args.origin ?? "panel",
+        doneWhen: Array.isArray(args.doneWhen) ? args.doneWhen.filter((x) => typeof x === "string" && x.trim()) : void 0
+      };
+      if (!["panel", "quick"].includes(input.origin)) bad("origin must be panel or quick");
+      return write((ws) => decide(ws, findingId(args.id), input, typeof args.rev === "number" ? args.rev : void 0));
+    }
+    case "reopen":
+      return write((ws) => reopen(ws, findingId(args.id), typeof args.reason === "string" && args.reason.trim() ? args.reason : "Reopened from the panel."));
+    case "unstale":
+      return write((ws) => clearStale(ws, findingId(args.id)));
+    case "endDiscussion":
+      return write((ws) => endDiscussion(ws, findingId(args.id)));
+    case "replyApprove":
+      return write((ws) => setReplyStatus(ws, findingId(args.id), "approved"));
+    case "replySkip":
+      return write((ws) => setReplyStatus(ws, findingId(args.id), "skipped"));
+    case "replyEdit":
+      return write((ws) => {
+        const f = ws.readFinding(findingId(args.id));
+        return draftReply(ws, f.id, {
+          text: typeof args.text === "string" ? args.text : bad("text is required"),
+          targetSourceId: f.reply?.targetSourceId,
+          resolveThread: f.reply?.resolveThread
+        });
+      });
+  }
+  bad(`unknown action ${String(name)}`);
+}
+var recentAppliers = /* @__PURE__ */ new Map();
+function claudeCommand(prompt) {
+  if (!/^[\w:\s/.-]+$/.test(prompt)) bad("unsafe prompt");
+  return `claude "${prompt}"`;
+}
+function requireOrca(command) {
+  if (!findOrca()) throw new DocketError("orca_missing", `The Orca CLI was not found. Run this in a terminal in the worktree instead: ${command}`);
+}
+function applierHandle(path, unit) {
+  const recent = recentAppliers.get(path);
+  if (recent && Date.now() - recent.at < 12e4 && terminalAlive(recent.handle)) return recent.handle;
+  if (unit.applier?.state === "running" && unit.applier.terminalHandle && terminalAlive(unit.applier.terminalHandle)) return unit.applier.terminalHandle;
+  return null;
+}
+function startApplier(path, unit) {
+  const command = claudeCommand("/docket:apply");
+  requireOrca(command);
+  const existing = applierHandle(path, unit);
+  if (existing) return { handle: existing, reused: true, command };
+  const handle = createTerminal(path, "docket: apply", command, false);
+  recentAppliers.set(path, { handle, at: Date.now() });
+  return { handle, reused: false, command };
+}
+function dispatch(path, kind, args = {}, options = {}) {
+  const ctx = ctxFor(path, options);
+  const unitOf = () => withWorkspace(ctx, "read", (ws) => ws.unit);
+  switch (kind) {
+    case "ingest":
+    case "research":
+    case "reply": {
+      unitOf();
+      const ids = kind === "research" && Array.isArray(args.ids) ? args.ids.map(findingId) : [];
+      const command = claudeCommand(`/docket:${kind}${ids.length ? ` ${ids.join(" ")}` : ""}`);
+      requireOrca(command);
+      return { handle: createTerminal(path, `docket: ${kind}`, command, true), command };
+    }
+    case "apply":
+      return startApplier(path, unitOf());
+    case "quickFix": {
+      const id = findingId(args.id);
+      const decided = withWorkspace(ctx, "write", (ws) => {
+        const f = ws.readFinding(id);
+        const optionId = typeof args.optionId === "string" ? args.optionId : f.research?.recommendedOptionId ?? bad(`${id} has no recommendation; research it first`);
+        return decide(ws, id, { optionId, origin: "quick" });
+      });
+      if (decided.state !== "queued") return { finding: decided, applier: null };
+      try {
+        return { finding: decided, applier: startApplier(path, unitOf()) };
+      } catch (error) {
+        if (!(error instanceof DocketError)) throw error;
+        return { finding: decided, applier: null, applierError: error.message };
+      }
+    }
+    case "discuss": {
+      const id = findingId(args.id);
+      const f = withWorkspace(ctx, "read", (ws) => ws.readFinding(id));
+      if (!isOpen(f.state)) bad(`${id} is closed; reopen it to discuss`);
+      const live = f.discussion?.terminalHandle && terminalAlive(f.discussion.terminalHandle) ? f.discussion.terminalHandle : null;
+      if (live) {
+        focusTerminal(live);
+        return { handle: live, reused: true };
+      }
+      const sessionId = f.discussion?.sessionId;
+      const command = sessionId && SESSION_ID.test(sessionId) ? `claude --resume ${sessionId}` : claudeCommand(`/docket:discuss ${id}`);
+      requireOrca(command);
+      const handle = createTerminal(path, `docket: ${id}`, command, true);
+      withWorkspace(ctx, "write", (ws) => startDiscussion(ws, id, { terminalHandle: handle }));
+      return { handle, reused: false, command };
+    }
+    case "ask": {
+      const id = findingId(args.id);
+      const text = typeof args.text === "string" && args.text.trim() ? args.text.trim() : bad("text is required");
+      const f = withWorkspace(ctx, "read", (ws) => ws.readFinding(id));
+      const handle = f.discussion?.terminalHandle;
+      if (!handle || !terminalAlive(handle)) throw new DocketError("no_discussion", `No live discussion for ${id}. Press Discuss first.`, EXIT.invalidState);
+      sendToTerminal(handle, text);
+      return { handle, sent: true };
+    }
+    case "focus": {
+      const handle = typeof args.handle === "string" ? args.handle : bad("handle is required");
+      focusTerminal(handle);
+      return { handle };
+    }
+  }
+  bad(`unknown dispatch ${String(kind)}`);
+}
+
+// src/ui.generated.ts
+var UI_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docket</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --panel-2: #f1f1ee; --text: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+  --accent: #3b5bdb; --accent-text: #ffffff; --danger: #c92a2a; --danger-bg: #fff0f0; --warn-bg: #fff8e6; --warn: #8a5a00;
+  --ok: #2b8a3e; --quick: #2b8a3e; --decide: #b7791f; --scope: #1c7ed6; --dig: #7048e8; --new: #868e96;
+  --quick-bg: #ebfbee; --decide-bg: #fff6e0; --scope-bg: #e7f5ff; --dig-bg: #f3f0ff; --new-bg: #f1f3f5;
+  --radius: 10px; --shadow: 0 1px 2px rgba(0,0,0,.05);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151515; --panel: #1e1e1e; --panel-2: #262626; --text: #ececea; --muted: #9a9a95; --line: #333331;
+    --accent: #7b93ff; --accent-text: #0f0f0f; --danger: #ff6b6b; --danger-bg: #3a1d1d; --warn-bg: #3a2f14; --warn: #f3c969;
+    --ok: #69db7c; --quick: #69db7c; --decide: #f3c969; --scope: #74c0fc; --dig: #b197fc; --new: #adb5bd;
+    --quick-bg: #1d3323; --decide-bg: #3a2f14; --scope-bg: #15304a; --dig-bg: #2b2250; --new-bg: #2a2a2a;
+    --shadow: none; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 5px 10px; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+button.ghost { background: transparent; border-color: transparent; color: var(--muted); padding: 4px 6px; }
+button:disabled { opacity: .5; cursor: default; }
+select, textarea, input { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; }
+textarea { width: 100%; min-height: 56px; resize: vertical; }
+a { color: var(--accent); }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+code { background: var(--panel-2); padding: 1px 4px; border-radius: 4px; }
+pre { background: var(--panel-2); padding: 8px 10px; border-radius: 7px; overflow-x: auto; white-space: pre-wrap; }
+
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 14px 8px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 15px; letter-spacing: -.01em; margin-right: 4px; }
+#worktree { max-width: 100%; min-width: 0; flex: 1 1 220px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--line); background: var(--panel); color: var(--muted); white-space: nowrap; }
+.pill.active { color: var(--ok); }
+.pill.paused { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.toolbar { margin-top: 8px; }
+.toolbar button { font-size: 12px; }
+.badge { display: inline-block; min-width: 16px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-text); font-size: 10px; font-weight: 700; text-align: center; margin-left: 4px; }
+.meta { color: var(--muted); font-size: 11px; }
+
+main { padding: 12px 14px 60px; max-width: 980px; margin: 0 auto; }
+.empty { text-align: center; padding: 48px 16px; color: var(--muted); }
+.empty h2 { color: var(--text); font-size: 16px; margin: 0 0 6px; }
+.banner { display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 12px; background: var(--panel); border: 1px solid var(--line); }
+.banner.warn { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
+
+section.lane { margin: 18px 0 8px; }
+section.lane > h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+section.lane > h3 .hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
+section.lane > h3 .spacer { flex: 1; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 8px; border-left: 4px solid var(--new); }
+.card.quick { border-left-color: var(--quick); } .card.decide { border-left-color: var(--decide); }
+.card.scope { border-left-color: var(--scope); } .card.dig { border-left-color: var(--dig); }
+.card.closed { border-left-color: var(--line); opacity: .92; }
+.card.attention { border-left-color: var(--warn); }
+.card-head { padding: 9px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; cursor: pointer; }
+.title { font-weight: 600; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.title .id { color: var(--muted); font-weight: 500; font-size: 11px; font-family: ui-monospace, Menlo, monospace; }
+.chips { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 1px 6px; border-radius: 5px; background: var(--new-bg); color: var(--new); white-space: nowrap; }
+.chip.quick { background: var(--quick-bg); color: var(--quick); } .chip.decide { background: var(--decide-bg); color: var(--decide); }
+.chip.scope { background: var(--scope-bg); color: var(--scope); } .chip.dig { background: var(--dig-bg); color: var(--dig); }
+.chip.sev-critical, .chip.sev-high { background: var(--danger-bg); color: var(--danger); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.outline { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.meters { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); grid-column: 1 / -1; }
+.meter { display: inline-flex; align-items: center; gap: 6px; }
+.segs { display: inline-flex; gap: 2px; }
+.seg { width: 12px; height: 6px; border-radius: 2px; background: var(--line); }
+.meter.complexity .seg.on { background: var(--text); }
+.meter.confidence .seg.on { background: var(--accent); }
+.rec { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.rec b { color: var(--text); font-weight: 600; }
+.actions { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.opt-rows { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 2px; }
+.opt-row { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); }
+.opt-row input { margin: 0; }
+.opt-row .k { font-weight: 700; width: 14px; }
+.opt-row .t { flex: 1; min-width: 0; }
+
+.body { padding: 4px 14px 14px; border-top: 1px solid var(--line); }
+.body h4 { margin: 14px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.md p { margin: 4px 0; }
+.md ul { margin: 4px 0; padding-left: 18px; }
+.options { display: grid; gap: 8px; }
+.option { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 4px; }
+.option.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.option.recommended .otitle::after { content: "recommended"; margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.option label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+.otitle { font-weight: 600; }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+.pc ul { margin: 2px 0; padding-left: 16px; }
+.pc .pro li::marker { color: var(--ok); } .pc .con li::marker { color: var(--danger); }
+@media (max-width: 520px) { .pc { grid-template-columns: 1fr; } }
+.decide-box { display: grid; gap: 6px; margin-top: 10px; }
+.timeline { border-left: 2px solid var(--line); margin: 4px 0 0 4px; padding-left: 12px; display: grid; gap: 8px; }
+.timeline .ev { font-size: 12px; }
+.timeline .ev .when { color: var(--muted); font-size: 11px; }
+.quote { border-left: 3px solid var(--line); padding: 2px 10px; color: var(--muted); margin: 6px 0; white-space: pre-wrap; }
+.entry { background: var(--panel-2); border-radius: 8px; padding: 6px 10px; margin: 6px 0; font-size: 12px; }
+.entry .q { font-weight: 600; }
+details.closed-list > summary { cursor: pointer; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 8px; }
+
+#toast { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; z-index: 20; }
+#toast.show { opacity: 1; }
+#toast.error { background: var(--danger); color: #fff; }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); padding: 16px; width: min(560px, 92vw); }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+dialog h3 { margin: 0 0 8px; }
+.check-list { display: grid; gap: 6px; max-height: 50vh; overflow: auto; margin: 10px 0; }
+.check-list label { display: flex; gap: 8px; align-items: baseline; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; }
+.launcher { padding: 24px 16px; text-align: center; }
+.launcher p { color: var(--muted); }
+</style>
+</head>
+<body>
+<header id="header" hidden>
+  <div class="row">
+    <span class="brand">Docket</span>
+    <select id="worktree" title="Worktree"></select>
+    <span id="state-pill" class="pill"></span>
+  </div>
+  <div class="row toolbar" id="toolbar"></div>
+</header>
+<main id="main"><div class="empty">Loading\u2026</div></main>
+<div id="toast" role="status"></div>
+<dialog id="dialog"></dialog>
+
+<script>
+'use strict'
+// ---------- transport ----------
+// One file serves two hosts. In a browser tab it talks to \`docket ui\` over
+// HTTP. Inside an Orca plugin panel it calls the plugin worker through
+// plugin.command.invoke when the host supports it.
+const inPanel = window.parent !== window && location.protocol !== 'http:' && location.protocol !== 'https:'
+let seq = 0
+const pending = {}
+function panelCall(action, params) {
+  return new Promise((resolve) => {
+    const requestId = 'req-' + ++seq
+    pending[requestId] = resolve
+    window.parent.postMessage({ type: 'orca-panel-action', requestId, action, params }, '*')
+  })
+}
+window.addEventListener('message', (event) => {
+  const data = event.data
+  if (!data || data.type !== 'orca-panel-action-result') return
+  const resolve = pending[data.requestId]
+  if (resolve) { delete pending[data.requestId]; resolve(data) }
+})
+async function invoke(op, args) {
+  const result = await panelCall('plugin.command.invoke', { commandId: 'docket-api', args: Object.assign({ op }, args || {}) })
+  if (!result.ok) throw new Error(result.error || result.errorCode || 'panel call failed')
+  const value = result.value && 'value' in result.value ? result.value.value : result.value
+  if (value && value.error) throw new Error(value.error.message)
+  return value
+}
+const api = {
+  async get(route, params) {
+    if (inPanel) return invoke(route, params)
+    const query = new URLSearchParams(params || {}).toString()
+    const res = await fetch('/api/' + route + (query ? '?' + query : ''))
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ? body.error.message : res.statusText)
+    return body
+  },
+  async post(route, payload) {
+    if (inPanel) return invoke(route, payload)
+    const res = await fetch('/api/' + route, { method: 'POST', headers: { 'content-type': 'application/json', 'x-docket': '1' }, body: JSON.stringify(payload) })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ? body.error.message : res.statusText)
+    return body.result
+  }
+}
+
+// ---------- state ----------
+const S = {
+  path: new URLSearchParams(location.search).get('path') || '',
+  worktrees: [],
+  snap: null,
+  expanded: new Set(),
+  details: {},
+  choice: {},
+  drafts: {},
+  showClosed: false,
+  openAnalysis: new Set(),
+  busy: false
+}
+const LANES = [
+  ['attention', 'Needs attention', 'The applier stopped. Re-decide or discuss.'],
+  ['quick', 'Quick', 'Simple and confident: accept and go.'],
+  ['decide', 'Decide', 'Small change, but a judgment call.'],
+  ['scope', 'Scope', 'Clear direction, large change: fix now or defer.'],
+  ['dig', 'Dig', 'Complex and unsure: discuss before deciding.'],
+  ['research', 'Needs research', 'Not researched yet.']
+]
+const CX = ['', 'trivial', 'modest', 'involved', 'major']
+const CF = ['', 'unclear', 'split', 'likely', 'certain']
+const OUTCOME_LABEL = { completed: 'Completed', acknowledged: 'Acknowledged', deferred: 'Deferred', resolved_externally: 'Resolved on GitHub' }
+
+// ---------- helpers ----------
+const $ = (sel, root) => (root || document).querySelector(sel)
+function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
+function md(text) {
+  if (!text) return ''
+  return String(text).split(/\`\`\`/).map((block, i) => {
+    if (i % 2 === 1) return '<pre>' + esc(block.replace(/^[a-z]*\\n/, '')) + '</pre>'
+    let html = '', list = false
+    for (const raw of esc(block).split('\\n')) {
+      const line = raw
+        .replace(/\`([^\`]+)\`/g, '<code>$1</code>')
+        .replace(/\\*\\*([^*]+)\\*\\*/g, '<b>$1</b>')
+        .replace(/\\[([^\\]]+)\\]\\((https?:[^)\\s]+)\\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      if (/^\\s*[-*] /.test(line)) { if (!list) { html += '<ul>'; list = true } html += '<li>' + line.replace(/^\\s*[-*] /, '') + '</li>'; continue }
+      if (list) { html += '</ul>'; list = false }
+      if (line.trim()) html += '<p>' + line + '</p>'
+    }
+    if (list) html += '</ul>'
+    return html
+  }).join('')
+}
+function ago(iso) {
+  if (!iso) return ''
+  const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return Math.round(s / 60) + 'm ago'
+  if (s < 86400) return Math.round(s / 3600) + 'h ago'
+  return Math.round(s / 86400) + 'd ago'
+}
+function short(sha) { return sha ? sha.slice(0, 7) : '' }
+let toastTimer
+function toast(message, isError) {
+  const el = $('#toast')
+  el.textContent = message
+  el.className = 'show' + (isError ? ' error' : '')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => (el.className = ''), isError ? 6000 : 2800)
+}
+function meter(kind, value, labels) {
+  const segs = [1, 2, 3, 4].map((n) => '<span class="seg' + (value && n <= value ? ' on' : '') + '"></span>').join('')
+  return '<span class="meter ' + kind + '">' + (kind === 'complexity' ? 'Complexity' : 'Confidence') + ' <span class="segs">' + segs + '</span> ' + (value ? labels[value] : '\u2014') + '</span>'
+}
+function laneOf(s) {
+  if (s.state === 'needs_attention') return 'attention'
+  if (!s.lane) return 'research'
+  return s.lane
+}
+function summaryOf(id) { return ((S.snap && S.snap.summaries) || []).find((s) => s.id === id) }
+
+// ---------- data ----------
+async function loadWorktrees() {
+  if (inPanel) return
+  try { S.worktrees = (await api.get('worktrees')).items || [] } catch (e) { S.worktrees = [] }
+  renderWorktreePicker()
+}
+let lastKey = ''
+async function refresh(force) {
+  if (!S.path) return render()
+  try {
+    const snap = await api.get('snapshot', { path: S.path })
+    // Redraw only when the data changed: a redraw replaces the DOM, which
+    // would reset scroll, hover and open sections every poll.
+    const key = JSON.stringify(snap)
+    const detailsStale = [...S.expanded].some((id) => { const sm = (snap.summaries || []).find((x) => x.id === id); return !sm || !S.details[id] || S.details[id].rev !== sm.rev })
+    if (!force && key === lastKey && !detailsStale) return
+    lastKey = key
+    S.snap = snap
+    for (const id of [...S.expanded]) {
+      const summary = summaryOf(id)
+      if (!summary) { S.expanded.delete(id); continue }
+      const cached = S.details[id]
+      if (!cached || cached.rev !== summary.rev) await loadDetail(id, summary.rev)
+    }
+  } catch (e) {
+    S.snap = { state: 'error', message: e.message, summaries: [] }
+  }
+  render()
+}
+async function loadDetail(id, rev) {
+  const data = await api.get('finding', { path: S.path, id })
+  S.details[id] = { rev: rev != null ? rev : data.finding.rev, data }
+}
+async function act(name, args, message) {
+  if (S.busy) return
+  S.busy = true
+  try {
+    const result = await api.post('action', { path: S.path, name, args: args || {} })
+    if (message) toast(message)
+    S.busy = false
+    await refresh(true)
+    return result
+  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
+}
+async function dispatch(kind, args, message) {
+  if (S.busy) return
+  S.busy = true
+  try {
+    const result = await api.post('dispatch', { path: S.path, kind, args: args || {} })
+    if (result && result.applierError) toast('Queued, but the applier did not start. ' + result.applierError, true)
+    else if (message) toast(result && result.reused ? message.replace(/^(Started|Opened)/, 'Focused') : message)
+    S.busy = false
+    await refresh(true)
+    return result
+  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
+}
+
+// ---------- render ----------
+function renderWorktreePicker() {
+  const select = $('#worktree')
+  if (inPanel && !S.worktrees.length) { select.hidden = true; return }
+  const items = S.worktrees.slice()
+  if (S.path && !items.some((w) => w.path === S.path)) items.unshift({ path: S.path, displayName: S.path.split('/').pop(), repo: '', docket: '' })
+  const byRepo = {}
+  for (const w of items) (byRepo[w.repo || 'Other'] = byRepo[w.repo || 'Other'] || []).push(w)
+  const mark = (state) => (state === 'active' ? ' \u25CF' : state === 'paused' ? ' \u25D0' : '')
+  select.innerHTML = '<option value="">Choose a worktree\u2026</option>' + Object.keys(byRepo).sort().map((repo) =>
+    '<optgroup label="' + esc(repo) + '">' + byRepo[repo].map((w) =>
+      '<option value="' + esc(w.path) + '"' + (w.path === S.path ? ' selected' : '') + '>' + esc(w.displayName + (w.branch ? ' \xB7 ' + w.branch : '') + mark(w.docket)) + '</option>').join('') + '</optgroup>').join('')
+}
+
+function render() {
+  $('#header').hidden = false
+  const snap = S.snap
+  const main = $('#main'), pill = $('#state-pill'), toolbar = $('#toolbar')
+  if (!S.path) {
+    pill.textContent = ''
+    toolbar.innerHTML = ''
+    main.innerHTML = '<div class="empty"><h2>Choose a worktree</h2>Docket tracks review findings per worktree.</div>'
+    return
+  }
+  if (!snap) return
+  const state = snap.state
+  pill.className = 'pill ' + (state === 'active' ? 'active' : state === 'paused' ? 'paused' : '')
+  pill.textContent = { active: 'active', paused: 'paused', not_started: 'not started', branch_mismatch: 'branch changed' }[state] || 'error'
+  if (state === 'error') { toolbar.innerHTML = ''; main.innerHTML = '<div class="empty"><h2>Cannot read this worktree</h2>' + esc(snap.message) + '</div>'; return }
+  if (state === 'branch_mismatch') { toolbar.innerHTML = ''; main.innerHTML = '<div class="empty"><h2>The branch changed</h2>' + esc(snap.message) + '</div>'; return }
+  if (state === 'not_started') {
+    toolbar.innerHTML = ''
+    main.innerHTML = '<div class="empty"><h2>Docket is not started here</h2><p>Docket stays dormant in a worktree until you start it. Use it on your own branches to track and resolve review findings.</p><p><button class="primary" data-act="start">Start docket</button></p>' +
+      (snap.deferralsOpen ? '<p class="meta">' + snap.deferralsOpen + ' deferred item(s) are waiting. Run <code>/docket:deferrals</code> to pick one up.</p>' : '') + '</div>'
+    return
+  }
+  renderToolbar()
+  renderFindings()
+}
+
+function renderToolbar() {
+  const snap = S.snap, unit = snap.unit || {}, counts = snap.counts || {}
+  const sums = snap.summaries || []
+  const untriaged = sums.filter((s) => s.open && !s.lane && s.state === 'new').length
+  const queued = (counts.queued || 0) + (counts.fixing || 0)
+  const drafts = sums.filter((s) => !s.open && s.replyStatus === 'drafted').length
+  const newCount = sums.filter((s) => s.isNew).length
+  const remoteNew = unit.remoteCheck ? unit.remoteCheck.newSourceCount : 0
+  const applierRunning = unit.applier && unit.applier.state === 'running'
+  const b = (attr, label, badge, title) => '<button ' + attr + (title ? ' title="' + esc(title) + '"' : '') + '>' + label + (badge ? '<span class="badge">' + badge + '</span>' : '') + '</button>'
+  const parts = []
+  if (snap.state === 'paused') parts.push(b('class="primary" data-act="resume"', 'Resume'))
+  else {
+    parts.push(b('data-dispatch="ingest"', 'Ingest', remoteNew, 'Read review comments on the PR'))
+    parts.push(b('data-dispatch="research"', 'Research', untriaged, 'Investigate unresearched findings'))
+    parts.push(b('data-dispatch="apply"', applierRunning ? 'Applier running' : 'Apply queue', queued, 'Implement queued fixes in order'))
+    parts.push(b('data-dispatch="reply"', 'Replies', drafts, 'Draft and post replies to reviewers'))
+    parts.push(b('class="ghost" data-act="pause"', 'Pause'))
+  }
+  if (newCount) parts.push(b('class="ghost" data-act="view"', newCount + ' new \xB7 mark seen'))
+  const meta = []
+  if (unit.pr) meta.push('<a href="' + esc(unit.pr.url) + '" target="_blank" rel="noopener">PR #' + unit.pr.number + '</a>')
+  meta.push(esc(unit.branch || ''))
+  if (snap.unpushedCommits) meta.push(snap.unpushedCommits + ' unpushed commit' + (snap.unpushedCommits === 1 ? '' : 's'))
+  if (unit.lastIngest) meta.push('ingested ' + ago(unit.lastIngest.at))
+  $('#toolbar').innerHTML = parts.join('') + '<span class="meta">' + meta.join(' \xB7 ') + '</span>'
+}
+
+function renderFindings() {
+  const snap = S.snap
+  const sums = snap.summaries || []
+  const open = sums.filter((s) => s.open)
+  const closed = sums.filter((s) => !s.open)
+  let html = ''
+  if (snap.state === 'paused') html += '<div class="banner warn"><span>Docket is paused. Skills and hooks are dormant in this worktree. The data stays.</span><button data-act="resume">Resume</button></div>'
+  if (!sums.length) {
+    html += '<div class="empty"><h2>No findings yet</h2><p>Ingest the review comments on your PR, or a local review report.</p>' +
+      (snap.state === 'active' ? '<button class="primary" data-dispatch="ingest">Ingest review comments</button>' : '') + '</div>'
+  }
+  for (const [lane, label, hint] of LANES) {
+    const items = open.filter((s) => laneOf(s) === lane)
+    if (!items.length) continue
+    const quickReady = lane === 'quick' ? items.filter((s) => s.state === 'ready' || s.state === 'discussing') : []
+    const extra = snap.state !== 'active' ? ''
+      : lane === 'quick' && quickReady.length > 1 ? '<button class="primary" data-bulk="quick">Accept all (' + quickReady.length + ')</button>'
+      : lane === 'research' ? '<button data-dispatch="research">Research all</button>' : ''
+    html += '<section class="lane"><h3>' + esc(label) + ' <span class="hint">' + esc(hint) + '</span><span class="spacer"></span>' + extra + '</h3>' + items.map(card).join('') + '</section>'
+  }
+  if (closed.length) html += '<details class="closed-list"' + (S.showClosed ? ' open' : '') + ' id="closed"><summary>Closed (' + closed.length + ')</summary>' + closed.map(card).join('') + '</details>'
+  $('#main').innerHTML = html
+}
+
+function stateChip(s) {
+  const map = { queued: 'In queue', fixing: 'Fixing\u2026', discussing: 'Discussing', needs_attention: 'Bounced' }
+  return map[s.state] ? '<span class="chip warn">' + map[s.state] + '</span>' : ''
+}
+
+function card(s) {
+  const lane = laneOf(s)
+  const expanded = S.expanded.has(s.id)
+  const chips = []
+  if (s.open) chips.push('<span class="chip ' + (s.lane || '') + '">' + (s.lane || 'new') + '</span>')
+  else chips.push('<span class="chip outline">' + esc(OUTCOME_LABEL[s.state] || s.state) + '</span>')
+  if (s.severity && s.severity !== 'unknown') chips.push('<span class="chip sev-' + esc(s.severity) + '">' + esc(s.severity) + '</span>')
+  if (s.open) chips.push(stateChip(s))
+  if (s.isNew) chips.push('<span class="chip outline">new</span>')
+  if (s.stale) chips.push('<span class="chip warn" title="' + esc(s.stale) + '">stale</span>')
+  if (s.lastOrigin === 'session') chips.push('<span class="chip outline" title="Recorded by an ad-hoc session">inferred</span>')
+  let head = '<div class="title"><span class="id">' + esc(s.id) + '</span>' + esc(s.title) + '</div><div class="chips">' + chips.join('') + '</div>'
+  if (s.open) {
+    if (s.lane) head += '<div class="meters">' + meter('complexity', s.complexity, CX) + meter('confidence', s.confidence, CF) + '</div>'
+    if (s.recommended) {
+      const opt = (s.options || []).find((o) => o.id === s.recommended.id) || {}
+      head += '<div class="rec">\u2192 <b>' + esc(s.recommended.id + ' \xB7 ' + s.recommended.title) + '</b>' + (opt.blast ? ' \xB7 ' + esc(opt.blast) : '') + (opt.effort ? ' \xB7 ' + esc(opt.effort) : '') + '</div>'
+    }
+    if (s.bounceReason) head += '<div class="rec">Bounced: ' + esc(s.bounceReason) + '</div>'
+    head += quickActions(s, lane)
+  } else if (s.resolutionSummary) {
+    head += '<div class="rec">' + esc(s.resolutionSummary) + (s.replyStatus === 'drafted' ? ' \xB7 <b>reply drafted</b>' : s.replyStatus === 'posted' ? ' \xB7 replied' : '') + '</div>'
+  }
+  return '<div class="card ' + (s.open ? (lane === 'attention' ? 'attention' : (s.lane || '')) : 'closed') + '" data-id="' + esc(s.id) + '"><div class="card-head" data-toggle="' + esc(s.id) + '">' + head + '</div>' +
+    (expanded ? '<div class="body">' + body(s) + '</div>' : '') + '</div>'
+}
+
+function quickActions(s, lane) {
+  if (S.snap.state !== 'active' || s.state === 'queued' || s.state === 'fixing') return ''
+  const id = esc(s.id)
+  if (lane === 'research') return '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research</button></div>'
+  if (lane === 'quick' && s.recommended) {
+    const label = s.recommended.kind === 'acknowledge' ? 'Accept (leave as is)' : s.recommended.kind === 'defer' ? 'Accept (defer)' : 'Quick fix'
+    return '<div class="actions"><button class="primary" data-quick="' + id + '">' + label + '</button><button data-discuss="' + id + '">Discuss</button></div>'
+  }
+  if (lane === 'decide') {
+    const sel = S.choice[s.id] || (s.recommended && s.recommended.id)
+    return '<div class="opt-rows">' + (s.options || []).map((o) =>
+      '<label class="opt-row"><input type="radio" name="o-' + id + '" value="' + esc(o.id) + '" data-pick="' + id + '"' + (o.id === sel ? ' checked' : '') + '><span class="k">' + esc(o.id) + '</span><span class="t">' + esc(o.title) + '</span><span class="chip outline">' + esc(o.kind) + '</span><span class="chip outline">' + esc(o.blast) + '</span></label>').join('') +
+      '</div><div class="actions"><button class="primary" data-decide="' + id + '">Decide</button><button data-discuss="' + id + '">Discuss</button></div>'
+  }
+  if (lane === 'scope') {
+    const defer = (s.options || []).find((o) => o.kind === 'defer')
+    return '<div class="actions"><button class="primary" data-quick="' + id + '">Fix now</button>' +
+      (defer ? '<button data-defer="' + id + '" data-option="' + esc(defer.id) + '">Defer</button>' : '') + '<button data-discuss="' + id + '">Discuss</button></div>'
+  }
+  if (lane === 'dig' || lane === 'attention') return '<div class="actions"><button class="primary" data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : 'Discuss') + '</button></div>'
+  return ''
+}
+
+function body(s) {
+  const detail = S.details[s.id]
+  if (!detail) return '<p class="meta">Loading\u2026</p>'
+  const f = detail.data.finding, sources = detail.data.sources || {}
+  const id = esc(f.id)
+  let html = '<h4>Summary</h4><div class="md">' + md(f.summary) + '</div>'
+  if (f.explanation) html += '<h4>Background</h4><div class="md">' + md(f.explanation) + '</div>'
+  if (f.severityRationale || (f.research && f.research.assessedSeverity)) {
+    html += '<h4>Why it matters</h4><div class="md">' + (f.research && f.research.assessedSeverity ? '<p><b>' + esc(f.research.assessedSeverity) + '</b>' + (f.reviewerSeverity && f.reviewerSeverity !== f.research.assessedSeverity ? ' (reviewer said ' + esc(f.reviewerSeverity) + ')' : '') + '</p>' : '') + md(f.severityRationale) + '</div>'
+  }
+  if (f.triage) html += '<p class="meta">Complexity: ' + esc(f.triage.complexityReason) + '<br>Confidence: ' + esc(f.triage.confidenceReason) + '</p>'
+  if (f.location) html += '<p class="meta"><code>' + esc(f.location.path + (f.location.startLine ? ':' + f.location.startLine : '')) + '</code>' + (f.location.symbol ? ' \xB7 <code>' + esc(f.location.symbol) + '</code>' : '') + '</p>'
+  if (f.research) {
+    html += '<h4>Verdict: ' + esc(f.research.verdict.replace('_', ' ')) + ' (' + esc(f.research.confidence) + ' confidence)</h4><details data-analysis="' + id + '"' + (S.openAnalysis.has(f.id) ? ' open' : '') + '><summary class="meta">Analysis</summary><div class="md">' + md(f.research.analysis) + '</div></details>'
+    const editable = s.open && S.snap.state === 'active' && f.state !== 'queued' && f.state !== 'fixing'
+    const sel = S.choice[f.id] || f.research.recommendedOptionId
+    html += '<h4>Options</h4><div class="options">' + f.research.options.map((o) => {
+      const br = o.blastRadius || {}
+      const brBits = [br.level, br.estimatedFiles != null ? '~' + br.estimatedFiles + ' files' : '', (br.areas || []).join(', '), br.publicApi ? 'public API' : '', br.migration ? 'migration' : '', br.featureFlag ? 'flag' : ''].filter(Boolean).join(' \xB7 ')
+      return '<div class="option' + (o.id === f.research.recommendedOptionId ? ' recommended' : '') + (editable && o.id === sel ? ' selected' : '') + '"><label>' +
+        (editable ? '<input type="radio" name="d-' + id + '" value="' + esc(o.id) + '" data-pick="' + id + '"' + (o.id === sel ? ' checked' : '') + '>' : '') +
+        '<span><span class="otitle">' + esc(o.id + '. ' + o.title) + '</span> <span class="chip outline">' + esc(o.kind) + '</span> <span class="chip outline">' + esc(o.effort) + '</span></span></label>' +
+        '<div class="md">' + md(o.description) + '</div><div class="meta">Blast radius: ' + esc(brBits) + (br.notes ? ' \u2014 ' + esc(br.notes) : '') + '</div>' +
+        '<div class="pc"><ul class="pro">' + o.pros.map((p) => '<li>' + esc(p) + '</li>').join('') + '</ul><ul class="con">' + o.cons.map((c) => '<li>' + esc(c) + '</li>').join('') + '</ul></div></div>'
+    }).join('') + '</div>'
+    if (editable) {
+      html += '<div class="decide-box"><textarea data-draft="' + id + '" placeholder="Optional: extra direction for the applier, or the reason when you acknowledge or defer">' + esc(S.drafts[f.id] || '') + '</textarea><div class="actions">' +
+        '<button class="primary" data-decide="' + id + '">Use selected option</button><button data-quick="' + id + '" data-selected="1">Quick fix with selected</button>' +
+        '<button data-ack="' + id + '">Leave as is\u2026</button><button data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : f.discussion && f.discussion.sessionId ? 'Resume discussion' : 'Discuss') + '</button>' +
+        (f.stale ? '<button class="ghost" data-act="unstale" data-arg-id="' + id + '">Clear stale flag</button>' : '') + '</div></div>'
+    }
+  } else if (s.open && S.snap.state === 'active') {
+    html += '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research this finding</button></div>'
+  }
+  if (s.discussionLive) html += '<h4>Ask in the discussion</h4><div class="row"><input style="flex:1" data-ask-input="' + id + '" placeholder="Ask a question\u2026"><button data-ask="' + id + '">Send</button></div>'
+  if (f.discussion && f.discussion.entries.length) {
+    html += '<h4>Discussion</h4>' + f.discussion.entries.map((e) => '<div class="entry"><div class="q">' + esc(e.question) + '</div><div class="md">' + md(e.answer) + '</div>' + (e.optionsChanged ? '<div class="meta">Options revised</div>' : '') + '</div>').join('')
+  }
+  html += '<h4>Review comments</h4>' + f.sources.map((ref) => {
+    const src = sources[ref.sourceId] || {}
+    return '<div class="quote">' + esc(ref.excerpt) + '</div><div class="meta">' + esc(src.author || ref.sourceId) + (src.url ? ' \xB7 <a href="' + esc(src.url) + '" target="_blank" rel="noopener">open</a>' : '') + '</div>'
+  }).join('')
+  html += history(f)
+  if (!s.open) {
+    if (f.resolution && f.resolution.reason) html += '<h4>Reason</h4><div class="md">' + md(f.resolution.reason) + '</div>'
+    if (f.resolution && f.resolution.deferral) html += '<p class="meta">Deferral file: <code>' + esc(f.resolution.deferral.path) + '</code></p>'
+    if (f.reply && f.reply.status === 'drafted' && S.snap.state === 'active') {
+      html += '<h4>Reply draft</h4><textarea data-reply-text="' + id + '">' + esc(f.reply.draft || '') + '</textarea><div class="actions"><button class="primary" data-reply="approve" data-rid="' + id + '">Approve</button><button data-reply="save" data-rid="' + id + '">Save edit</button><button class="ghost" data-reply="skip" data-rid="' + id + '">Skip</button></div><p class="meta">Approved replies post when you run Replies.</p>'
+    }
+    if (S.snap.state === 'active' && f.state !== 'resolved_externally') html += '<div class="actions" style="margin-top:10px"><button class="ghost" data-reopen="' + id + '">Reopen</button></div>'
+  }
+  return html
+}
+
+function history(f) {
+  const evs = [{ when: f.createdAt, text: 'Detected at <code>' + short(f.detectedAtCommit) + '</code>' }]
+  for (const it of f.iterations) {
+    const origin = it.origin === 'session' ? ' <span class="chip outline">inferred</span>' : it.origin === 'quick' ? ' <span class="chip outline">quick</span>' : ''
+    let text = '<b>Iteration ' + it.n + '</b>: ' + esc(it.decision.kind) + ' with ' + esc(it.decision.optionId) + origin
+    if (it.decision.instruction) text += '<div class="meta">' + esc(it.decision.instruction) + '</div>'
+    for (const c of it.commits || []) text += '<div><code>' + short(c.sha) + '</code> ' + esc(c.message) + '</div>'
+    if (it.verification) text += '<div class="meta">Verification ' + esc(it.verification.status) + ': ' + it.verification.checks.map((c) => esc(c.name) + ' ' + esc(c.result)).join(', ') + '</div>'
+    text += '<div class="meta">' + esc(it.outcome.replace('_', ' ')) + (it.summary ? ' \u2014 ' + esc(it.summary) : '') + (it.bounceReason ? ' \u2014 ' + esc(it.bounceReason) : '') + '</div>'
+    evs.push({ when: it.decidedAt, text })
+  }
+  if (f.resolution) {
+    let text = '<b>' + esc(OUTCOME_LABEL[f.resolution.outcome] || f.resolution.outcome) + '</b> at <code>' + short(f.resolution.closedAtCommit) + '</code>'
+    if (f.resolution.resolvedBy) text += ' by ' + esc(f.resolution.resolvedBy.findingId) + ' iteration ' + f.resolution.resolvedBy.iteration
+    evs.push({ when: f.resolution.closedAt, text })
+  }
+  return '<h4>History</h4><div class="timeline">' + evs.map((e) => '<div class="ev"><span class="when">' + esc(ago(e.when)) + '</span><div>' + e.text + '</div></div>').join('') + '</div>'
+}
+
+// ---------- dialogs ----------
+function confirmDialog(title, html, buttons) {
+  return new Promise((resolve) => {
+    const dialog = $('#dialog')
+    dialog.innerHTML = '<h3>' + esc(title) + '</h3>' + html + '<div class="actions" style="justify-content:flex-end;margin-top:10px">' +
+      buttons.map((b, i) => '<button data-choice="' + i + '"' + (b.primary ? ' class="primary"' : '') + '>' + esc(b.label) + '</button>').join('') + '</div>'
+    dialog.onclick = (event) => {
+      const choice = event.target.closest('[data-choice]')
+      if (!choice) return
+      const value = buttons[Number(choice.dataset.choice)].value
+      const extra = { checked: [...dialog.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value), text: (dialog.querySelector('textarea') || {}).value }
+      dialog.close()
+      resolve(value ? Object.assign({ value }, extra) : null)
+    }
+    dialog.oncancel = () => resolve(null)
+    dialog.showModal()
+  })
+}
+
+async function bulkAccept() {
+  const items = (S.snap.summaries || []).filter((s) => s.open && s.lane === 'quick' && (s.state === 'ready' || s.state === 'discussing'))
+  const html = '<p class="meta">Each finding takes its recommended option. Clear any you want to review first.</p><div class="check-list">' + items.map((s) =>
+    '<label><input type="checkbox" value="' + esc(s.id) + '" checked><span><b>' + esc(s.id) + '</b> ' + esc(s.title) + '<br><span class="meta">\u2192 ' + esc(s.recommended ? s.recommended.id + ' \xB7 ' + s.recommended.title + ' (' + s.recommended.kind + ')' : '') + '</span></span></label>').join('') + '</div>'
+  const result = await confirmDialog('Accept quick findings', html, [{ label: 'Cancel' }, { label: 'Accept', value: 'accept' }, { label: 'Accept and apply', value: 'apply', primary: true }])
+  if (!result || !result.checked.length) return
+  await act('accept', { ids: result.checked }, 'Accepted ' + result.checked.length)
+  if (result.value === 'apply' && ((S.snap.counts || {}).queued || 0) > 0) await dispatch('apply', {}, 'Started the applier')
+}
+
+async function reasonDialog(title, hint, initial) {
+  const result = await confirmDialog(title, '<p class="meta">' + esc(hint) + '</p><textarea>' + esc(initial || '') + '</textarea>', [{ label: 'Cancel' }, { label: 'Save', value: 'ok', primary: true }])
+  if (!result || !result.text || !result.text.trim()) return null
+  return result.text.trim()
+}
+
+// ---------- events ----------
+document.addEventListener('click', async (event) => {
+  const t = event.target.closest('button, [data-toggle]')
+  if (!t) return
+  const d = t.dataset
+  if (d.toggle && !t.matches('button')) {
+    if (event.target.closest('button, input, label, a, textarea')) return
+    const id = d.toggle
+    if (S.expanded.has(id)) S.expanded.delete(id)
+    else { S.expanded.add(id); if (!S.details[id]) { render(); await loadDetail(id) } }
+    return render()
+  }
+  if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : null)
+  if (d.dispatch) return dispatch(d.dispatch, d.ids ? { ids: d.ids.split(',') } : {}, 'Started ' + d.dispatch + ' in a new terminal')
+  if (d.bulk) return bulkAccept()
+  if (d.quick) {
+    const id = d.quick
+    const optionId = d.selected ? S.choice[id] : undefined
+    if (S.drafts[id]) {
+      const rec = S.details[id] && S.details[id].data.finding.research
+      await act('decide', { id, optionId: optionId || (rec && rec.recommendedOptionId), instruction: S.drafts[id], origin: 'quick' })
+      delete S.drafts[id]
+      return dispatch('apply', {}, 'Queued and started the applier')
+    }
+    return dispatch('quickFix', optionId ? { id, optionId } : { id }, 'Queued; the applier is running')
+  }
+  if (d.decide) {
+    const id = d.decide
+    const summary = summaryOf(id)
+    const optionId = S.choice[id] || (summary.recommended || {}).id
+    if (!optionId) return toast('Choose an option first', true)
+    const opt = (summary.options || []).find((o) => o.id === optionId) || {}
+    let instruction = S.drafts[id]
+    if ((opt.kind === 'acknowledge' || opt.kind === 'defer') && !instruction) {
+      instruction = await reasonDialog(opt.kind === 'defer' ? 'Defer ' + id : 'Leave ' + id + ' as is', opt.kind === 'defer' ? 'Why does this wait? This goes into the deferral file.' : 'Why is no change needed? This becomes the reply to the reviewer.')
+      if (!instruction) return
+    }
+    await act('decide', { id, optionId, instruction }, opt.kind === 'fix' ? 'Queued ' + id : opt.kind === 'defer' ? 'Deferred ' + id : 'Acknowledged ' + id)
+    delete S.drafts[id]
+    return
+  }
+  if (d.defer) {
+    const reason = await reasonDialog('Defer ' + d.defer, 'Why does this wait? This goes into the deferral file.')
+    if (reason) await act('decide', { id: d.defer, optionId: d.option, instruction: reason }, 'Deferred ' + d.defer)
+    return
+  }
+  if (d.ack) {
+    const reason = await reasonDialog('Leave ' + d.ack + ' as is', 'Why is no change needed? This becomes the reply to the reviewer.', S.drafts[d.ack])
+    if (reason) await act('decide', { id: d.ack, optionId: 'custom', kind: 'acknowledge', instruction: reason }, 'Acknowledged ' + d.ack)
+    return
+  }
+  if (d.discuss) return dispatch('discuss', { id: d.discuss }, 'Opened the discussion in a terminal')
+  if (d.ask) {
+    const input = $('[data-ask-input="' + d.ask + '"]')
+    if (!input.value.trim()) return
+    await dispatch('ask', { id: d.ask, text: input.value }, 'Sent to the discussion')
+    input.value = ''
+    return
+  }
+  if (d.reopen) {
+    const reason = await reasonDialog('Reopen ' + d.reopen, 'Why does this need another look?')
+    if (reason) await act('reopen', { id: d.reopen, reason }, 'Reopened ' + d.reopen)
+    return
+  }
+  if (d.reply) {
+    const id = d.rid
+    const text = $('[data-reply-text="' + id + '"]').value
+    if (d.reply === 'approve') { await act('replyEdit', { id, text }); return act('replyApprove', { id }, 'Reply approved') }
+    if (d.reply === 'save') return act('replyEdit', { id, text }, 'Reply saved')
+    if (d.reply === 'skip') return act('replySkip', { id }, 'Reply skipped')
+  }
+})
+document.addEventListener('change', (event) => {
+  const t = event.target
+  if (t.dataset.pick) { S.choice[t.dataset.pick] = t.value; render() }
+  if (t.id === 'worktree') {
+    S.path = t.value
+    S.snap = null; S.expanded.clear(); S.details = {}; lastKey = ''
+    if (!inPanel) {
+      const url = new URL(location.href)
+      if (S.path) url.searchParams.set('path', S.path); else url.searchParams.delete('path')
+      history.replaceState(null, '', url)
+    }
+    refresh()
+  }
+})
+document.addEventListener('input', (event) => {
+  if (event.target.dataset.draft) S.drafts[event.target.dataset.draft] = event.target.value
+})
+document.addEventListener('keydown', (event) => {
+  const t = event.target
+  if (event.key === 'Enter' && t.dataset && t.dataset.askInput) { event.preventDefault(); $('[data-ask="' + t.dataset.askInput + '"]').click() }
+})
+document.addEventListener('toggle', (event) => {
+  const t = event.target
+  if (t.id === 'closed') S.showClosed = t.open
+  if (t.dataset && t.dataset.analysis) { if (t.open) S.openAnalysis.add(t.dataset.analysis); else S.openAnalysis.delete(t.dataset.analysis) }
+}, true)
+
+// Pause re-rendering while the user types or a dialog is open, so polling never eats input.
+function typing() { const a = document.activeElement; return a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT') }
+async function tick() {
+  if (document.visibilityState === 'visible' && !typing() && !S.busy && !$('#dialog').open) await refresh()
+  setTimeout(tick, 2000)
+}
+
+// ---------- panel boot ----------
+async function bootPanel() {
+  const ctxResult = await panelCall('workspace.readContext')
+  const context = ctxResult.ok ? ctxResult.value : null
+  try {
+    const resolved = await invoke('resolve', { branch: context && context.branch, displayName: context && context.displayName })
+    if (resolved.candidates.length === 1) { S.path = resolved.candidates[0].path; return true }
+    S.worktrees = resolved.candidates
+    renderWorktreePicker()
+    return true
+  } catch (e) {
+    // This Orca does not let panels call their worker yet: show a launcher.
+    const terminals = context ? context.terminals : []
+    $('#main').innerHTML = '<div class="launcher"><h2>Docket</h2><p>' + (context ? esc(context.displayName) + ' \xB7 ' + esc(context.branch) : 'No worktree is focused.') + '</p>' +
+      '<p>This version of Orca cannot show docket data inside the panel yet. Open the full Docket view in Orca\\'s browser instead.</p>' +
+      '<p><button class="primary" id="open-ui"' + (terminals.length ? '' : ' disabled') + '>Open Docket</button></p>' +
+      '<p class="meta">' + (terminals.length ? 'Types <code>docket ui --open</code> into this worktree\\'s terminal.' : 'Open a terminal in this worktree first.') + '</p></div>'
+    const button = $('#open-ui')
+    if (button) button.onclick = async () => {
+      const r = await panelCall('terminal.sendText', { terminalId: terminals[0].id, text: 'docket ui --open', enter: true })
+      toast(r.ok ? 'Opening Docket\u2026' : 'Could not type into the terminal', !r.ok)
+    }
+    return false
+  }
+}
+
+(async () => {
+  if (inPanel && !(await bootPanel())) return
+  await loadWorktrees()
+  await refresh()
+  tick()
+})()
+</script>
+</body>
+</html>
+`;
+
+// src/ui-server.ts
+var DEFAULT_PORT = Number(process.env.DOCKET_UI_PORT ?? 4747);
+var MAX_BODY = 256 * 1024;
+var VERSION = 1;
+function send(res, status2, body, type = "application/json") {
+  const text = type === "application/json" ? JSON.stringify(body) : String(body);
+  res.writeHead(status2, {
+    "content-type": `${type}; charset=utf-8`,
+    "cache-control": "no-store",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer"
+  });
+  res.end(text);
+}
+function readBody(req) {
+  return new Promise((resolve2, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY) {
+        reject(new DocketError("bad_input", "request body too large", 2));
+        req.destroy();
+      } else chunks.push(chunk);
+    });
+    req.on("end", () => {
+      try {
+        resolve2(chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {});
+      } catch {
+        reject(new DocketError("bad_input", "request body is not valid JSON", 2));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+function allowedWrite(req, port) {
+  if (req.headers["x-docket"] !== "1") return false;
+  const origin = req.headers.origin;
+  return origin === void 0 || origin === `http://127.0.0.1:${port}` || origin === `http://localhost:${port}`;
+}
+function errorStatus(error) {
+  if (error.code === "not_found") return 404;
+  if (error.code === "rev_conflict") return 409;
+  if (["bad_input", "invalid_state", "not_started", "paused", "branch_mismatch", "no_discussion"].includes(error.code)) return 400;
+  if (error.code === "orca_missing") return 424;
+  return 500;
+}
+function createUiServer(port) {
+  return (0, import_node_http.createServer)(async (req, res) => {
+    const url = new URL(req.url ?? "/", `http://127.0.0.1:${port}`);
+    try {
+      if (req.method === "GET" && url.pathname === "/") return send(res, 200, UI_HTML, "text/html");
+      if (req.method === "GET" && url.pathname === "/api/health") return send(res, 200, { docket: true, version: VERSION });
+      if (req.method === "GET" && url.pathname === "/api/worktrees") return send(res, 200, worktrees());
+      if (req.method === "GET" && url.pathname === "/api/snapshot") return send(res, 200, snapshot(url.searchParams.get("path") ?? ""));
+      if (req.method === "GET" && url.pathname === "/api/finding") {
+        return send(res, 200, finding(url.searchParams.get("path") ?? "", url.searchParams.get("id") ?? ""));
+      }
+      if (req.method === "POST" && (url.pathname === "/api/action" || url.pathname === "/api/dispatch")) {
+        if (!allowedWrite(req, port)) return send(res, 403, { error: { code: "forbidden", message: "missing x-docket header or foreign origin" } });
+        const body = await readBody(req);
+        const result = url.pathname === "/api/action" ? action(body.path, body.name, body.args ?? {}) : dispatch(body.path, body.kind, body.args ?? {});
+        return send(res, 200, { ok: true, result: result ?? null });
+      }
+      return send(res, 404, { error: { code: "not_found", message: `no route ${req.method} ${url.pathname}` } });
+    } catch (error) {
+      if (error instanceof DocketError) return send(res, errorStatus(error), { error: { code: error.code, message: error.message } });
+      return send(res, 500, { error: { code: "internal", message: error.message } });
+    }
+  });
+}
+function probe(port) {
+  return new Promise((resolve2) => {
+    const req = (0, import_node_http.request)({ host: "127.0.0.1", port, path: "/api/health", timeout: 800 }, (res) => {
+      let body = "";
+      res.on("data", (c) => body += c);
+      res.on("end", () => {
+        try {
+          resolve2(JSON.parse(body).docket === true);
+        } catch {
+          resolve2(false);
+        }
+      });
+    });
+    req.on("error", () => resolve2(false));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve2(false);
+    });
+    req.end();
+  });
+}
+function uiUrl(port, path) {
+  return `http://127.0.0.1:${port}/${path ? `?path=${encodeURIComponent(path)}` : ""}`;
+}
+async function runUi(options) {
+  const url = uiUrl(options.port, options.cwd);
+  if (options.open) {
+    if (!await probe(options.port)) {
+      const child = (0, import_node_child_process6.spawn)(process.execPath, [...process.execArgv, process.argv[1], "ui", "--port", String(options.port)], {
+        detached: true,
+        stdio: "ignore",
+        env: process.env
+      });
+      child.unref();
+      for (let i = 0; i < 40 && !await probe(options.port); i++) await new Promise((r) => setTimeout(r, 100));
+    }
+    if (!openBrowserTab(url)) (0, import_node_child_process6.spawn)("open", [url], { detached: true, stdio: "ignore" }).unref();
+    console.log(url);
+    return 0;
+  }
+  if (await probe(options.port)) {
+    console.log(`Docket UI is already running: ${url}`);
+    return 0;
+  }
+  const server = createUiServer(options.port);
+  await new Promise((resolve2, reject) => {
+    server.once("error", reject);
+    server.listen(options.port, "127.0.0.1", () => resolve2());
+  });
+  console.log(`Docket UI: ${url}`);
+  return await new Promise(() => {
   });
 }
 
@@ -18232,6 +19374,10 @@ Replies
   reply draft <id> --text <t> [--target <sourceId>] [--resolve-thread]
   reply approve <id> | reply posted <id> --url <u> | reply skip <id>
 
+UI
+  ui [--open] [--port <n>]            Serve the Docket web UI on 127.0.0.1 (default port 4747);
+                                      --open starts it in the background and opens this worktree in Orca's browser
+
 Deferrals (any directory)
   deferrals list [--all] | deferrals show <id>
   deferrals pickup <id> --ref <where> [--by <who>]
@@ -18270,14 +19416,16 @@ function parse(argv) {
       state: { type: "string" },
       all: { type: "boolean", default: false },
       by: { type: "string" },
-      ref: { type: "string" }
+      ref: { type: "string" },
+      port: { type: "string" },
+      open: { type: "boolean", default: false }
     }
   });
 }
 function readData(values) {
   const raw = values.data;
   if (raw === void 0) badInput("--data is required");
-  const text = raw === "-" ? (0, import_node_fs5.readFileSync)(0, "utf8") : raw.startsWith("@") ? (0, import_node_fs5.readFileSync)(raw.slice(1), "utf8") : raw;
+  const text = raw === "-" ? (0, import_node_fs7.readFileSync)(0, "utf8") : raw.startsWith("@") ? (0, import_node_fs7.readFileSync)(raw.slice(1), "utf8") : raw;
   try {
     return JSON.parse(text);
   } catch {
@@ -18296,14 +19444,14 @@ function need(value, name) {
 }
 function unpushedCommits(cwd) {
   try {
-    return Number((0, import_node_child_process4.execFileSync)("git", ["rev-list", "--count", "@{upstream}..HEAD"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
+    return Number((0, import_node_child_process7.execFileSync)("git", ["rev-list", "--count", "@{upstream}..HEAD"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
   } catch {
     return null;
   }
 }
 function lookupPr2(cwd) {
   try {
-    const out = (0, import_node_child_process4.execFileSync)("gh", ["pr", "view", "--json", "number,url"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 1e4 });
+    const out = (0, import_node_child_process7.execFileSync)("gh", ["pr", "view", "--json", "number,url"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 1e4 });
     return JSON.parse(out);
   } catch {
     throw new DocketError("not_found", "gh found no PR for this branch; pass --number and --url", 15);
@@ -18312,7 +19460,7 @@ function lookupPr2(cwd) {
 function hookCwd() {
   if (process.stdin.isTTY) return void 0;
   try {
-    const input = JSON.parse((0, import_node_fs5.readFileSync)(0, "utf8") || "{}");
+    const input = JSON.parse((0, import_node_fs7.readFileSync)(0, "utf8") || "{}");
     return typeof input.cwd === "string" ? input.cwd : void 0;
   } catch {
     return void 0;
@@ -18323,7 +19471,7 @@ function humanList(result) {
   if (result.findings.length === 0) return "No findings.";
   const meter = (n) => n === null ? "\xB7\xB7\xB7\xB7" : "\u2588".repeat(n) + "\xB7".repeat(4 - n);
   return result.findings.map((s) => {
-    const lane = (s.lane ?? (s.open ? "new" : s.state)).padEnd(19);
+    const lane = (s.open ? s.state === "new" || s.state === "ready" ? s.lane ?? "new" : `${s.lane ?? "new"}/${s.state}` : s.state).padEnd(19);
     const tail = s.open ? s.recommended ? `\u2192 ${s.recommended.id} ${s.recommended.title}` : "" : s.resolutionSummary ?? "";
     return `${s.id}  ${lane} cx ${meter(s.complexity)} cf ${meter(s.confidence)}  ${s.title}${s.stale ? "  [stale]" : ""}${s.isNew ? "  [new]" : ""}
          ${tail}`;
@@ -18417,8 +19565,8 @@ function run(ctx, values, args) {
       return {
         output: write(
           (ws) => ids.map((fid) => {
-            const finding = ws.readFinding(fid);
-            const optionId = finding.research?.recommendedOptionId ?? badInput(`${fid} has no recommendation; research it first`);
+            const finding2 = ws.readFinding(fid);
+            const optionId = finding2.research?.recommendedOptionId ?? badInput(`${fid} has no recommendation; research it first`);
             return decide(ws, fid, { optionId, origin: "quick" });
           })
         )
@@ -18460,7 +19608,7 @@ function run(ctx, values, args) {
       }
       if (sub === "show") {
         const d = findDeferral(need(target, "deferral id"));
-        return { output: { ...d.frontmatter, path: d.path, body: d.body }, human: (0, import_node_fs5.readFileSync)(d.path, "utf8") };
+        return { output: { ...d.frontmatter, path: d.path, body: d.body }, human: (0, import_node_fs7.readFileSync)(d.path, "utf8") };
       }
       if (sub === "pickup") return { output: pickUpDeferral(need(target, "deferral id"), { ref: need(values.ref, "--ref"), by: values.by }, ctx.now()).frontmatter };
       if (sub === "done" || sub === "drop") {
@@ -18492,6 +19640,21 @@ function main(argv) {
     now: () => process.env.DOCKET_NOW ?? (/* @__PURE__ */ new Date()).toISOString(),
     prLookup: !values["no-pr"] && process.env.DOCKET_NO_GH !== "1"
   };
+  if (name === "ui") {
+    const port = values.port ? Number(values.port) : DEFAULT_PORT;
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+      console.error("docket: --port must be 1-65535");
+      return 2;
+    }
+    runUi({ port, open: values.open, cwd: ctx.cwd }).then(
+      (code2) => process.exitCode = code2,
+      (error) => {
+        console.error(`docket: ${error.message}`);
+        process.exitCode = 1;
+      }
+    );
+    return 0;
+  }
   try {
     const activation = ACTIVATION[name];
     if (activation) {
@@ -18515,4 +19678,5 @@ Old docket: ${result.movedStaleTo}` : result.message);
     return error.exitCode;
   }
 }
-process.exitCode = main(process.argv.slice(2));
+var code = main(process.argv.slice(2));
+if (process.exitCode === void 0) process.exitCode = code;

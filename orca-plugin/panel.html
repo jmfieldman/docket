@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docket</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --panel-2: #f1f1ee; --text: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+  --accent: #3b5bdb; --accent-text: #ffffff; --danger: #c92a2a; --danger-bg: #fff0f0; --warn-bg: #fff8e6; --warn: #8a5a00;
+  --ok: #2b8a3e; --quick: #2b8a3e; --decide: #b7791f; --scope: #1c7ed6; --dig: #7048e8; --new: #868e96;
+  --quick-bg: #ebfbee; --decide-bg: #fff6e0; --scope-bg: #e7f5ff; --dig-bg: #f3f0ff; --new-bg: #f1f3f5;
+  --radius: 10px; --shadow: 0 1px 2px rgba(0,0,0,.05);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151515; --panel: #1e1e1e; --panel-2: #262626; --text: #ececea; --muted: #9a9a95; --line: #333331;
+    --accent: #7b93ff; --accent-text: #0f0f0f; --danger: #ff6b6b; --danger-bg: #3a1d1d; --warn-bg: #3a2f14; --warn: #f3c969;
+    --ok: #69db7c; --quick: #69db7c; --decide: #f3c969; --scope: #74c0fc; --dig: #b197fc; --new: #adb5bd;
+    --quick-bg: #1d3323; --decide-bg: #3a2f14; --scope-bg: #15304a; --dig-bg: #2b2250; --new-bg: #2a2a2a;
+    --shadow: none; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 5px 10px; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+button.ghost { background: transparent; border-color: transparent; color: var(--muted); padding: 4px 6px; }
+button:disabled { opacity: .5; cursor: default; }
+select, textarea, input { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; }
+textarea { width: 100%; min-height: 56px; resize: vertical; }
+a { color: var(--accent); }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+code { background: var(--panel-2); padding: 1px 4px; border-radius: 4px; }
+pre { background: var(--panel-2); padding: 8px 10px; border-radius: 7px; overflow-x: auto; white-space: pre-wrap; }
+
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 14px 8px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 15px; letter-spacing: -.01em; margin-right: 4px; }
+#worktree { max-width: 100%; min-width: 0; flex: 1 1 220px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--line); background: var(--panel); color: var(--muted); white-space: nowrap; }
+.pill.active { color: var(--ok); }
+.pill.paused { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.toolbar { margin-top: 8px; }
+.toolbar button { font-size: 12px; }
+.badge { display: inline-block; min-width: 16px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-text); font-size: 10px; font-weight: 700; text-align: center; margin-left: 4px; }
+.meta { color: var(--muted); font-size: 11px; }
+
+main { padding: 12px 14px 60px; max-width: 980px; margin: 0 auto; }
+.empty { text-align: center; padding: 48px 16px; color: var(--muted); }
+.empty h2 { color: var(--text); font-size: 16px; margin: 0 0 6px; }
+.banner { display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 12px; background: var(--panel); border: 1px solid var(--line); }
+.banner.warn { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
+
+section.lane { margin: 18px 0 8px; }
+section.lane > h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+section.lane > h3 .hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
+section.lane > h3 .spacer { flex: 1; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 8px; border-left: 4px solid var(--new); }
+.card.quick { border-left-color: var(--quick); } .card.decide { border-left-color: var(--decide); }
+.card.scope { border-left-color: var(--scope); } .card.dig { border-left-color: var(--dig); }
+.card.closed { border-left-color: var(--line); opacity: .92; }
+.card.attention { border-left-color: var(--warn); }
+.card-head { padding: 9px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; cursor: pointer; }
+.title { font-weight: 600; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.title .id { color: var(--muted); font-weight: 500; font-size: 11px; font-family: ui-monospace, Menlo, monospace; }
+.chips { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 1px 6px; border-radius: 5px; background: var(--new-bg); color: var(--new); white-space: nowrap; }
+.chip.quick { background: var(--quick-bg); color: var(--quick); } .chip.decide { background: var(--decide-bg); color: var(--decide); }
+.chip.scope { background: var(--scope-bg); color: var(--scope); } .chip.dig { background: var(--dig-bg); color: var(--dig); }
+.chip.sev-critical, .chip.sev-high { background: var(--danger-bg); color: var(--danger); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.outline { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.meters { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); grid-column: 1 / -1; }
+.meter { display: inline-flex; align-items: center; gap: 6px; }
+.segs { display: inline-flex; gap: 2px; }
+.seg { width: 12px; height: 6px; border-radius: 2px; background: var(--line); }
+.meter.complexity .seg.on { background: var(--text); }
+.meter.confidence .seg.on { background: var(--accent); }
+.rec { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.rec b { color: var(--text); font-weight: 600; }
+.actions { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.opt-rows { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 2px; }
+.opt-row { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); }
+.opt-row input { margin: 0; }
+.opt-row .k { font-weight: 700; width: 14px; }
+.opt-row .t { flex: 1; min-width: 0; }
+
+.body { padding: 4px 14px 14px; border-top: 1px solid var(--line); }
+.body h4 { margin: 14px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.md p { margin: 4px 0; }
+.md ul { margin: 4px 0; padding-left: 18px; }
+.options { display: grid; gap: 8px; }
+.option { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 4px; }
+.option.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.option.recommended .otitle::after { content: "recommended"; margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.option label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+.otitle { font-weight: 600; }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+.pc ul { margin: 2px 0; padding-left: 16px; }
+.pc .pro li::marker { color: var(--ok); } .pc .con li::marker { color: var(--danger); }
+@media (max-width: 520px) { .pc { grid-template-columns: 1fr; } }
+.decide-box { display: grid; gap: 6px; margin-top: 10px; }
+.timeline { border-left: 2px solid var(--line); margin: 4px 0 0 4px; padding-left: 12px; display: grid; gap: 8px; }
+.timeline .ev { font-size: 12px; }
+.timeline .ev .when { color: var(--muted); font-size: 11px; }
+.quote { border-left: 3px solid var(--line); padding: 2px 10px; color: var(--muted); margin: 6px 0; white-space: pre-wrap; }
+.entry { background: var(--panel-2); border-radius: 8px; padding: 6px 10px; margin: 6px 0; font-size: 12px; }
+.entry .q { font-weight: 600; }
+details.closed-list > summary { cursor: pointer; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 8px; }
+
+#toast { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; z-index: 20; }
+#toast.show { opacity: 1; }
+#toast.error { background: var(--danger); color: #fff; }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); padding: 16px; width: min(560px, 92vw); }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+dialog h3 { margin: 0 0 8px; }
+.check-list { display: grid; gap: 6px; max-height: 50vh; overflow: auto; margin: 10px 0; }
+.check-list label { display: flex; gap: 8px; align-items: baseline; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; }
+.launcher { padding: 24px 16px; text-align: center; }
+.launcher p { color: var(--muted); }
+</style>
+</head>
+<body>
+<header id="header" hidden>
+  <div class="row">
+    <span class="brand">Docket</span>
+    <select id="worktree" title="Worktree"></select>
+    <span id="state-pill" class="pill"></span>
+  </div>
+  <div class="row toolbar" id="toolbar"></div>
+</header>
+<main id="main"><div class="empty">Loading…</div></main>
+<div id="toast" role="status"></div>
+<dialog id="dialog"></dialog>
+
+<script>
+'use strict'
+// ---------- transport ----------
+// One file serves two hosts. In a browser tab it talks to `docket ui` over
+// HTTP. Inside an Orca plugin panel it calls the plugin worker through
+// plugin.command.invoke when the host supports it.
+const inPanel = window.parent !== window && location.protocol !== 'http:' && location.protocol !== 'https:'
+let seq = 0
+const pending = {}
+function panelCall(action, params) {
+  return new Promise((resolve) => {
+    const requestId = 'req-' + ++seq
+    pending[requestId] = resolve
+    window.parent.postMessage({ type: 'orca-panel-action', requestId, action, params }, '*')
+  })
+}
+window.addEventListener('message', (event) => {
+  const data = event.data
+  if (!data || data.type !== 'orca-panel-action-result') return
+  const resolve = pending[data.requestId]
+  if (resolve) { delete pending[data.requestId]; resolve(data) }
+})
+async function invoke(op, args) {
+  const result = await panelCall('plugin.command.invoke', { commandId: 'docket-api', args: Object.assign({ op }, args || {}) })
+  if (!result.ok) throw new Error(result.error || result.errorCode || 'panel call failed')
+  const value = result.value && 'value' in result.value ? result.value.value : result.value
+  if (value && value.error) throw new Error(value.error.message)
+  return value
+}
+const api = {
+  async get(route, params) {
+    if (inPanel) return invoke(route, params)
+    const query = new URLSearchParams(params || {}).toString()
+    const res = await fetch('/api/' + route + (query ? '?' + query : ''))
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ? body.error.message : res.statusText)
+    return body
+  },
+  async post(route, payload) {
+    if (inPanel) return invoke(route, payload)
+    const res = await fetch('/api/' + route, { method: 'POST', headers: { 'content-type': 'application/json', 'x-docket': '1' }, body: JSON.stringify(payload) })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ? body.error.message : res.statusText)
+    return body.result
+  }
+}
+
+// ---------- state ----------
+const S = {
+  path: new URLSearchParams(location.search).get('path') || '',
+  worktrees: [],
+  snap: null,
+  expanded: new Set(),
+  details: {},
+  choice: {},
+  drafts: {},
+  showClosed: false,
+  openAnalysis: new Set(),
+  busy: false
+}
+const LANES = [
+  ['attention', 'Needs attention', 'The applier stopped. Re-decide or discuss.'],
+  ['quick', 'Quick', 'Simple and confident: accept and go.'],
+  ['decide', 'Decide', 'Small change, but a judgment call.'],
+  ['scope', 'Scope', 'Clear direction, large change: fix now or defer.'],
+  ['dig', 'Dig', 'Complex and unsure: discuss before deciding.'],
+  ['research', 'Needs research', 'Not researched yet.']
+]
+const CX = ['', 'trivial', 'modest', 'involved', 'major']
+const CF = ['', 'unclear', 'split', 'likely', 'certain']
+const OUTCOME_LABEL = { completed: 'Completed', acknowledged: 'Acknowledged', deferred: 'Deferred', resolved_externally: 'Resolved on GitHub' }
+
+// ---------- helpers ----------
+const $ = (sel, root) => (root || document).querySelector(sel)
+function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
+function md(text) {
+  if (!text) return ''
+  return String(text).split(/```/).map((block, i) => {
+    if (i % 2 === 1) return '<pre>' + esc(block.replace(/^[a-z]*\n/, '')) + '</pre>'
+    let html = '', list = false
+    for (const raw of esc(block).split('\n')) {
+      const line = raw
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+        .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      if (/^\s*[-*] /.test(line)) { if (!list) { html += '<ul>'; list = true } html += '<li>' + line.replace(/^\s*[-*] /, '') + '</li>'; continue }
+      if (list) { html += '</ul>'; list = false }
+      if (line.trim()) html += '<p>' + line + '</p>'
+    }
+    if (list) html += '</ul>'
+    return html
+  }).join('')
+}
+function ago(iso) {
+  if (!iso) return ''
+  const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return Math.round(s / 60) + 'm ago'
+  if (s < 86400) return Math.round(s / 3600) + 'h ago'
+  return Math.round(s / 86400) + 'd ago'
+}
+function short(sha) { return sha ? sha.slice(0, 7) : '' }
+let toastTimer
+function toast(message, isError) {
+  const el = $('#toast')
+  el.textContent = message
+  el.className = 'show' + (isError ? ' error' : '')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => (el.className = ''), isError ? 6000 : 2800)
+}
+function meter(kind, value, labels) {
+  const segs = [1, 2, 3, 4].map((n) => '<span class="seg' + (value && n <= value ? ' on' : '') + '"></span>').join('')
+  return '<span class="meter ' + kind + '">' + (kind === 'complexity' ? 'Complexity' : 'Confidence') + ' <span class="segs">' + segs + '</span> ' + (value ? labels[value] : '—') + '</span>'
+}
+function laneOf(s) {
+  if (s.state === 'needs_attention') return 'attention'
+  if (!s.lane) return 'research'
+  return s.lane
+}
+function summaryOf(id) { return ((S.snap && S.snap.summaries) || []).find((s) => s.id === id) }
+
+// ---------- data ----------
+async function loadWorktrees() {
+  if (inPanel) return
+  try { S.worktrees = (await api.get('worktrees')).items || [] } catch (e) { S.worktrees = [] }
+  renderWorktreePicker()
+}
+let lastKey = ''
+async function refresh(force) {
+  if (!S.path) return render()
+  try {
+    const snap = await api.get('snapshot', { path: S.path })
+    // Redraw only when the data changed: a redraw replaces the DOM, which
+    // would reset scroll, hover and open sections every poll.
+    const key = JSON.stringify(snap)
+    const detailsStale = [...S.expanded].some((id) => { const sm = (snap.summaries || []).find((x) => x.id === id); return !sm || !S.details[id] || S.details[id].rev !== sm.rev })
+    if (!force && key === lastKey && !detailsStale) return
+    lastKey = key
+    S.snap = snap
+    for (const id of [...S.expanded]) {
+      const summary = summaryOf(id)
+      if (!summary) { S.expanded.delete(id); continue }
+      const cached = S.details[id]
+      if (!cached || cached.rev !== summary.rev) await loadDetail(id, summary.rev)
+    }
+  } catch (e) {
+    S.snap = { state: 'error', message: e.message, summaries: [] }
+  }
+  render()
+}
+async function loadDetail(id, rev) {
+  const data = await api.get('finding', { path: S.path, id })
+  S.details[id] = { rev: rev != null ? rev : data.finding.rev, data }
+}
+async function act(name, args, message) {
+  if (S.busy) return
+  S.busy = true
+  try {
+    const result = await api.post('action', { path: S.path, name, args: args || {} })
+    if (message) toast(message)
+    S.busy = false
+    await refresh(true)
+    return result
+  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
+}
+async function dispatch(kind, args, message) {
+  if (S.busy) return
+  S.busy = true
+  try {
+    const result = await api.post('dispatch', { path: S.path, kind, args: args || {} })
+    if (result && result.applierError) toast('Queued, but the applier did not start. ' + result.applierError, true)
+    else if (message) toast(result && result.reused ? message.replace(/^(Started|Opened)/, 'Focused') : message)
+    S.busy = false
+    await refresh(true)
+    return result
+  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
+}
+
+// ---------- render ----------
+function renderWorktreePicker() {
+  const select = $('#worktree')
+  if (inPanel && !S.worktrees.length) { select.hidden = true; return }
+  const items = S.worktrees.slice()
+  if (S.path && !items.some((w) => w.path === S.path)) items.unshift({ path: S.path, displayName: S.path.split('/').pop(), repo: '', docket: '' })
+  const byRepo = {}
+  for (const w of items) (byRepo[w.repo || 'Other'] = byRepo[w.repo || 'Other'] || []).push(w)
+  const mark = (state) => (state === 'active' ? ' ●' : state === 'paused' ? ' ◐' : '')
+  select.innerHTML = '<option value="">Choose a worktree…</option>' + Object.keys(byRepo).sort().map((repo) =>
+    '<optgroup label="' + esc(repo) + '">' + byRepo[repo].map((w) =>
+      '<option value="' + esc(w.path) + '"' + (w.path === S.path ? ' selected' : '') + '>' + esc(w.displayName + (w.branch ? ' · ' + w.branch : '') + mark(w.docket)) + '</option>').join('') + '</optgroup>').join('')
+}
+
+function render() {
+  $('#header').hidden = false
+  const snap = S.snap
+  const main = $('#main'), pill = $('#state-pill'), toolbar = $('#toolbar')
+  if (!S.path) {
+    pill.textContent = ''
+    toolbar.innerHTML = ''
+    main.innerHTML = '<div class="empty"><h2>Choose a worktree</h2>Docket tracks review findings per worktree.</div>'
+    return
+  }
+  if (!snap) return
+  const state = snap.state
+  pill.className = 'pill ' + (state === 'active' ? 'active' : state === 'paused' ? 'paused' : '')
+  pill.textContent = { active: 'active', paused: 'paused', not_started: 'not started', branch_mismatch: 'branch changed' }[state] || 'error'
+  if (state === 'error') { toolbar.innerHTML = ''; main.innerHTML = '<div class="empty"><h2>Cannot read this worktree</h2>' + esc(snap.message) + '</div>'; return }
+  if (state === 'branch_mismatch') { toolbar.innerHTML = ''; main.innerHTML = '<div class="empty"><h2>The branch changed</h2>' + esc(snap.message) + '</div>'; return }
+  if (state === 'not_started') {
+    toolbar.innerHTML = ''
+    main.innerHTML = '<div class="empty"><h2>Docket is not started here</h2><p>Docket stays dormant in a worktree until you start it. Use it on your own branches to track and resolve review findings.</p><p><button class="primary" data-act="start">Start docket</button></p>' +
+      (snap.deferralsOpen ? '<p class="meta">' + snap.deferralsOpen + ' deferred item(s) are waiting. Run <code>/docket:deferrals</code> to pick one up.</p>' : '') + '</div>'
+    return
+  }
+  renderToolbar()
+  renderFindings()
+}
+
+function renderToolbar() {
+  const snap = S.snap, unit = snap.unit || {}, counts = snap.counts || {}
+  const sums = snap.summaries || []
+  const untriaged = sums.filter((s) => s.open && !s.lane && s.state === 'new').length
+  const queued = (counts.queued || 0) + (counts.fixing || 0)
+  const drafts = sums.filter((s) => !s.open && s.replyStatus === 'drafted').length
+  const newCount = sums.filter((s) => s.isNew).length
+  const remoteNew = unit.remoteCheck ? unit.remoteCheck.newSourceCount : 0
+  const applierRunning = unit.applier && unit.applier.state === 'running'
+  const b = (attr, label, badge, title) => '<button ' + attr + (title ? ' title="' + esc(title) + '"' : '') + '>' + label + (badge ? '<span class="badge">' + badge + '</span>' : '') + '</button>'
+  const parts = []
+  if (snap.state === 'paused') parts.push(b('class="primary" data-act="resume"', 'Resume'))
+  else {
+    parts.push(b('data-dispatch="ingest"', 'Ingest', remoteNew, 'Read review comments on the PR'))
+    parts.push(b('data-dispatch="research"', 'Research', untriaged, 'Investigate unresearched findings'))
+    parts.push(b('data-dispatch="apply"', applierRunning ? 'Applier running' : 'Apply queue', queued, 'Implement queued fixes in order'))
+    parts.push(b('data-dispatch="reply"', 'Replies', drafts, 'Draft and post replies to reviewers'))
+    parts.push(b('class="ghost" data-act="pause"', 'Pause'))
+  }
+  if (newCount) parts.push(b('class="ghost" data-act="view"', newCount + ' new · mark seen'))
+  const meta = []
+  if (unit.pr) meta.push('<a href="' + esc(unit.pr.url) + '" target="_blank" rel="noopener">PR #' + unit.pr.number + '</a>')
+  meta.push(esc(unit.branch || ''))
+  if (snap.unpushedCommits) meta.push(snap.unpushedCommits + ' unpushed commit' + (snap.unpushedCommits === 1 ? '' : 's'))
+  if (unit.lastIngest) meta.push('ingested ' + ago(unit.lastIngest.at))
+  $('#toolbar').innerHTML = parts.join('') + '<span class="meta">' + meta.join(' · ') + '</span>'
+}
+
+function renderFindings() {
+  const snap = S.snap
+  const sums = snap.summaries || []
+  const open = sums.filter((s) => s.open)
+  const closed = sums.filter((s) => !s.open)
+  let html = ''
+  if (snap.state === 'paused') html += '<div class="banner warn"><span>Docket is paused. Skills and hooks are dormant in this worktree. The data stays.</span><button data-act="resume">Resume</button></div>'
+  if (!sums.length) {
+    html += '<div class="empty"><h2>No findings yet</h2><p>Ingest the review comments on your PR, or a local review report.</p>' +
+      (snap.state === 'active' ? '<button class="primary" data-dispatch="ingest">Ingest review comments</button>' : '') + '</div>'
+  }
+  for (const [lane, label, hint] of LANES) {
+    const items = open.filter((s) => laneOf(s) === lane)
+    if (!items.length) continue
+    const quickReady = lane === 'quick' ? items.filter((s) => s.state === 'ready' || s.state === 'discussing') : []
+    const extra = snap.state !== 'active' ? ''
+      : lane === 'quick' && quickReady.length > 1 ? '<button class="primary" data-bulk="quick">Accept all (' + quickReady.length + ')</button>'
+      : lane === 'research' ? '<button data-dispatch="research">Research all</button>' : ''
+    html += '<section class="lane"><h3>' + esc(label) + ' <span class="hint">' + esc(hint) + '</span><span class="spacer"></span>' + extra + '</h3>' + items.map(card).join('') + '</section>'
+  }
+  if (closed.length) html += '<details class="closed-list"' + (S.showClosed ? ' open' : '') + ' id="closed"><summary>Closed (' + closed.length + ')</summary>' + closed.map(card).join('') + '</details>'
+  $('#main').innerHTML = html
+}
+
+function stateChip(s) {
+  const map = { queued: 'In queue', fixing: 'Fixing…', discussing: 'Discussing', needs_attention: 'Bounced' }
+  return map[s.state] ? '<span class="chip warn">' + map[s.state] + '</span>' : ''
+}
+
+function card(s) {
+  const lane = laneOf(s)
+  const expanded = S.expanded.has(s.id)
+  const chips = []
+  if (s.open) chips.push('<span class="chip ' + (s.lane || '') + '">' + (s.lane || 'new') + '</span>')
+  else chips.push('<span class="chip outline">' + esc(OUTCOME_LABEL[s.state] || s.state) + '</span>')
+  if (s.severity && s.severity !== 'unknown') chips.push('<span class="chip sev-' + esc(s.severity) + '">' + esc(s.severity) + '</span>')
+  if (s.open) chips.push(stateChip(s))
+  if (s.isNew) chips.push('<span class="chip outline">new</span>')
+  if (s.stale) chips.push('<span class="chip warn" title="' + esc(s.stale) + '">stale</span>')
+  if (s.lastOrigin === 'session') chips.push('<span class="chip outline" title="Recorded by an ad-hoc session">inferred</span>')
+  let head = '<div class="title"><span class="id">' + esc(s.id) + '</span>' + esc(s.title) + '</div><div class="chips">' + chips.join('') + '</div>'
+  if (s.open) {
+    if (s.lane) head += '<div class="meters">' + meter('complexity', s.complexity, CX) + meter('confidence', s.confidence, CF) + '</div>'
+    if (s.recommended) {
+      const opt = (s.options || []).find((o) => o.id === s.recommended.id) || {}
+      head += '<div class="rec">→ <b>' + esc(s.recommended.id + ' · ' + s.recommended.title) + '</b>' + (opt.blast ? ' · ' + esc(opt.blast) : '') + (opt.effort ? ' · ' + esc(opt.effort) : '') + '</div>'
+    }
+    if (s.bounceReason) head += '<div class="rec">Bounced: ' + esc(s.bounceReason) + '</div>'
+    head += quickActions(s, lane)
+  } else if (s.resolutionSummary) {
+    head += '<div class="rec">' + esc(s.resolutionSummary) + (s.replyStatus === 'drafted' ? ' · <b>reply drafted</b>' : s.replyStatus === 'posted' ? ' · replied' : '') + '</div>'
+  }
+  return '<div class="card ' + (s.open ? (lane === 'attention' ? 'attention' : (s.lane || '')) : 'closed') + '" data-id="' + esc(s.id) + '"><div class="card-head" data-toggle="' + esc(s.id) + '">' + head + '</div>' +
+    (expanded ? '<div class="body">' + body(s) + '</div>' : '') + '</div>'
+}
+
+function quickActions(s, lane) {
+  if (S.snap.state !== 'active' || s.state === 'queued' || s.state === 'fixing') return ''
+  const id = esc(s.id)
+  if (lane === 'research') return '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research</button></div>'
+  if (lane === 'quick' && s.recommended) {
+    const label = s.recommended.kind === 'acknowledge' ? 'Accept (leave as is)' : s.recommended.kind === 'defer' ? 'Accept (defer)' : 'Quick fix'
+    return '<div class="actions"><button class="primary" data-quick="' + id + '">' + label + '</button><button data-discuss="' + id + '">Discuss</button></div>'
+  }
+  if (lane === 'decide') {
+    const sel = S.choice[s.id] || (s.recommended && s.recommended.id)
+    return '<div class="opt-rows">' + (s.options || []).map((o) =>
+      '<label class="opt-row"><input type="radio" name="o-' + id + '" value="' + esc(o.id) + '" data-pick="' + id + '"' + (o.id === sel ? ' checked' : '') + '><span class="k">' + esc(o.id) + '</span><span class="t">' + esc(o.title) + '</span><span class="chip outline">' + esc(o.kind) + '</span><span class="chip outline">' + esc(o.blast) + '</span></label>').join('') +
+      '</div><div class="actions"><button class="primary" data-decide="' + id + '">Decide</button><button data-discuss="' + id + '">Discuss</button></div>'
+  }
+  if (lane === 'scope') {
+    const defer = (s.options || []).find((o) => o.kind === 'defer')
+    return '<div class="actions"><button class="primary" data-quick="' + id + '">Fix now</button>' +
+      (defer ? '<button data-defer="' + id + '" data-option="' + esc(defer.id) + '">Defer</button>' : '') + '<button data-discuss="' + id + '">Discuss</button></div>'
+  }
+  if (lane === 'dig' || lane === 'attention') return '<div class="actions"><button class="primary" data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : 'Discuss') + '</button></div>'
+  return ''
+}
+
+function body(s) {
+  const detail = S.details[s.id]
+  if (!detail) return '<p class="meta">Loading…</p>'
+  const f = detail.data.finding, sources = detail.data.sources || {}
+  const id = esc(f.id)
+  let html = '<h4>Summary</h4><div class="md">' + md(f.summary) + '</div>'
+  if (f.explanation) html += '<h4>Background</h4><div class="md">' + md(f.explanation) + '</div>'
+  if (f.severityRationale || (f.research && f.research.assessedSeverity)) {
+    html += '<h4>Why it matters</h4><div class="md">' + (f.research && f.research.assessedSeverity ? '<p><b>' + esc(f.research.assessedSeverity) + '</b>' + (f.reviewerSeverity && f.reviewerSeverity !== f.research.assessedSeverity ? ' (reviewer said ' + esc(f.reviewerSeverity) + ')' : '') + '</p>' : '') + md(f.severityRationale) + '</div>'
+  }
+  if (f.triage) html += '<p class="meta">Complexity: ' + esc(f.triage.complexityReason) + '<br>Confidence: ' + esc(f.triage.confidenceReason) + '</p>'
+  if (f.location) html += '<p class="meta"><code>' + esc(f.location.path + (f.location.startLine ? ':' + f.location.startLine : '')) + '</code>' + (f.location.symbol ? ' · <code>' + esc(f.location.symbol) + '</code>' : '') + '</p>'
+  if (f.research) {
+    html += '<h4>Verdict: ' + esc(f.research.verdict.replace('_', ' ')) + ' (' + esc(f.research.confidence) + ' confidence)</h4><details data-analysis="' + id + '"' + (S.openAnalysis.has(f.id) ? ' open' : '') + '><summary class="meta">Analysis</summary><div class="md">' + md(f.research.analysis) + '</div></details>'
+    const editable = s.open && S.snap.state === 'active' && f.state !== 'queued' && f.state !== 'fixing'
+    const sel = S.choice[f.id] || f.research.recommendedOptionId
+    html += '<h4>Options</h4><div class="options">' + f.research.options.map((o) => {
+      const br = o.blastRadius || {}
+      const brBits = [br.level, br.estimatedFiles != null ? '~' + br.estimatedFiles + ' files' : '', (br.areas || []).join(', '), br.publicApi ? 'public API' : '', br.migration ? 'migration' : '', br.featureFlag ? 'flag' : ''].filter(Boolean).join(' · ')
+      return '<div class="option' + (o.id === f.research.recommendedOptionId ? ' recommended' : '') + (editable && o.id === sel ? ' selected' : '') + '"><label>' +
+        (editable ? '<input type="radio" name="d-' + id + '" value="' + esc(o.id) + '" data-pick="' + id + '"' + (o.id === sel ? ' checked' : '') + '>' : '') +
+        '<span><span class="otitle">' + esc(o.id + '. ' + o.title) + '</span> <span class="chip outline">' + esc(o.kind) + '</span> <span class="chip outline">' + esc(o.effort) + '</span></span></label>' +
+        '<div class="md">' + md(o.description) + '</div><div class="meta">Blast radius: ' + esc(brBits) + (br.notes ? ' — ' + esc(br.notes) : '') + '</div>' +
+        '<div class="pc"><ul class="pro">' + o.pros.map((p) => '<li>' + esc(p) + '</li>').join('') + '</ul><ul class="con">' + o.cons.map((c) => '<li>' + esc(c) + '</li>').join('') + '</ul></div></div>'
+    }).join('') + '</div>'
+    if (editable) {
+      html += '<div class="decide-box"><textarea data-draft="' + id + '" placeholder="Optional: extra direction for the applier, or the reason when you acknowledge or defer">' + esc(S.drafts[f.id] || '') + '</textarea><div class="actions">' +
+        '<button class="primary" data-decide="' + id + '">Use selected option</button><button data-quick="' + id + '" data-selected="1">Quick fix with selected</button>' +
+        '<button data-ack="' + id + '">Leave as is…</button><button data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : f.discussion && f.discussion.sessionId ? 'Resume discussion' : 'Discuss') + '</button>' +
+        (f.stale ? '<button class="ghost" data-act="unstale" data-arg-id="' + id + '">Clear stale flag</button>' : '') + '</div></div>'
+    }
+  } else if (s.open && S.snap.state === 'active') {
+    html += '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research this finding</button></div>'
+  }
+  if (s.discussionLive) html += '<h4>Ask in the discussion</h4><div class="row"><input style="flex:1" data-ask-input="' + id + '" placeholder="Ask a question…"><button data-ask="' + id + '">Send</button></div>'
+  if (f.discussion && f.discussion.entries.length) {
+    html += '<h4>Discussion</h4>' + f.discussion.entries.map((e) => '<div class="entry"><div class="q">' + esc(e.question) + '</div><div class="md">' + md(e.answer) + '</div>' + (e.optionsChanged ? '<div class="meta">Options revised</div>' : '') + '</div>').join('')
+  }
+  html += '<h4>Review comments</h4>' + f.sources.map((ref) => {
+    const src = sources[ref.sourceId] || {}
+    return '<div class="quote">' + esc(ref.excerpt) + '</div><div class="meta">' + esc(src.author || ref.sourceId) + (src.url ? ' · <a href="' + esc(src.url) + '" target="_blank" rel="noopener">open</a>' : '') + '</div>'
+  }).join('')
+  html += history(f)
+  if (!s.open) {
+    if (f.resolution && f.resolution.reason) html += '<h4>Reason</h4><div class="md">' + md(f.resolution.reason) + '</div>'
+    if (f.resolution && f.resolution.deferral) html += '<p class="meta">Deferral file: <code>' + esc(f.resolution.deferral.path) + '</code></p>'
+    if (f.reply && f.reply.status === 'drafted' && S.snap.state === 'active') {
+      html += '<h4>Reply draft</h4><textarea data-reply-text="' + id + '">' + esc(f.reply.draft || '') + '</textarea><div class="actions"><button class="primary" data-reply="approve" data-rid="' + id + '">Approve</button><button data-reply="save" data-rid="' + id + '">Save edit</button><button class="ghost" data-reply="skip" data-rid="' + id + '">Skip</button></div><p class="meta">Approved replies post when you run Replies.</p>'
+    }
+    if (S.snap.state === 'active' && f.state !== 'resolved_externally') html += '<div class="actions" style="margin-top:10px"><button class="ghost" data-reopen="' + id + '">Reopen</button></div>'
+  }
+  return html
+}
+
+function history(f) {
+  const evs = [{ when: f.createdAt, text: 'Detected at <code>' + short(f.detectedAtCommit) + '</code>' }]
+  for (const it of f.iterations) {
+    const origin = it.origin === 'session' ? ' <span class="chip outline">inferred</span>' : it.origin === 'quick' ? ' <span class="chip outline">quick</span>' : ''
+    let text = '<b>Iteration ' + it.n + '</b>: ' + esc(it.decision.kind) + ' with ' + esc(it.decision.optionId) + origin
+    if (it.decision.instruction) text += '<div class="meta">' + esc(it.decision.instruction) + '</div>'
+    for (const c of it.commits || []) text += '<div><code>' + short(c.sha) + '</code> ' + esc(c.message) + '</div>'
+    if (it.verification) text += '<div class="meta">Verification ' + esc(it.verification.status) + ': ' + it.verification.checks.map((c) => esc(c.name) + ' ' + esc(c.result)).join(', ') + '</div>'
+    text += '<div class="meta">' + esc(it.outcome.replace('_', ' ')) + (it.summary ? ' — ' + esc(it.summary) : '') + (it.bounceReason ? ' — ' + esc(it.bounceReason) : '') + '</div>'
+    evs.push({ when: it.decidedAt, text })
+  }
+  if (f.resolution) {
+    let text = '<b>' + esc(OUTCOME_LABEL[f.resolution.outcome] || f.resolution.outcome) + '</b> at <code>' + short(f.resolution.closedAtCommit) + '</code>'
+    if (f.resolution.resolvedBy) text += ' by ' + esc(f.resolution.resolvedBy.findingId) + ' iteration ' + f.resolution.resolvedBy.iteration
+    evs.push({ when: f.resolution.closedAt, text })
+  }
+  return '<h4>History</h4><div class="timeline">' + evs.map((e) => '<div class="ev"><span class="when">' + esc(ago(e.when)) + '</span><div>' + e.text + '</div></div>').join('') + '</div>'
+}
+
+// ---------- dialogs ----------
+function confirmDialog(title, html, buttons) {
+  return new Promise((resolve) => {
+    const dialog = $('#dialog')
+    dialog.innerHTML = '<h3>' + esc(title) + '</h3>' + html + '<div class="actions" style="justify-content:flex-end;margin-top:10px">' +
+      buttons.map((b, i) => '<button data-choice="' + i + '"' + (b.primary ? ' class="primary"' : '') + '>' + esc(b.label) + '</button>').join('') + '</div>'
+    dialog.onclick = (event) => {
+      const choice = event.target.closest('[data-choice]')
+      if (!choice) return
+      const value = buttons[Number(choice.dataset.choice)].value
+      const extra = { checked: [...dialog.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value), text: (dialog.querySelector('textarea') || {}).value }
+      dialog.close()
+      resolve(value ? Object.assign({ value }, extra) : null)
+    }
+    dialog.oncancel = () => resolve(null)
+    dialog.showModal()
+  })
+}
+
+async function bulkAccept() {
+  const items = (S.snap.summaries || []).filter((s) => s.open && s.lane === 'quick' && (s.state === 'ready' || s.state === 'discussing'))
+  const html = '<p class="meta">Each finding takes its recommended option. Clear any you want to review first.</p><div class="check-list">' + items.map((s) =>
+    '<label><input type="checkbox" value="' + esc(s.id) + '" checked><span><b>' + esc(s.id) + '</b> ' + esc(s.title) + '<br><span class="meta">→ ' + esc(s.recommended ? s.recommended.id + ' · ' + s.recommended.title + ' (' + s.recommended.kind + ')' : '') + '</span></span></label>').join('') + '</div>'
+  const result = await confirmDialog('Accept quick findings', html, [{ label: 'Cancel' }, { label: 'Accept', value: 'accept' }, { label: 'Accept and apply', value: 'apply', primary: true }])
+  if (!result || !result.checked.length) return
+  await act('accept', { ids: result.checked }, 'Accepted ' + result.checked.length)
+  if (result.value === 'apply' && ((S.snap.counts || {}).queued || 0) > 0) await dispatch('apply', {}, 'Started the applier')
+}
+
+async function reasonDialog(title, hint, initial) {
+  const result = await confirmDialog(title, '<p class="meta">' + esc(hint) + '</p><textarea>' + esc(initial || '') + '</textarea>', [{ label: 'Cancel' }, { label: 'Save', value: 'ok', primary: true }])
+  if (!result || !result.text || !result.text.trim()) return null
+  return result.text.trim()
+}
+
+// ---------- events ----------
+document.addEventListener('click', async (event) => {
+  const t = event.target.closest('button, [data-toggle]')
+  if (!t) return
+  const d = t.dataset
+  if (d.toggle && !t.matches('button')) {
+    if (event.target.closest('button, input, label, a, textarea')) return
+    const id = d.toggle
+    if (S.expanded.has(id)) S.expanded.delete(id)
+    else { S.expanded.add(id); if (!S.details[id]) { render(); await loadDetail(id) } }
+    return render()
+  }
+  if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : null)
+  if (d.dispatch) return dispatch(d.dispatch, d.ids ? { ids: d.ids.split(',') } : {}, 'Started ' + d.dispatch + ' in a new terminal')
+  if (d.bulk) return bulkAccept()
+  if (d.quick) {
+    const id = d.quick
+    const optionId = d.selected ? S.choice[id] : undefined
+    if (S.drafts[id]) {
+      const rec = S.details[id] && S.details[id].data.finding.research
+      await act('decide', { id, optionId: optionId || (rec && rec.recommendedOptionId), instruction: S.drafts[id], origin: 'quick' })
+      delete S.drafts[id]
+      return dispatch('apply', {}, 'Queued and started the applier')
+    }
+    return dispatch('quickFix', optionId ? { id, optionId } : { id }, 'Queued; the applier is running')
+  }
+  if (d.decide) {
+    const id = d.decide
+    const summary = summaryOf(id)
+    const optionId = S.choice[id] || (summary.recommended || {}).id
+    if (!optionId) return toast('Choose an option first', true)
+    const opt = (summary.options || []).find((o) => o.id === optionId) || {}
+    let instruction = S.drafts[id]
+    if ((opt.kind === 'acknowledge' || opt.kind === 'defer') && !instruction) {
+      instruction = await reasonDialog(opt.kind === 'defer' ? 'Defer ' + id : 'Leave ' + id + ' as is', opt.kind === 'defer' ? 'Why does this wait? This goes into the deferral file.' : 'Why is no change needed? This becomes the reply to the reviewer.')
+      if (!instruction) return
+    }
+    await act('decide', { id, optionId, instruction }, opt.kind === 'fix' ? 'Queued ' + id : opt.kind === 'defer' ? 'Deferred ' + id : 'Acknowledged ' + id)
+    delete S.drafts[id]
+    return
+  }
+  if (d.defer) {
+    const reason = await reasonDialog('Defer ' + d.defer, 'Why does this wait? This goes into the deferral file.')
+    if (reason) await act('decide', { id: d.defer, optionId: d.option, instruction: reason }, 'Deferred ' + d.defer)
+    return
+  }
+  if (d.ack) {
+    const reason = await reasonDialog('Leave ' + d.ack + ' as is', 'Why is no change needed? This becomes the reply to the reviewer.', S.drafts[d.ack])
+    if (reason) await act('decide', { id: d.ack, optionId: 'custom', kind: 'acknowledge', instruction: reason }, 'Acknowledged ' + d.ack)
+    return
+  }
+  if (d.discuss) return dispatch('discuss', { id: d.discuss }, 'Opened the discussion in a terminal')
+  if (d.ask) {
+    const input = $('[data-ask-input="' + d.ask + '"]')
+    if (!input.value.trim()) return
+    await dispatch('ask', { id: d.ask, text: input.value }, 'Sent to the discussion')
+    input.value = ''
+    return
+  }
+  if (d.reopen) {
+    const reason = await reasonDialog('Reopen ' + d.reopen, 'Why does this need another look?')
+    if (reason) await act('reopen', { id: d.reopen, reason }, 'Reopened ' + d.reopen)
+    return
+  }
+  if (d.reply) {
+    const id = d.rid
+    const text = $('[data-reply-text="' + id + '"]').value
+    if (d.reply === 'approve') { await act('replyEdit', { id, text }); return act('replyApprove', { id }, 'Reply approved') }
+    if (d.reply === 'save') return act('replyEdit', { id, text }, 'Reply saved')
+    if (d.reply === 'skip') return act('replySkip', { id }, 'Reply skipped')
+  }
+})
+document.addEventListener('change', (event) => {
+  const t = event.target
+  if (t.dataset.pick) { S.choice[t.dataset.pick] = t.value; render() }
+  if (t.id === 'worktree') {
+    S.path = t.value
+    S.snap = null; S.expanded.clear(); S.details = {}; lastKey = ''
+    if (!inPanel) {
+      const url = new URL(location.href)
+      if (S.path) url.searchParams.set('path', S.path); else url.searchParams.delete('path')
+      history.replaceState(null, '', url)
+    }
+    refresh()
+  }
+})
+document.addEventListener('input', (event) => {
+  if (event.target.dataset.draft) S.drafts[event.target.dataset.draft] = event.target.value
+})
+document.addEventListener('keydown', (event) => {
+  const t = event.target
+  if (event.key === 'Enter' && t.dataset && t.dataset.askInput) { event.preventDefault(); $('[data-ask="' + t.dataset.askInput + '"]').click() }
+})
+document.addEventListener('toggle', (event) => {
+  const t = event.target
+  if (t.id === 'closed') S.showClosed = t.open
+  if (t.dataset && t.dataset.analysis) { if (t.open) S.openAnalysis.add(t.dataset.analysis); else S.openAnalysis.delete(t.dataset.analysis) }
+}, true)
+
+// Pause re-rendering while the user types or a dialog is open, so polling never eats input.
+function typing() { const a = document.activeElement; return a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT') }
+async function tick() {
+  if (document.visibilityState === 'visible' && !typing() && !S.busy && !$('#dialog').open) await refresh()
+  setTimeout(tick, 2000)
+}
+
+// ---------- panel boot ----------
+async function bootPanel() {
+  const ctxResult = await panelCall('workspace.readContext')
+  const context = ctxResult.ok ? ctxResult.value : null
+  try {
+    const resolved = await invoke('resolve', { branch: context && context.branch, displayName: context && context.displayName })
+    if (resolved.candidates.length === 1) { S.path = resolved.candidates[0].path; return true }
+    S.worktrees = resolved.candidates
+    renderWorktreePicker()
+    return true
+  } catch (e) {
+    // This Orca does not let panels call their worker yet: show a launcher.
+    const terminals = context ? context.terminals : []
+    $('#main').innerHTML = '<div class="launcher"><h2>Docket</h2><p>' + (context ? esc(context.displayName) + ' · ' + esc(context.branch) : 'No worktree is focused.') + '</p>' +
+      '<p>This version of Orca cannot show docket data inside the panel yet. Open the full Docket view in Orca\'s browser instead.</p>' +
+      '<p><button class="primary" id="open-ui"' + (terminals.length ? '' : ' disabled') + '>Open Docket</button></p>' +
+      '<p class="meta">' + (terminals.length ? 'Types <code>docket ui --open</code> into this worktree\'s terminal.' : 'Open a terminal in this worktree first.') + '</p></div>'
+    const button = $('#open-ui')
+    if (button) button.onclick = async () => {
+      const r = await panelCall('terminal.sendText', { terminalId: terminals[0].id, text: 'docket ui --open', enter: true })
+      toast(r.ok ? 'Opening Docket…' : 'Could not type into the terminal', !r.ok)
+    }
+    return false
+  }
+}
+
+(async () => {
+  if (inPanel && !(await bootPanel())) return
+  await loadWorktrees()
+  await refresh()
+  tick()
+})()
+</script>
+</body>
+</html>
