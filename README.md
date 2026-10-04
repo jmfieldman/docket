@@ -16,13 +16,16 @@ Reviewers post findings in many formats: inline code comments, one large PR comm
 | `docket-apply` skill | Not started | Applies decided findings in order, one commit each, then verifies and closes them |
 | `docket-reply` skill | Not started | Drafts replies to reviewers. Posts only after approval. |
 | `docket-deferrals` skill | Not started | Lists deferred work across all repos and picks it up later |
-| Orca plugin | Not started | Right-pane panel to review findings, decide, quick fix, and queue |
+| `SessionStart` hook | Not started | Briefs agent sessions on open findings, only in worktrees where docket is started |
+| Orca plugin | Not started | Right-pane panel: start or pause docket, findings grouped by lane, quick fix, queue |
 
 ## Data model
 
 Read [spec/SPEC.md](spec/SPEC.md). In summary:
 
+- Docket is dormant in a worktree until you start it. Paused or never started, no skill or hook acts.
 - Each git worktree has one docket at `$(git rev-parse --git-dir)/docket/`. The docket is deleted with the worktree.
+- Each researched finding has a complexity score and a confidence score. They place it in one of four lanes: `quick`, `decide`, `scope`, `dig`.
 - Deferred work goes to `${DOCKET_HOME:-~/.docket}/deferrals/` as self-contained markdown files, so it outlives the worktree.
 - Each finding is one file with its own state, `rev` counter, and history of iterations by commit.
 - A finding closes as `completed` (fixed and verified), `acknowledged` (no change, with a reason), `deferred`, or `resolved_externally`.

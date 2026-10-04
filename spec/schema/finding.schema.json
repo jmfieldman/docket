@@ -58,6 +58,10 @@
     "research": {
       "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/research" }]
     },
+    "triage": {
+      "description": "Where the finding sits on the two axes. Written with research; rewritten when discussion changes the options. Required when research is not null.",
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/triage" }]
+    },
     "discussion": {
       "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/discussion" }]
     },
@@ -77,6 +81,29 @@
     "updatedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
   },
   "$defs": {
+    "triage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complexity", "complexityReason", "confidence", "confidenceReason", "lane", "assessedAt", "assessedAtCommit"],
+      "properties": {
+        "complexity": {
+          "type": "integer", "minimum": 1, "maximum": 4,
+          "description": "Of the recommended option. 1 trivial, 2 modest, 3 involved, 4 major."
+        },
+        "complexityReason": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "confidence": {
+          "type": "integer", "minimum": 1, "maximum": 4,
+          "description": "In the recommended option. 1 unclear, 2 split, 3 likely, 4 certain."
+        },
+        "confidenceReason": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "lane": {
+          "enum": ["quick", "decide", "scope", "dig"],
+          "description": "Derived: complexity <= 2 and confidence >= 3 → quick; complexity <= 2 and confidence <= 2 → decide; complexity >= 3 and confidence >= 3 → scope; otherwise dig. The CLI computes it."
+        },
+        "assessedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "assessedAtCommit": { "$ref": "common.schema.json#/$defs/sha" }
+      }
+    },
     "research": {
       "type": "object",
       "additionalProperties": false,
@@ -156,9 +183,13 @@
     "iteration": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["n", "decision", "decidedAt", "decidedAtCommit", "outcome"],
+      "required": ["n", "origin", "decision", "decidedAt", "decidedAtCommit", "outcome"],
       "properties": {
         "n": { "type": "integer", "minimum": 1 },
+        "origin": {
+          "enum": ["panel", "quick", "session"],
+          "description": "panel: decided in the panel. quick: quick fix or bulk accept. session: recorded by an ad-hoc agent session (the panel shows it as inferred)."
+        },
         "decision": { "$ref": "#/$defs/decision" },
         "decidedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
         "decidedAtCommit": { "$ref": "common.schema.json#/$defs/sha" },
@@ -232,8 +263,7 @@
           "description": "custom means the user wrote the decision in instruction."
         },
         "kind": { "$ref": "common.schema.json#/$defs/optionKind" },
-        "instruction": { "type": "string", "description": "Extra direction for the applier, the custom fix, or the reason." },
-        "quick": { "type": "boolean", "description": "True when the user chose quick fix." }
+        "instruction": { "type": "string", "description": "Extra direction for the applier, the custom fix, or the reason." }
       },
       "allOf": [
         {

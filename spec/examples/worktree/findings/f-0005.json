@@ -1,29 +1,124 @@
 {
-  "schemaVersion": 1, "id": "f-0005", "rev": 5, "state": "deferred", "stale": null,
+  "schemaVersion": 1,
+  "id": "f-0005",
+  "rev": 5,
+  "state": "deferred",
+  "stale": null,
   "title": "Session refresh races with sign-out",
   "summary": "A refresh that finishes after sign-out writes the new token back into the keychain.",
   "explanation": "TokenStore.refresh() awaits the network call and then saves the token. signOut() clears the keychain but does not cancel an in-flight refresh, so a late response restores the session.",
   "severityRationale": "Medium. Rare timing, but a signed-out user can be signed back in.",
-  "category": "bug", "reviewerSeverity": "medium",
-  "location": { "path": "Sources/Auth/TokenStore.swift", "symbol": "TokenStore.refresh()", "startLine": 55, "commit": "3333333333333333333333333333333333333333" },
+  "category": "bug",
+  "reviewerSeverity": "medium",
+  "location": {
+    "path": "Sources/Auth/TokenStore.swift",
+    "symbol": "TokenStore.refresh()",
+    "startLine": 55,
+    "commit": "3333333333333333333333333333333333333333"
+  },
   "detectedAtCommit": "1111111111111111111111111111111111111111",
-  "sources": [ { "sourceId": "gh:comment:9001", "excerpt": "5. refresh() can race signOut().", "ordinal": 4 } ],
+  "sources": [
+    {
+      "sourceId": "gh:comment:9001",
+      "excerpt": "5. refresh() can race signOut().",
+      "ordinal": 4
+    }
+  ],
   "research": {
-    "verdict": "valid", "confidence": "medium", "assessedSeverity": "medium",
+    "verdict": "valid",
+    "confidence": "medium",
+    "assessedSeverity": "medium",
     "analysis": "signOut() at TokenStore.swift:70 does not cancel refreshTask.",
     "options": [
-      { "id": "A", "kind": "fix", "title": "Cancel refreshTask in signOut()", "description": "Keep a handle and cancel it.", "pros": ["Small"], "cons": ["Needs a session generation check too"], "effort": "small", "blastRadius": { "level": "contained", "estimatedFiles": 3, "areas": ["Auth"] } },
-      { "id": "B", "kind": "defer", "title": "Session generation counter (follow-up PR)", "description": "Stamp each refresh with a session generation and drop stale results.", "pros": ["Fixes every late-write path"], "cons": ["Touches every token writer"], "effort": "medium", "blastRadius": { "level": "broad", "estimatedFiles": 9, "areas": ["Auth", "Networking"] } }
+      {
+        "id": "A",
+        "kind": "fix",
+        "title": "Cancel refreshTask in signOut()",
+        "description": "Keep a handle and cancel it.",
+        "pros": [
+          "Small"
+        ],
+        "cons": [
+          "Needs a session generation check too"
+        ],
+        "effort": "small",
+        "blastRadius": {
+          "level": "contained",
+          "estimatedFiles": 3,
+          "areas": [
+            "Auth"
+          ]
+        }
+      },
+      {
+        "id": "B",
+        "kind": "defer",
+        "title": "Session generation counter (follow-up PR)",
+        "description": "Stamp each refresh with a session generation and drop stale results.",
+        "pros": [
+          "Fixes every late-write path"
+        ],
+        "cons": [
+          "Touches every token writer"
+        ],
+        "effort": "medium",
+        "blastRadius": {
+          "level": "broad",
+          "estimatedFiles": 9,
+          "areas": [
+            "Auth",
+            "Networking"
+          ]
+        }
+      }
     ],
-    "recommendedOptionId": "B", "researchedAt": "2026-10-04T12:40:00Z", "researchedAtCommit": "3333333333333333333333333333333333333333"
+    "recommendedOptionId": "B",
+    "researchedAt": "2026-10-04T12:40:00Z",
+    "researchedAtCommit": "3333333333333333333333333333333333333333"
+  },
+  "triage": {
+    "complexity": 3,
+    "complexityReason": "Touches every token writer, about 9 files across Auth and Networking.",
+    "confidence": 3,
+    "confidenceReason": "Generation counter is the known pattern for late writes.",
+    "lane": "scope",
+    "assessedAt": "2026-10-04T12:40:00Z",
+    "assessedAtCommit": "3333333333333333333333333333333333333333"
   },
   "discussion": null,
   "iterations": [
-    { "n": 1, "decision": { "optionId": "B", "kind": "defer", "instruction": "Out of scope for a retry fix; do it in its own PR after #42 lands." },
-      "decidedAt": "2026-10-04T12:45:00Z", "decidedAtCommit": "3333333333333333333333333333333333333333", "outcome": "deferred", "summary": "Deferred to its own PR.", "endedAt": "2026-10-04T12:45:00Z" }
+    {
+      "n": 1,
+      "origin": "panel",
+      "decision": {
+        "optionId": "B",
+        "kind": "defer",
+        "instruction": "Out of scope for a retry fix; do it in its own PR after #42 lands."
+      },
+      "decidedAt": "2026-10-04T12:45:00Z",
+      "decidedAtCommit": "3333333333333333333333333333333333333333",
+      "outcome": "deferred",
+      "summary": "Deferred to its own PR.",
+      "endedAt": "2026-10-04T12:45:00Z"
+    }
   ],
-  "resolution": { "outcome": "deferred", "summary": "Deferred: session generation counter, own PR after #42.", "reason": "Out of scope for a retry fix; do it in its own PR after #42 lands.", "closedAt": "2026-10-04T12:45:00Z", "closedAtCommit": "3333333333333333333333333333333333333333",
-    "deferral": { "id": "2026-10-04-session-refresh-signout-race", "path": "~/.docket/deferrals/2026-10-04-session-refresh-signout-race.md" } },
-  "reply": { "status": "drafted", "draft": "Valid. Deferred to a follow-up PR after this one lands, since it touches every token writer.", "targetSourceId": "gh:comment:9001", "resolveThread": false },
-  "createdAt": "2026-10-04T09:31:00Z", "updatedAt": "2026-10-04T12:45:00Z"
+  "resolution": {
+    "outcome": "deferred",
+    "summary": "Deferred: session generation counter, own PR after #42.",
+    "reason": "Out of scope for a retry fix; do it in its own PR after #42 lands.",
+    "closedAt": "2026-10-04T12:45:00Z",
+    "closedAtCommit": "3333333333333333333333333333333333333333",
+    "deferral": {
+      "id": "2026-10-04-session-refresh-signout-race",
+      "path": "~/.docket/deferrals/2026-10-04-session-refresh-signout-race.md"
+    }
+  },
+  "reply": {
+    "status": "drafted",
+    "draft": "Valid. Deferred to a follow-up PR after this one lands, since it touches every token writer.",
+    "targetSourceId": "gh:comment:9001",
+    "resolveThread": false
+  },
+  "createdAt": "2026-10-04T09:31:00Z",
+  "updatedAt": "2026-10-04T12:45:00Z"
 }

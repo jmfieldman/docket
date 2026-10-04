@@ -5,29 +5,93 @@
   "description": "One line of events.jsonl. Append-only. head is the worktree HEAD when the event occurred.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ts", "head", "actor", "type"],
+  "required": [
+    "ts",
+    "head",
+    "actor",
+    "type"
+  ],
   "properties": {
-    "ts": { "$ref": "common.schema.json#/$defs/timestamp" },
-    "head": { "$ref": "common.schema.json#/$defs/sha" },
-    "actor": { "enum": ["ingest", "research", "discuss", "ui", "dispatcher", "applier", "reply", "deferrals", "cli"] },
-    "type": {
+    "ts": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "head": {
+      "$ref": "common.schema.json#/$defs/sha"
+    },
+    "actor": {
       "enum": [
-        "unit_created", "unit_marked_stale", "pr_attached", "unit_viewed",
-        "source_added", "source_changed", "source_deleted",
-        "finding_created", "finding_merged", "finding_updated", "stale_flag_set", "stale_flag_cleared",
-        "state_changed", "research_written", "options_revised",
-        "discussion_started", "discussion_entry", "discussion_ended",
-        "decision_written", "queued", "apply_started", "apply_committed", "verification_written", "apply_bounced",
-        "finding_closed", "finding_reopened", "deferral_written",
-        "reply_drafted", "reply_approved", "reply_posted"
+        "ingest",
+        "research",
+        "discuss",
+        "ui",
+        "session",
+        "dispatcher",
+        "applier",
+        "reply",
+        "deferrals",
+        "cli"
       ]
     },
-    "findingId": { "$ref": "common.schema.json#/$defs/findingId" },
-    "sourceId": { "$ref": "common.schema.json#/$defs/sourceId" },
-    "iteration": { "type": "integer", "minimum": 1 },
-    "from": { "$ref": "common.schema.json#/$defs/state" },
-    "to": { "$ref": "common.schema.json#/$defs/state" },
-    "rev": { "type": "integer", "minimum": 0 },
-    "data": { "type": "object" }
+    "type": {
+      "enum": [
+        "unit_created",
+        "unit_marked_stale",
+        "pr_attached",
+        "unit_viewed",
+        "unit_paused",
+        "unit_resumed",
+        "remote_checked",
+        "source_added",
+        "source_changed",
+        "source_deleted",
+        "finding_created",
+        "finding_merged",
+        "finding_updated",
+        "stale_flag_set",
+        "stale_flag_cleared",
+        "state_changed",
+        "research_written",
+        "options_revised",
+        "triage_written",
+        "discussion_started",
+        "discussion_entry",
+        "discussion_ended",
+        "decision_written",
+        "queued",
+        "apply_started",
+        "apply_committed",
+        "verification_written",
+        "apply_bounced",
+        "finding_closed",
+        "finding_reopened",
+        "deferral_written",
+        "reply_drafted",
+        "reply_approved",
+        "reply_posted"
+      ]
+    },
+    "findingId": {
+      "$ref": "common.schema.json#/$defs/findingId"
+    },
+    "sourceId": {
+      "$ref": "common.schema.json#/$defs/sourceId"
+    },
+    "iteration": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "from": {
+      "$ref": "common.schema.json#/$defs/state"
+    },
+    "to": {
+      "$ref": "common.schema.json#/$defs/state"
+    },
+    "rev": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "data": {
+      "type": "object"
+    }
   }
 }

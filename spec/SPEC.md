@@ -63,6 +63,45 @@ Skills and the plugin never edit these files directly. They call the `docket` CL
 
 Each finding has a `rev` counter. A writer passes the `rev` that it read. If the stored `rev` is different, the CLI rejects the write, and the writer must read the finding again. The CLI writes each file atomically: it writes a temporary file, then renames it.
 
+## Activation
+
+Docket is dormant in a worktree until the user starts it.
+
+### Enabled, paused and dormant
+
+| Condition | Docket state | Behavior |
+|---|---|---|
+| No `docket/` directory | Dormant | No skill acts. No hook injects anything. Nothing polls GitHub. |
+| `unit.status` is `paused` | Dormant | Same as above. The data stays. |
+| `unit.status` is `active` | Enabled | Skills and hooks act, including in ad-hoc sessions. |
+
+Only two actions create a docket: the **Start docket** button in the panel, and the explicit `/docket-start` command. Both run `docket start`. No other skill, hook or command creates the `docket/` directory.
+
+**Pause** sets `status` to `paused`. **Resume** sets it to `active`. Deleting the worktree deletes the docket.
+
+### How docket stays dormant
+
+Skill instructions alone cannot keep an agent dormant, because the agent selects a skill from its description. Docket uses three layers:
+
+1. **Session hook.** A `SessionStart` hook runs `docket status`. If the docket is dormant, the hook injects nothing, and the agent has no information about docket in that session. If the docket is enabled, the hook injects a short brief: the open findings and how to record work with the CLI.
+2. **Gate in every skill.** The first step of every skill is `docket status`. If the docket is dormant, the skill stops, says so in one line, and writes nothing.
+3. **Explicit-only skills.** `docket-start` and `docket-ingest` run only when the user names them. Automatic selection is turned off in their frontmatter.
+
+### Ad-hoc sessions
+
+When the docket is enabled, an agent session that the user started for another reason can record docket work. Its limits:
+
+- It updates existing findings only. It records an iteration with `origin: session`, its commits and its verification, and it can close the finding as `completed`.
+- It does not create findings. If it notices a new issue, it tells the user and writes nothing.
+- It obeys the single-applier rule. If `unit.applier.state` is `running`, it warns the user before it edits code.
+- After it commits, it sets the stale flag on open findings whose `location` overlaps the changed lines.
+
+The panel shows `origin: session` iterations with an "inferred" badge. The user can reopen the finding in one action if the agent linked the wrong one.
+
+### Ingest triggers
+
+Ingest runs only when the user triggers it: from the panel, or with `/docket-ingest`. When the docket is enabled, the panel can check the PR for sources newer than `unit.lastIngest`. It records the result in `unit.remoteCheck` and shows "N new" on the re-ingest control. The check never ingests.
+
 ## Sources
 
 A source is one unit of reviewer output. Docket identifies a source by where the output came from, never by its format. This rule makes docket independent of the reviewer.
@@ -121,6 +160,46 @@ Each option has `effort` and `blastRadius`. These measure different things: a re
 
 `blastRadius` also records `estimatedFiles`, `areas`, and the booleans `publicApi`, `migration` and `featureFlag`.
 
+## Triage
+
+Each researched finding sits on two axes. Research writes both scores, each with a reason of 140 characters or fewer. Discussion rewrites them when it changes the options.
+
+| Score | Axis | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|---|
+| `complexity` | The recommended option, simple to complicated | trivial | modest | involved | major |
+| `confidence` | Certainty that the recommended option is right | unclear | split | likely | certain |
+
+- **Complexity** combines the recommended option's effort, blast radius, and how hard the change is to get right. A 40-file mechanical rename is broad but can be `modest`. A 3-line change to concurrency logic can be `involved`.
+- **Confidence** is about the recommendation, not the verdict. "Two good options with a real trade-off" is `split`. "Needs a product answer or more information" is `unclear`. A finding that is not valid, with a clear "acknowledge" recommendation, has high confidence.
+
+### Lanes
+
+The CLI derives one lane from the two scores. The lane name says what the user does next.
+
+| | Confidence 3-4 | Confidence 1-2 |
+|---|---|---|
+| **Complexity 1-2** | `quick`: accept the recommendation | `decide`: small change, but a judgment call |
+| **Complexity 3-4** | `scope`: direction is clear, the work is large. Fix now or defer. | `dig`: discuss before deciding |
+
+Each score has 4 levels, so each lane boundary falls between levels 2 and 3. No score is ambiguous.
+
+### Panel presentation
+
+- Open findings group by lane in this order: `quick`, `decide`, `scope`, `dig`. The fast decisions come first. Inside a lane, findings sort by assessed severity, then by `createdAt`.
+- Each card shows the lane as a colored chip and the two scores as two 4-segment meters, labeled "Complexity" and "Confidence", with the level name. The reasons show on hover and in the expanded card.
+- The primary action changes with the lane:
+
+| Lane | Primary action | Card shows by default |
+|---|---|---|
+| `quick` | **Accept** (quick fix, or acknowledge when the recommendation is acknowledge) | Title, recommendation title, one-line reason |
+| `decide` | Choose an option | Title, all options as compact rows |
+| `scope` | **Fix now** or **Defer** | Title, recommended option with its blast radius |
+| `dig` | **Discuss** | Title, summary, open questions |
+
+- The `quick` group has a bulk control: **Accept all (N)**. It opens a checklist with every item selected. The user clears any item, then confirms. Each accepted item becomes an iteration with `origin: quick`.
+- When discussion changes the scores, the card moves to its new lane. A `dig` finding often becomes `quick` after one or two questions.
+- Severity is separate from the lane. It shows as a text badge, colored only for `critical` and `high`.
+
 ## Finding states
 
 ```
@@ -160,7 +239,8 @@ The user never sets `completed`. The applier sets it after it commits the fix an
 
 Each decision starts an iteration. The finding keeps all iterations in `iterations[]`, oldest first. An iteration records:
 
-- the decision (option, kind, instruction, and whether it was a quick fix),
+- where the decision came from (`origin`: `panel`, `quick`, or `session`),
+- the decision (option, kind, instruction),
 - the head commit when the decision was made,
 - the queue position, the commits the applier made, and the verification result,
 - the outcome and a one-line summary.
@@ -198,7 +278,7 @@ Research and discussion only read code, so they can run in parallel. Only the ap
 6. If verification passes, it closes the finding as `completed` and writes `resolution.summary`.
 7. After each commit, it sets the stale flag on open findings whose `location` overlaps the changed lines.
 
-A quick fix records the decision, queues the finding, and starts the applier if it is idle. It does not skip the queue.
+A quick fix records the decision with `origin: quick`, queues the finding, and starts the applier if it is idle. It does not skip the queue.
 
 The applier commits. It never pushes. The user pushes.
 

@@ -39,6 +39,14 @@ function check(schema, label, value) {
 }
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
+// SPEC.md "Lanes": the boundary on both axes falls between levels 2 and 3.
+function laneFor({ complexity, confidence }) {
+  const simple = complexity <= 2
+  const confident = confidence >= 3
+  if (simple) return confident ? 'quick' : 'decide'
+  return confident ? 'scope' : 'dig'
+}
+
 function validateWorktree(dir, name) {
   check('unit.schema.json', `${name}/unit.json`, readJson(join(dir, 'unit.json')))
   const sources = readJson(join(dir, 'sources.json'))
@@ -62,6 +70,11 @@ function validateWorktree(dir, name) {
       fail(label, `resolution.outcome ${finding.resolution.outcome} does not match state ${finding.state}`)
     }
     if (closed && finding.stale) fail(label, 'a closed finding must not carry the stale flag')
+
+    if (finding.research && !finding.triage) fail(label, 'a researched finding needs triage')
+    if (finding.triage && finding.triage.lane !== laneFor(finding.triage)) {
+      fail(label, `lane ${finding.triage.lane} does not match scores (expected ${laneFor(finding.triage)})`)
+    }
 
     finding.iterations.forEach((iteration, index) => {
       if (iteration.n !== index + 1) fail(label, `iteration ${index + 1} has n=${iteration.n}`)

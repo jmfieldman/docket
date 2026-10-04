@@ -5,67 +5,185 @@
   "description": "One docket per git worktree. Stored at $(git rev-parse --git-dir)/docket/unit.json.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "repo", "branch", "worktreePath", "firstSeenHead", "nextFindingNumber", "createdAt", "updatedAt"],
+  "required": [
+    "schemaVersion",
+    "status",
+    "startedAt",
+    "repo",
+    "branch",
+    "worktreePath",
+    "firstSeenHead",
+    "nextFindingNumber",
+    "createdAt",
+    "updatedAt"
+  ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "active",
+        "paused"
+      ],
+      "description": "The docket exists only after the user starts it. paused makes every skill and hook dormant again without deleting data."
+    },
+    "startedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "pausedAt": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        }
+      ]
+    },
     "repo": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["remoteUrl"],
+      "required": [
+        "remoteUrl"
+      ],
       "properties": {
-        "remoteUrl": { "type": "string" },
-        "owner": { "type": "string" },
-        "name": { "type": "string" }
+        "remoteUrl": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
       }
     },
-    "branch": { "type": "string", "minLength": 1 },
-    "worktreePath": { "type": "string", "minLength": 1 },
-    "firstSeenHead": { "$ref": "common.schema.json#/$defs/sha" },
+    "branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worktreePath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "firstSeenHead": {
+      "$ref": "common.schema.json#/$defs/sha"
+    },
     "pr": {
       "description": "Null until a PR exists for the branch.",
       "oneOf": [
-        { "type": "null" },
+        {
+          "type": "null"
+        },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["number", "url"],
+          "required": [
+            "number",
+            "url"
+          ],
           "properties": {
-            "number": { "type": "integer", "minimum": 1 },
-            "url": { "type": "string" }
+            "number": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "url": {
+              "type": "string"
+            }
           }
         }
       ]
     },
     "lastIngest": {
       "oneOf": [
-        { "type": "null" },
+        {
+          "type": "null"
+        },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["at", "head"],
+          "required": [
+            "at",
+            "head"
+          ],
           "properties": {
-            "at": { "$ref": "common.schema.json#/$defs/timestamp" },
-            "head": { "$ref": "common.schema.json#/$defs/sha" }
+            "at": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "head": {
+              "$ref": "common.schema.json#/$defs/sha"
+            }
+          }
+        }
+      ]
+    },
+    "remoteCheck": {
+      "description": "Last check of the PR for sources newer than lastIngest. Never ingests.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "at",
+            "newSourceCount"
+          ],
+          "properties": {
+            "at": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "newSourceCount": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         }
       ]
     },
     "lastViewedAt": {
       "description": "When the user last viewed the docket. Findings created after it show as new.",
-      "oneOf": [{ "type": "null" }, { "$ref": "common.schema.json#/$defs/timestamp" }]
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        }
+      ]
     },
     "applier": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["state"],
+      "required": [
+        "state"
+      ],
       "properties": {
-        "state": { "enum": ["idle", "running"] },
-        "terminalHandle": { "type": "string" },
-        "since": { "$ref": "common.schema.json#/$defs/timestamp" }
+        "state": {
+          "enum": [
+            "idle",
+            "running"
+          ]
+        },
+        "terminalHandle": {
+          "type": "string"
+        },
+        "since": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        }
       }
     },
-    "nextFindingNumber": { "type": "integer", "minimum": 1 },
-    "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
-    "updatedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+    "nextFindingNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
   }
 }

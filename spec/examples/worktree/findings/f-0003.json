@@ -1,13 +1,44 @@
 {
-  "schemaVersion": 1, "id": "f-0003", "rev": 3, "state": "completed", "stale": null,
+  "schemaVersion": 1,
+  "id": "f-0003",
+  "rev": 3,
+  "state": "completed",
+  "stale": null,
   "title": "Android logs secrets in TokenStore",
   "summary": "The Android TokenStore writes the token to logcat.",
-  "category": "security", "reviewerSeverity": "high",
-  "location": { "path": "android/auth/TokenStore.kt", "symbol": "TokenStore.refresh", "startLine": 37, "commit": "2222222222222222222222222222222222222222" },
+  "category": "security",
+  "reviewerSeverity": "high",
+  "location": {
+    "path": "android/auth/TokenStore.kt",
+    "symbol": "TokenStore.refresh",
+    "startLine": 37,
+    "commit": "2222222222222222222222222222222222222222"
+  },
   "detectedAtCommit": "1111111111111111111111111111111111111111",
-  "sources": [ { "sourceId": "gh:comment:9001", "excerpt": "3. Same logging problem in the Kotlin TokenStore.", "ordinal": 2 } ],
-  "research": null, "discussion": null, "iterations": [],
-  "resolution": { "outcome": "completed", "summary": "Closed by f-0002 iteration 2 (3333333).", "closedAt": "2026-10-04T12:22:00Z", "closedAtCommit": "3333333333333333333333333333333333333333", "resolvedBy": { "findingId": "f-0002", "iteration": 2 } },
-  "reply": { "status": "none" },
-  "createdAt": "2026-10-04T09:31:00Z", "updatedAt": "2026-10-04T12:22:00Z"
+  "sources": [
+    {
+      "sourceId": "gh:comment:9001",
+      "excerpt": "3. Same logging problem in the Kotlin TokenStore.",
+      "ordinal": 2
+    }
+  ],
+  "research": null,
+  "triage": null,
+  "discussion": null,
+  "iterations": [],
+  "resolution": {
+    "outcome": "completed",
+    "summary": "Closed by f-0002 iteration 2 (3333333).",
+    "closedAt": "2026-10-04T12:22:00Z",
+    "closedAtCommit": "3333333333333333333333333333333333333333",
+    "resolvedBy": {
+      "findingId": "f-0002",
+      "iteration": 2
+    }
+  },
+  "reply": {
+    "status": "none"
+  },
+  "createdAt": "2026-10-04T09:31:00Z",
+  "updatedAt": "2026-10-04T12:22:00Z"
 }
