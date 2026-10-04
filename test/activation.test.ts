@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
-import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { assertValid } from '../src/schema.ts'
 import { cli, cliAsync, commit, git, makeRepo, readEvents } from './helpers.ts'
+
+process.env.DOCKET_HOME = mkdtempSync(join(tmpdir(), 'docket-home-'))
 
 let cleanups: Array<() => void> = []
 afterEach(() => {

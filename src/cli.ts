@@ -1,29 +1,92 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
+import { addCommit, bounceTask, completeTask, nextTask, queueSummary, recordSessionWork, writeVerification } from './apply.ts'
+import { closeDeferral, findDeferral, listDeferrals, pickUpDeferral, reopenDeferral } from './deferrals.ts'
 import { EXIT_CODE, pause, rebind, resume, start, status, type Context, type StatusReport } from './docket.ts'
 import { DocketError } from './errors.ts'
+import {
+  addDiscussionEntry,
+  addFinding,
+  attachPr,
+  badInput,
+  clearStale,
+  decide,
+  deleteSource,
+  draftReply,
+  endDiscussion,
+  markViewed,
+  mergeSourceIntoFinding,
+  recordIngest,
+  recordRemoteCheck,
+  reopen,
+  resolveExternally,
+  setReplyStatus,
+  setStale,
+  startDiscussion,
+  updateFinding,
+  upsertSource,
+  writeResearch
+} from './findings.ts'
+import type { OptionKind, Origin } from './types.ts'
+import { brief, listFindings, panelSnapshot } from './view.ts'
+import { withWorkspace, type Workspace } from './workspace.ts'
 
-const USAGE = `Usage: docket [-C <path>] <command> [--json] [--quiet]
+const USAGE = `Usage: docket [-C <path>] <command> [args] [options]
 
-Commands:
-  start     Start docket in this worktree, or resume it if paused
-  status    Show whether docket is active, paused, or not started
-  pause     Make every docket skill and hook dormant; keep the data
-  resume    Make a paused docket active again
-  rebind    Confirm that the branch was renamed
+Activation
+  start | status | pause | resume | rebind
 
-Options:
-  -C <path>   Run as if docket started in <path>
-  --json      Print machine-readable JSON
-  --quiet     Print nothing; use the exit status
-  --no-pr     start: skip the GitHub PR lookup
+Reading
+  list [--state open|closed|all]      Findings, sorted by lane
+  show <id>                           One finding (JSON)
+  snapshot                            Everything the panel needs (JSON)
+  brief [--hook]                      Session brief; prints nothing when dormant
+  view                                Mark findings as seen
 
-Exit status for status: 0 active, 10 not started, 11 paused, 12 branch mismatch, 1 error.`
+Ingest
+  source upsert --data <json>         Record a source; reports new, changed or unchanged
+  source delete <sourceId>
+  source list
+  finding add --data <json>
+  finding merge <id> --data <json>    Add a source to an existing finding
+  finding update <id> --data <json>
+  resolve-external <id> [--reason]
+  ingest done | remote-check --count <n> | pr attach [--number <n> --url <u>]
 
-const COMMANDS: Record<string, (ctx: Context) => StatusReport> = { start, status, pause, resume, rebind }
+Research and discussion
+  research <id> --data <json>         Write research and triage (lane is computed)
+  stale <id> --reason <text> | unstale <id>
+  discuss start <id> [--session-id <s>] [--terminal <t>]
+  discuss entry <id> --data <json>
+  discuss end <id>
 
-function main(argv: string[]): number {
-  const { values, positionals } = parseArgs({
+Decisions and apply
+  decide <id> --option <A-F|custom> [--kind fix|acknowledge|defer] [--instruction <text>] [--origin panel|quick|session]
+  accept <id>...                      Take the recommended option (origin quick)
+  reopen <id> --reason <text>
+  apply next [--terminal <t>] | apply queue
+  apply commit <id> <sha> | apply verify <id> --data <json>
+  apply complete <id> --summary <text> [--also <id,id>] | apply bounce <id> --reason <text>
+  record <id> --data <json>           Record work an ad-hoc session already committed
+
+Replies
+  reply draft <id> --text <t> [--target <sourceId>] [--resolve-thread]
+  reply approve <id> | reply posted <id> --url <u> | reply skip <id>
+
+Deferrals (any directory)
+  deferrals list [--all] | deferrals show <id>
+  deferrals pickup <id> --ref <where> [--by <who>]
+  deferrals done <id> --reason <text> | deferrals drop <id> --reason <text> | deferrals reopen <id>
+
+Options: -C <path>, --json, --quiet, --rev <n> (reject if the finding changed), --data <json | @file | ->
+Exit status: 0 ok, 1 error, 2 bad input, 10 not started, 11 paused, 12 branch mismatch, 13 rev conflict, 14 invalid state, 15 not found.`
+
+type Values = ReturnType<typeof parse>['values']
+
+function parse(argv: string[]) {
+  return parseArgs({
     args: argv,
     allowPositionals: true,
     options: {
@@ -31,31 +94,271 @@ function main(argv: string[]): number {
       json: { type: 'boolean', default: false },
       quiet: { type: 'boolean', default: false },
       'no-pr': { type: 'boolean', default: false },
-      help: { type: 'boolean', short: 'h', default: false }
+      help: { type: 'boolean', short: 'h', default: false },
+      hook: { type: 'boolean', default: false },
+      data: { type: 'string' },
+      rev: { type: 'string' },
+      option: { type: 'string' },
+      kind: { type: 'string' },
+      instruction: { type: 'string' },
+      origin: { type: 'string' },
+      reason: { type: 'string' },
+      summary: { type: 'string' },
+      also: { type: 'string' },
+      terminal: { type: 'string' },
+      'session-id': { type: 'string' },
+      text: { type: 'string' },
+      target: { type: 'string' },
+      'resolve-thread': { type: 'boolean', default: false },
+      url: { type: 'string' },
+      number: { type: 'string' },
+      count: { type: 'string' },
+      state: { type: 'string' },
+      all: { type: 'boolean', default: false },
+      by: { type: 'string' },
+      ref: { type: 'string' }
     }
   })
+}
+
+function readData(values: Values): any {
+  const raw = values.data
+  if (raw === undefined) badInput('--data is required')
+  const text = raw === '-' ? readFileSync(0, 'utf8') : raw.startsWith('@') ? readFileSync(raw.slice(1), 'utf8') : raw
+  try {
+    return JSON.parse(text)
+  } catch {
+    badInput('--data is not valid JSON')
+  }
+}
+
+function rev(values: Values): number | undefined {
+  if (values.rev === undefined) return undefined
+  const n = Number(values.rev)
+  if (!Number.isInteger(n) || n < 0) badInput('--rev must be a non-negative integer')
+  return n
+}
+
+function need(value: string | undefined, name: string): string {
+  if (!value) badInput(`${name} is required`)
+  return value
+}
+
+function unpushedCommits(cwd: string): number | null {
+  try {
+    return Number(execFileSync('git', ['rev-list', '--count', '@{upstream}..HEAD'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim())
+  } catch {
+    return null
+  }
+}
+
+function lookupPr(cwd: string): { number: number; url: string } {
+  try {
+    const out = execFileSync('gh', ['pr', 'view', '--json', 'number,url'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 10_000 })
+    return JSON.parse(out)
+  } catch {
+    throw new DocketError('not_found', 'gh found no PR for this branch; pass --number and --url', 15)
+  }
+}
+
+const ACTIVATION: Record<string, (ctx: Context) => StatusReport> = { start, status, pause, resume, rebind }
+
+function humanList(result: ReturnType<typeof listFindings>): string {
+  if (result.findings.length === 0) return 'No findings.'
+  const meter = (n: number | null) => (n === null ? '····' : '█'.repeat(n) + '·'.repeat(4 - n))
+  return result.findings
+    .map((s) => {
+      const lane = (s.lane ?? (s.open ? 'new' : s.state)).padEnd(19)
+      const tail = s.open ? (s.recommended ? `→ ${s.recommended.id} ${s.recommended.title}` : '') : (s.resolutionSummary ?? '')
+      return `${s.id}  ${lane} cx ${meter(s.complexity)} cf ${meter(s.confidence)}  ${s.title}${s.stale ? '  [stale]' : ''}${s.isNew ? '  [new]' : ''}\n         ${tail}`
+    })
+    .join('\n')
+}
+
+function run(ctx: Context, values: Values, args: string[]): { output: unknown; human?: string } {
+  const [command, sub, ...rest] = args
+  const write = <T>(fn: (ws: Workspace) => T) => withWorkspace(ctx, 'write', fn)
+  const read = <T>(fn: (ws: Workspace) => T) => withWorkspace(ctx, 'read', fn)
+  const id = sub
+
+  switch (command) {
+    case 'list': {
+      const which = (values.state ?? 'all') as 'open' | 'closed' | 'all'
+      if (!['open', 'closed', 'all'].includes(which)) badInput('--state must be open, closed or all')
+      const result = read((ws) => listFindings(ws, which))
+      return { output: result, human: humanList(result) }
+    }
+    case 'show':
+      return { output: read((ws) => ws.readFinding(need(id, 'finding id'))) }
+    case 'snapshot':
+      return { output: read((ws) => panelSnapshot(ws, unpushedCommits(ws.worktree.root))) }
+    case 'brief': {
+      const text = brief(ctx, (fn) => read(fn))
+      return { output: { brief: text }, human: text }
+    }
+    case 'view':
+      return { output: write(markViewed) }
+    case 'source':
+      if (sub === 'upsert') return { output: write((ws) => upsertSource(ws, readData(values))) }
+      if (sub === 'delete') return { output: write((ws) => deleteSource(ws, need(rest[0], 'sourceId'))) }
+      if (sub === 'list') return { output: read((ws) => ws.readSources()) }
+      break
+    case 'finding': {
+      const target = rest[0]
+      if (sub === 'add') return { output: write((ws) => addFinding(ws, readData(values))) }
+      if (sub === 'merge') return { output: write((ws) => mergeSourceIntoFinding(ws, need(target, 'finding id'), readData(values), rev(values))) }
+      if (sub === 'update') return { output: write((ws) => updateFinding(ws, need(target, 'finding id'), readData(values), rev(values))) }
+      break
+    }
+    case 'resolve-external':
+      return { output: write((ws) => resolveExternally(ws, need(id, 'finding id'), values.reason)) }
+    case 'ingest':
+      if (sub === 'done') return { output: write(recordIngest) }
+      break
+    case 'remote-check':
+      return { output: write((ws) => recordRemoteCheck(ws, Number(need(values.count, '--count')))) }
+    case 'pr':
+      if (sub === 'attach') {
+        return {
+          output: write((ws) =>
+            attachPr(ws, values.number ? { number: Number(values.number), url: need(values.url, '--url') } : lookupPr(ws.worktree.root))
+          )
+        }
+      }
+      break
+    case 'research':
+      return { output: write((ws) => writeResearch(ws, need(id, 'finding id'), readData(values), rev(values))) }
+    case 'stale':
+      return { output: write((ws) => setStale(ws, need(id, 'finding id'), need(values.reason, '--reason'))) }
+    case 'unstale':
+      return { output: write((ws) => clearStale(ws, need(id, 'finding id'))) }
+    case 'discuss': {
+      const target = need(rest[0], 'finding id')
+      if (sub === 'start') return { output: write((ws) => startDiscussion(ws, target, { sessionId: values['session-id'], terminalHandle: values.terminal })) }
+      if (sub === 'entry') return { output: write((ws) => addDiscussionEntry(ws, target, readData(values), rev(values))) }
+      if (sub === 'end') return { output: write((ws) => endDiscussion(ws, target)) }
+      break
+    }
+    case 'decide': {
+      const extra = values.data ? readData(values) : {}
+      return {
+        output: write((ws) =>
+          decide(
+            ws,
+            need(id, 'finding id'),
+            {
+              ...extra,
+              optionId: need(values.option ?? extra.optionId, '--option'),
+              kind: (values.kind ?? extra.kind) as OptionKind | undefined,
+              instruction: values.instruction ?? extra.instruction,
+              origin: (values.origin ?? extra.origin) as Origin | undefined
+            },
+            rev(values)
+          )
+        )
+      }
+    }
+    case 'accept': {
+      const ids = [sub, ...rest].filter((x): x is string => Boolean(x))
+      if (ids.length === 0) badInput('accept needs at least one finding id')
+      return {
+        output: write((ws) =>
+          ids.map((fid) => {
+            const finding = ws.readFinding(fid)
+            const optionId = finding.research?.recommendedOptionId ?? badInput(`${fid} has no recommendation; research it first`)
+            return decide(ws, fid, { optionId, origin: 'quick' })
+          })
+        )
+      }
+    }
+    case 'reopen':
+      return { output: write((ws) => reopen(ws, need(id, 'finding id'), need(values.reason, '--reason'))) }
+    case 'apply': {
+      const target = rest[0]
+      if (sub === 'next') return { output: write((ws) => nextTask(ws, values.terminal)) }
+      if (sub === 'queue') return { output: read(queueSummary) }
+      if (sub === 'commit') return { output: write((ws) => addCommit(ws, need(target, 'finding id'), need(rest[1], 'commit sha'))) }
+      if (sub === 'verify') return { output: write((ws) => writeVerification(ws, need(target, 'finding id'), readData(values))) }
+      if (sub === 'complete') {
+        const also = values.also ? values.also.split(',').map((x) => x.trim()) : []
+        return { output: write((ws) => completeTask(ws, need(target, 'finding id'), { summary: need(values.summary, '--summary'), also })) }
+      }
+      if (sub === 'bounce') return { output: write((ws) => bounceTask(ws, need(target, 'finding id'), need(values.reason, '--reason'))) }
+      break
+    }
+    case 'record':
+      return { output: write((ws) => recordSessionWork(ws, need(id, 'finding id'), readData(values))) }
+    case 'reply': {
+      const target = need(rest[0], 'finding id')
+      if (sub === 'draft') {
+        return { output: write((ws) => draftReply(ws, target, { text: need(values.text, '--text'), targetSourceId: values.target, resolveThread: values['resolve-thread'] || undefined })) }
+      }
+      if (sub === 'approve') return { output: write((ws) => setReplyStatus(ws, target, 'approved')) }
+      if (sub === 'posted') return { output: write((ws) => setReplyStatus(ws, target, 'posted', need(values.url, '--url'))) }
+      if (sub === 'skip') return { output: write((ws) => setReplyStatus(ws, target, 'skipped')) }
+      break
+    }
+    case 'deferrals': {
+      const target = rest[0]
+      if (sub === 'list' || sub === undefined) {
+        const items = listDeferrals(values.all)
+        const human = items.length
+          ? items.map((d) => `${d.frontmatter.id}  ${d.frontmatter.status.padEnd(9)}  ${d.frontmatter.origin.repo.name ?? d.frontmatter.origin.repo.remoteUrl}  ${d.frontmatter.title}`).join('\n')
+          : 'No deferrals.'
+        return { output: items.map((d) => ({ ...d.frontmatter, path: d.path })), human }
+      }
+      if (sub === 'show') {
+        const d = findDeferral(need(target, 'deferral id'))
+        return { output: { ...d.frontmatter, path: d.path, body: d.body }, human: readFileSync(d.path, 'utf8') }
+      }
+      if (sub === 'pickup') return { output: pickUpDeferral(need(target, 'deferral id'), { ref: need(values.ref, '--ref'), by: values.by }, ctx.now()).frontmatter }
+      if (sub === 'done' || sub === 'drop') {
+        return { output: closeDeferral(need(target, 'deferral id'), sub === 'done' ? 'done' : 'dropped', need(values.reason, '--reason'), ctx.now()).frontmatter }
+      }
+      if (sub === 'reopen') return { output: reopenDeferral(need(target, 'deferral id')).frontmatter }
+      break
+    }
+  }
+  badInput(`unknown command: ${args.join(' ')}`)
+}
+
+function main(argv: string[]): number {
+  let values: Values
+  let positionals: string[]
+  try {
+    ;({ values, positionals } = parse(argv))
+  } catch (error) {
+    console.error(`docket: ${(error as Error).message}`)
+    return 2
+  }
   const name = positionals[0]
   if (values.help || !name) {
     console.log(USAGE)
-    return name || values.help ? 0 : 1
+    return values.help ? 0 : 2
   }
-  const command = COMMANDS[name]
-  if (!command) {
-    console.error(`docket: unknown command ${name}\n\n${USAGE}`)
-    return 1
-  }
-
   const ctx: Context = {
     cwd: values.C ?? process.cwd(),
     now: () => process.env.DOCKET_NOW ?? new Date().toISOString(),
     prLookup: !values['no-pr'] && process.env.DOCKET_NO_GH !== '1'
   }
+
   try {
-    const result = command(ctx)
-    if (values.json) console.log(JSON.stringify(result, null, 2))
-    else if (!values.quiet) console.log(result.movedStaleTo ? `${result.message}\nOld docket: ${result.movedStaleTo}` : result.message)
-    return name === 'status' ? EXIT_CODE[result.state] : 0
+    const activation = ACTIVATION[name]
+    if (activation) {
+      const result = activation(ctx)
+      if (values.json) console.log(JSON.stringify(result, null, 2))
+      else if (!values.quiet) console.log(result.movedStaleTo ? `${result.message}\nOld docket: ${result.movedStaleTo}` : result.message)
+      return name === 'status' ? EXIT_CODE[result.state] : 0
+    }
+    const { output, human } = run(ctx, values, positionals)
+    if (values.quiet) return 0
+    if (human !== undefined && !values.json) {
+      if (human) console.log(human)
+    } else console.log(JSON.stringify(output, null, 2))
+    return 0
   } catch (error) {
+    // The hook must never fail a session: a dormant or broken docket prints nothing.
+    if (name === 'brief' && values.hook) return 0
     if (!(error instanceof DocketError)) throw error
     if (values.json) console.log(JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2))
     else if (!values.quiet) console.error(`docket: ${error.message}`)

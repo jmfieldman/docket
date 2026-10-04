@@ -55,15 +55,15 @@ export const EXIT_CODE: Record<DocketState, number> = {
 }
 
 export const docketDirFor = (worktree: WorktreeInfo): string => join(worktree.gitDir, 'docket')
-const lockDirFor = (worktree: WorktreeInfo): string => join(worktree.gitDir, 'docket.lock')
+export const lockDirFor = (worktree: WorktreeInfo): string => join(worktree.gitDir, 'docket.lock')
 
-function appendEvent(docketDir: string, ctx: Context, head: string, actor: EventActor, type: string, extra: Record<string, unknown> = {}): void {
+export function appendEvent(docketDir: string, ctx: Context, head: string, actor: EventActor, type: string, extra: Record<string, unknown> = {}): void {
   const event = { ts: ctx.now(), head, actor, type, ...extra }
   assertValid('event', event)
   appendLine(join(docketDir, 'events.jsonl'), event)
 }
 
-function writeUnit(docketDir: string, unit: Unit): void {
+export function writeUnit(docketDir: string, unit: Unit): void {
   assertValid('unit', unit)
   writeJsonAtomic(join(docketDir, 'unit.json'), unit)
 }
@@ -83,7 +83,7 @@ function report(state: DocketState, docketDir: string, worktree: WorktreeInfo, u
  * guard from SPEC.md. Must run under the lock, because it can move a stale
  * docket aside.
  */
-function resolve(ctx: Context, worktree: WorktreeInfo): StatusReport {
+export function resolve(ctx: Context, worktree: WorktreeInfo): StatusReport {
   const docketDir = docketDirFor(worktree)
   const unit = readUnit(docketDir)
   if (!unit) return report('not_started', docketDir, worktree, null, 'Docket is not started in this worktree.')

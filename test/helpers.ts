@@ -5,11 +5,15 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'cli.ts')
-const ENV = { ...process.env, DOCKET_NO_GH: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' }
+// Read the environment on every call: tests set DOCKET_HOME after this module loads.
+const env = () => {
+  if (!process.env.DOCKET_HOME) throw new Error('tests must set DOCKET_HOME so nothing touches the real ~/.docket')
+  return { ...process.env, DOCKET_NO_GH: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' }
+}
 
 export function git(cwd: string, ...args: string[]): string {
   return execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', '-c', 'init.defaultBranch=main', ...args], {
-    cwd, encoding: 'utf8', env: ENV
+    cwd, encoding: 'utf8', env: env()
   }).trim()
 }
 
@@ -48,7 +52,7 @@ export interface CliResult {
 
 export function cli(cwd: string, ...args: string[]): CliResult {
   try {
-    const stdout = execFileSync(process.execPath, [CLI, ...args], { cwd, encoding: 'utf8', env: ENV, stdio: ['ignore', 'pipe', 'pipe'] })
+    const stdout = execFileSync(process.execPath, [CLI, ...args], { cwd, encoding: 'utf8', env: env(), stdio: ['ignore', 'pipe', 'pipe'] })
     return { code: 0, stdout, stderr: '', json: () => JSON.parse(stdout) }
   } catch (error) {
     const e = error as { status: number; stdout: string; stderr: string }
@@ -58,7 +62,7 @@ export function cli(cwd: string, ...args: string[]): CliResult {
 
 export function cliAsync(cwd: string, ...args: string[]): Promise<number> {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [CLI, ...args], { cwd, env: ENV, stdio: 'ignore' })
+    const child = spawn(process.execPath, [CLI, ...args], { cwd, env: env(), stdio: 'ignore' })
     child.on('exit', (code) => resolve(code ?? 1))
   })
 }
