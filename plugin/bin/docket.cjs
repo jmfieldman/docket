@@ -17729,12 +17729,17 @@ function checkOptions(options, recommendedOptionId) {
   if (new Set(ids).size !== ids.length) badInput("option ids must be unique");
   if (!ids.includes(recommendedOptionId)) badInput(`recommendedOptionId ${recommendedOptionId} is not one of ${ids.join(", ")}`);
 }
+function rankOptions(options, recommendedOptionId) {
+  const recommended = options.find((o) => o.id === recommendedOptionId);
+  const ordered = [recommended, ...options.filter((o) => o !== recommended)];
+  return { options: ordered.map((o, i) => ({ ...o, id: String.fromCharCode(65 + i) })), recommendedOptionId: "A" };
+}
 function writeResearch(ws, id, input, rev2) {
   const finding2 = ws.readFinding(id);
   if (!isOpen(finding2.state) || finding2.state === "queued" || finding2.state === "fixing") invalidState(finding2, "research");
   if (!input?.research || !input.triage) badInput("research and triage are required");
   checkOptions(input.research.options, input.research.recommendedOptionId);
-  finding2.research = { ...input.research, researchedAt: ws.now, researchedAtCommit: ws.head };
+  finding2.research = { ...input.research, ...rankOptions(input.research.options, input.research.recommendedOptionId), researchedAt: ws.now, researchedAtCommit: ws.head };
   finding2.triage = buildTriage(ws, input.triage);
   if (input.explanation !== void 0) finding2.explanation = input.explanation;
   if (input.severityRationale !== void 0) finding2.severityRationale = input.severityRationale;
@@ -17786,7 +17791,7 @@ function addDiscussionEntry(ws, id, input, rev2) {
     const options = input.options ?? finding2.research.options;
     const recommended = input.recommendedOptionId ?? finding2.research.recommendedOptionId;
     checkOptions(options, recommended);
-    finding2.research = { ...finding2.research, options, recommendedOptionId: recommended };
+    finding2.research = { ...finding2.research, ...rankOptions(options, recommended) };
   }
   if (input.triage) finding2.triage = buildTriage(ws, input.triage);
   finding2.discussion.entries.push(

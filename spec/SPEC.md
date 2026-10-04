@@ -149,7 +149,9 @@ Each finding carries text for two reading speeds.
 
 ### Options
 
-Research writes 2 to 6 options. Each option has a `kind`:
+Research writes 2 to 6 options, in order of preference. The CLI letters them by preference when it stores them: the recommended option is always `A`, the next best `B`, and so on. A discussion that revises the options gets the same lettering.
+
+Each option has a `kind`:
 
 | `kind` | Result when chosen |
 |---|---|

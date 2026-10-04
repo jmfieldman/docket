@@ -399,49 +399,80 @@ export function register(on) {
       if (open) detail(s)
     }
 
+    // The expanded finding: a framed block of labeled sections. Indented text
+    // uses Box padding, so wrapped lines keep their indent.
     const detail = (s) => {
       const cached = details[s.id]
       if (!cached) {
-        dim('   Loading…')
+        rows.push(Box({ paddingLeft: 4, children: [Text({ dimColor: true, children: ['Loading…'] })] }))
         return
       }
       const f = cached.data.finding
       const sources = cached.data.sources || {}
-      // Queued findings stay editable: pick another option, or take them out of the queue.
-      const editable = active && s.open && f.state !== 'fixing'
-      const queuedAt = f.state === 'queued' ? (f.iterations.at(-1) || {}).queue : null
-      rows.push(Markdown({ key: 'md-summary-' + f.id, text: capped(f.summary || '', 4000) }))
-      if (f.location) dim('   ' + f.location.path + (f.location.startLine ? ':' + f.location.startLine : '') + (f.location.symbol ? '  ' + f.location.symbol : ''))
-      if (f.severityRationale) dim('   Why it matters: ' + f.severityRationale)
-      if (f.state === 'queued') {
-        line('Queued' + (queuedAt ? ' at position ' + queuedAt.position : '') + ' with option ' + (f.iterations.at(-1) || {}).decision.optionId + '. Remove it from the queue, or pick another option.', { color: SEVERITY_COLOR.medium })
-        if (active) buttons([Button({ key: 'unqueue-' + f.id, label: 'x: Remove from queue', hotkey: 'x', onPress: () => act($, 'unqueue', { id: f.id }, 'Removed ' + f.id + ' from the queue.') })])
+      const parts = []
+      const blank = () => parts.push(Text({ children: [' '] }))
+      const section = (title) => {
+        if (parts.length) blank()
+        parts.push(Text({ bold: true, color: '#87afd7', children: [title.toUpperCase()] }))
       }
-      if (f.state === 'fixing') dim('   The applier is working on this finding.')
+      const para = (children, style) => parts.push(Box({ paddingLeft: 2, children: [Text({ ...(style || {}), wrap: 'wrap', children })] }))
+      const field = (label, value) => parts.push(Box({
+        flexDirection: 'row',
+        paddingLeft: 2,
+        children: [Box({ width: 7, flexShrink: 0, children: [Text({ dimColor: true, children: [label] })] }), Box({ flexGrow: 1, flexShrink: 1, children: [Text({ wrap: 'wrap', children: [value] })] })]
+      }))
+      const markdown = (key, text) => parts.push(Box({ paddingLeft: 2, children: [Markdown({ key, text: capped(text || '', 4000) })] }))
+      const actions = (list) => parts.push(Box({ flexDirection: 'row', flexWrap: 'wrap', columnGap: 2, paddingLeft: 2, children: list.filter(Boolean) }))
+
+      const last = f.iterations.at(-1) || null
+      const queuedOption = f.state === 'queued' && last ? last.decision.optionId : null
+      // Queued findings stay editable: f toggles the queue, or switches to another option.
+      const editable = active && s.open && f.state !== 'fixing'
+
+      section('Summary')
+      markdown('md-summary-' + f.id, f.summary)
+      if (f.location) field('Where', f.location.path + (f.location.startLine ? ':' + f.location.startLine : '') + (f.location.symbol ? ' · ' + f.location.symbol : ''))
+      if (f.severityRationale) field('Why', f.severityRationale)
+
       if (f.research) {
-        line('Verdict: ' + f.research.verdict.replace('_', ' ') + ' (' + f.research.confidence + ' confidence)', { bold: true })
-        if (f.triage) dim('   ' + f.triage.complexityReason + ' · ' + f.triage.confidenceReason)
-        const selected = choice[f.id] || f.research.recommendedOptionId
+        section('Verdict')
+        para([Text({ bold: true, children: [f.research.verdict.replace('_', ' ')] }), ' · ' + f.research.confidence + ' confidence'])
+        if (f.triage) para([f.triage.complexityReason + ' ' + f.triage.confidenceReason], { dimColor: true })
+
+        section('Options')
+        const selected = choice[f.id] || queuedOption || f.research.recommendedOptionId
         for (const o of f.research.options) {
           const isSel = o.id === selected
+          const isRec = o.id === f.research.recommendedOptionId
           const br = o.blastRadius || {}
           const tag = [o.kind, o.effort, br.level, br.estimatedFiles != null ? '~' + br.estimatedFiles + ' files' : ''].filter(Boolean).join(' · ')
-          rows.push(Box({
+          parts.push(Box({
             flexDirection: 'row',
             columnGap: 1,
+            paddingLeft: 2,
             children: [
               Button({ key: 'opt-' + f.id + '-' + o.id, label: (isSel ? '(•) ' : '( ) ') + o.id + '.', plain: true, dimColor: !isSel, onPress: () => { choice[f.id] = o.id; redraw() } }),
-              Box({ flexGrow: 1, flexShrink: 1, children: [Text({ wrap: 'wrap', dimColor: !isSel, children: [o.title + (o.id === f.research.recommendedOptionId ? ' ★' : ''), Text({ dimColor: true, children: ['  [' + tag + ']'] })] })] })
+              Box({ flexGrow: 1, flexShrink: 1, children: [Text({ wrap: 'wrap', children: [
+                Text({ bold: isSel, dimColor: !isSel && !isRec, children: [o.title] }),
+                isRec ? Text({ color: '#5faf5f', bold: true, children: ['  ★ recommended'] }) : '',
+                o.id === queuedOption ? Text({ color: SEVERITY_COLOR.medium, children: ['  ● queued'] }) : '',
+                Text({ dimColor: true, children: ['  [' + tag + ']'] })
+              ] })] })
             ]
           }))
           if (isSel) {
-            rows.push(Markdown({ key: 'md-opt-' + f.id + '-' + o.id, text: capped(o.description || '', 4000) }))
-            if (o.pros.length) dim('   + ' + o.pros.join('\n   + '))
-            if (o.cons.length) dim('   − ' + o.cons.join('\n   − '))
+            parts.push(Box({ paddingLeft: 8, flexDirection: 'column', children: [
+              Markdown({ key: 'md-opt-' + f.id + '-' + o.id, text: capped(o.description || '', 4000) }),
+              ...o.pros.map((x) => Text({ wrap: 'wrap', children: [Text({ color: '#5faf5f', children: ['+ '] }), x] })),
+              ...o.cons.map((x) => Text({ wrap: 'wrap', children: [Text({ color: '#d75f5f', children: ['− '] }), x] }))
+            ] }))
           }
         }
+
         if (editable) {
-          rows.push(Input({
+          section('Decide')
+          if (f.state === 'queued') para(['Queued' + (last && last.queue ? ' at position ' + last.queue.position : '') + ' with option ' + queuedOption + '.'], { color: SEVERITY_COLOR.medium })
+          parts.push(Box({ paddingLeft: 2, children: [Input({
             key: 'note-' + f.id,
             label: 'Note',
             placeholder: 'Extra direction, or why you leave or defer it',
@@ -449,11 +480,16 @@ export function register(on) {
             submitLabel: 'save',
             onInput: (value) => { notes[f.id] = value },
             onSubmit: (value) => { notes[f.id] = value; message = 'Note saved for ' + f.id + '.'; redraw() }
-          }))
+          })] }))
           const chosen = f.research.options.find((o) => o.id === selected) || {}
           const note = (notes[f.id] || '').trim()
-          buttons([
-            Button({ key: 'decide-' + f.id, label: chosen.kind === 'fix' ? 'f: Queue ' + selected : chosen.kind === 'defer' ? 'f: Defer' : 'f: Leave as is', hotkey: 'f', onPress: async () => {
+          const isQueuedChoice = selected === queuedOption
+          const decideLabel = isQueuedChoice ? 'f: Remove from queue'
+            : chosen.kind === 'fix' ? (queuedOption ? 'f: Queue ' + selected + ' instead' : 'f: Queue ' + selected)
+            : chosen.kind === 'defer' ? 'f: Defer' : 'f: Leave as is'
+          actions([
+            Button({ key: 'decide-' + f.id, label: decideLabel, hotkey: 'f', onPress: async () => {
+              if (isQueuedChoice) return act($, 'unqueue', { id: f.id }, 'Removed ' + f.id + ' from the queue.')
               if (chosen.kind !== 'fix' && !note) {
                 message = 'Add a note saying why, then decide again.'
                 return redraw()
@@ -461,7 +497,8 @@ export function register(on) {
               delete notes[f.id]
               await act($, 'decide', { id: f.id, optionId: selected, instruction: note || undefined }, (chosen.kind === 'fix' ? 'Queued ' : chosen.kind === 'defer' ? 'Deferred ' : 'Acknowledged ') + f.id + '.')
             } }),
-            chosen.kind === 'fix' ? Button({ key: 'quick-' + f.id, label: 'q: Quick fix', hotkey: 'q', onPress: async () => {
+            chosen.kind === 'fix' ? Button({ key: 'quick-' + f.id, label: isQueuedChoice ? 'q: Apply now' : 'q: Quick fix', hotkey: 'q', onPress: async () => {
+              if (isQueuedChoice) return plan($, 'apply')
               if (note) {
                 delete notes[f.id]
                 await act($, 'decide', { id: f.id, optionId: selected, instruction: note, origin: 'quick' }, 'Queued ' + f.id + '.')
@@ -469,7 +506,7 @@ export function register(on) {
               }
               return plan($, 'quickFix', { id: f.id, optionId: selected })
             } }) : null,
-            Button({ key: 'ack-' + f.id, label: 'l: Leave as is (custom)', hotkey: 'l', dimColor: true, onPress: async () => {
+            Button({ key: 'ack-' + f.id, label: 'l: Leave as is', hotkey: 'l', dimColor: true, onPress: async () => {
               if (!note) {
                 message = 'Add a note saying why no change is needed.'
                 return redraw()
@@ -480,29 +517,41 @@ export function register(on) {
             Button({ key: 'discuss-' + f.id, label: f.state === 'discussing' ? 'd: Continue discussion' : 'd: Discuss', hotkey: 'd', onPress: () => plan($, 'discuss', { id: f.id }) }),
             f.stale ? Button({ key: 'unstale-' + f.id, label: 'u: Clear stale', hotkey: 'u', dimColor: true, onPress: () => act($, 'unstale', { id: f.id }, 'Stale flag cleared.') }) : null
           ])
+        } else if (f.state === 'fixing') {
+          section('Status')
+          para(['The applier is working on this finding.'], { color: SEVERITY_COLOR.medium })
         }
       } else if (active && s.open) {
-        buttons([Button({ key: 'research-' + f.id, label: 'e: Research this finding', hotkey: 'e', onPress: () => plan($, 'research', { ids: [f.id] }) })])
+        section('Next')
+        actions([Button({ key: 'research-' + f.id, label: 'e: Research this finding', hotkey: 'e', onPress: () => plan($, 'research', { ids: [f.id] }) })])
       }
+
       if (f.discussion && f.discussion.entries.length) {
-        line('Discussion', { bold: true })
+        section('Discussion')
         for (const entry of f.discussion.entries.slice(-3)) {
-          dim('   Q: ' + entry.question)
-          rows.push(Markdown({ key: 'md-entry-' + f.id + '-' + entry.at, text: capped(entry.answer, 3000) }))
+          para([Text({ bold: true, children: ['Q '] }), entry.question])
+          parts.push(Box({ paddingLeft: 4, children: [Markdown({ key: 'md-entry-' + f.id + '-' + entry.at, text: capped(entry.answer, 3000) })] }))
         }
       }
-      line('Review comments', { bold: true })
+
+      section('Review comments')
       for (const ref of f.sources.slice(0, 3)) {
         const src = sources[ref.sourceId] || {}
-        dim('   “' + capped(ref.excerpt, 3000) + '” — ' + (src.author || ref.sourceId))
+        parts.push(Box({ paddingLeft: 2, flexDirection: 'column', children: [
+          Text({ wrap: 'wrap', italic: true, children: ['“' + capped(ref.excerpt, 3000) + '”'] }),
+          Text({ dimColor: true, children: ['— ' + (src.author || src.title || ref.sourceId)] })
+        ] }))
       }
+
       if (!s.open) {
-        if (f.resolution && f.resolution.reason) dim('   Reason: ' + f.resolution.reason)
-        if (f.resolution && f.resolution.deferral) dim('   Deferral file: ' + f.resolution.deferral.path)
+        section('Resolution')
+        field('Outcome', (OUTCOME[f.state] || f.state) + (f.resolution && f.resolution.summary ? ' — ' + f.resolution.summary : ''))
+        if (f.resolution && f.resolution.reason) field('Reason', f.resolution.reason)
+        if (f.resolution && f.resolution.deferral) field('File', f.resolution.deferral.path)
         if (f.reply && f.reply.status === 'drafted' && active) {
-          line('Reply draft', { bold: true })
-          rows.push(Markdown({ key: 'md-reply-' + f.id, text: capped(replyDrafts[f.id] != null ? replyDrafts[f.id] : f.reply.draft || '', 4000) }))
-          rows.push(Input({
+          section('Reply draft')
+          markdown('md-reply-' + f.id, replyDrafts[f.id] != null ? replyDrafts[f.id] : f.reply.draft || '')
+          parts.push(Box({ paddingLeft: 2, children: [Input({
             key: 'reply-' + f.id,
             label: 'Edit',
             placeholder: 'Type a new reply and press Enter to save it',
@@ -513,17 +562,19 @@ export function register(on) {
               replyDrafts[f.id] = value.trim()
               await act($, 'replyEdit', { id: f.id, text: value.trim() }, 'Reply saved.')
             }
-          }))
-          buttons([
+          })] }))
+          actions([
             Button({ key: 'reply-approve-' + f.id, label: 'v: Approve reply', hotkey: 'v', onPress: () => act($, 'replyApprove', { id: f.id }, 'Reply approved. Press y to post approved replies.') }),
             Button({ key: 'reply-skip-' + f.id, label: 'k: Skip reply', hotkey: 'k', dimColor: true, onPress: () => act($, 'replySkip', { id: f.id }, 'Reply skipped.') })
           ])
         }
         if (active && f.state !== 'resolved_externally') {
-          buttons([Button({ key: 'reopen-' + f.id, label: 'x: Reopen', hotkey: 'x', dimColor: true, onPress: () => act($, 'reopen', { id: f.id, reason: 'Reopened from the Docket pane.' }, 'Reopened ' + f.id + '.') })])
+          blank()
+          actions([Button({ key: 'reopen-' + f.id, label: 'x: Reopen', hotkey: 'x', dimColor: true, onPress: () => act($, 'reopen', { id: f.id, reason: 'Reopened from the Docket pane.' }, 'Reopened ' + f.id + '.') })])
         }
       }
-      gap()
+
+      rows.push(Box({ flexDirection: 'column', borderStyle: 'round', borderDimColor: true, paddingX: 1, marginLeft: 2, marginTop: 1, marginBottom: 1, children: parts }))
     }
 
     if (tab === 'closed') {

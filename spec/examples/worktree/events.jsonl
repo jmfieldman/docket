@@ -1,12 +1,12 @@
 {"ts":"2026-10-04T09:00:00Z","head":"1111111111111111111111111111111111111111","actor":"cli","type":"unit_created"}
 {"ts":"2026-10-04T09:31:00Z","head":"1111111111111111111111111111111111111111","actor":"ingest","type":"source_added","sourceId":"gh:comment:9001"}
 {"ts":"2026-10-04T09:31:00Z","head":"1111111111111111111111111111111111111111","actor":"ingest","type":"finding_created","findingId":"f-0002","sourceId":"gh:comment:9001","to":"new","rev":0}
-{"ts":"2026-10-04T10:00:00Z","head":"1111111111111111111111111111111111111111","actor":"ui","type":"decision_written","findingId":"f-0002","iteration":1,"data":{"optionId":"A","quick":true}}
+{"ts":"2026-10-04T10:00:00Z","head":"1111111111111111111111111111111111111111","actor":"ui","type":"decision_written","findingId":"f-0002","iteration":1,"data":{"optionId":"B","quick":true}}
 {"ts":"2026-10-04T10:05:00Z","head":"2222222222222222222222222222222222222222","actor":"applier","type":"apply_committed","findingId":"f-0002","iteration":1,"data":{"commit":"2222222222222222222222222222222222222222"}}
 {"ts":"2026-10-04T10:05:00Z","head":"2222222222222222222222222222222222222222","actor":"applier","type":"finding_closed","findingId":"f-0002","from":"fixing","to":"completed","rev":6}
 {"ts":"2026-10-04T12:10:00Z","head":"2222222222222222222222222222222222222222","actor":"ingest","type":"finding_reopened","findingId":"f-0002","from":"completed","to":"ready","data":{"reason":"Reviewer reply asks about Android."}}
 {"ts":"2026-10-04T12:22:00Z","head":"3333333333333333333333333333333333333333","actor":"applier","type":"finding_closed","findingId":"f-0003","from":"new","to":"completed","data":{"resolvedBy":"f-0002#2"}}
 {"ts":"2026-10-04T12:45:00Z","head":"3333333333333333333333333333333333333333","actor":"ui","type":"deferral_written","findingId":"f-0005","iteration":1,"data":{"id":"2026-10-04-session-refresh-signout-race"}}
 {"ts":"2026-10-04T16:04:00Z","head":"5555555555555555555555555555555555555555","actor":"discuss","type":"options_revised","findingId":"f-0001","data":{"added":["C"]}}
-{"ts":"2026-10-04T12:16:00Z","head":"2222222222222222222222222222222222222222","actor":"session","type":"decision_written","findingId":"f-0002","iteration":2,"data":{"optionId":"B","origin":"session"}}
+{"ts":"2026-10-04T12:16:00Z","head":"2222222222222222222222222222222222222222","actor":"session","type":"decision_written","findingId":"f-0002","iteration":2,"data":{"optionId":"A","origin":"session"}}
 {"ts":"2026-10-04T17:00:00Z","head":"5555555555555555555555555555555555555555","actor":"ui","type":"remote_checked","data":{"newSourceCount":2}}

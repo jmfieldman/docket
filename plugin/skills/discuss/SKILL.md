@@ -28,7 +28,7 @@ Answer the user's questions with evidence from the code. After each exchange tha
 
 with `question` (the user's question, condensed) and `answer` (your answer, condensed, Markdown).
 
-When the conversation changes the options, include the full revised `options` array and `recommendedOptionId` in the same entry, in the same format the research skill uses. When it changes how complex or how certain the recommended fix is, include `triage` (`complexity`, `complexityReason`, `confidence`, `confidenceReason`, scored as in the research skill). The Docket pane moves the finding to its new lane.
+When the conversation changes the options, include the full revised `options` array and `recommendedOptionId` in the same entry, in the same format and order the research skill uses. Docket re-letters them so the recommendation is `A`: read the result before you refer to an option by letter. When it changes how complex or how certain the recommended fix is, include `triage` (`complexity`, `complexityReason`, `confidence`, `confidenceReason`, scored as in the research skill). The Docket pane moves the finding to its new lane.
 
 ## Decisions
 

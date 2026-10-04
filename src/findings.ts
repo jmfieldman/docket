@@ -281,6 +281,16 @@ function checkOptions(options: Option[], recommendedOptionId: string): void {
   if (!ids.includes(recommendedOptionId)) badInput(`recommendedOptionId ${recommendedOptionId} is not one of ${ids.join(', ')}`)
 }
 
+/**
+ * Letters options by preference: the recommended option becomes A, and the
+ * rest keep their relative order as B, C, ... So A is always the recommendation.
+ */
+export function rankOptions(options: Option[], recommendedOptionId: string): { options: Option[]; recommendedOptionId: string } {
+  const recommended = options.find((o) => o.id === recommendedOptionId) as Option
+  const ordered = [recommended, ...options.filter((o) => o !== recommended)]
+  return { options: ordered.map((o, i) => ({ ...o, id: String.fromCharCode(65 + i) })), recommendedOptionId: 'A' }
+}
+
 export interface ResearchInput {
   research: Omit<Research, 'researchedAt' | 'researchedAtCommit'>
   triage: TriageInput
@@ -294,7 +304,7 @@ export function writeResearch(ws: Workspace, id: string, input: ResearchInput, r
   if (!input?.research || !input.triage) badInput('research and triage are required')
   checkOptions(input.research.options, input.research.recommendedOptionId)
 
-  finding.research = { ...input.research, researchedAt: ws.now, researchedAtCommit: ws.head }
+  finding.research = { ...input.research, ...rankOptions(input.research.options, input.research.recommendedOptionId), researchedAt: ws.now, researchedAtCommit: ws.head }
   finding.triage = buildTriage(ws, input.triage)
   if (input.explanation !== undefined) finding.explanation = input.explanation
   if (input.severityRationale !== undefined) finding.severityRationale = input.severityRationale
@@ -360,7 +370,7 @@ export function addDiscussionEntry(ws: Workspace, id: string, input: DiscussionE
     const options = input.options ?? finding.research.options
     const recommended = input.recommendedOptionId ?? finding.research.recommendedOptionId
     checkOptions(options, recommended)
-    finding.research = { ...finding.research, options, recommendedOptionId: recommended }
+    finding.research = { ...finding.research, ...rankOptions(options, recommended) }
   }
   if (input.triage) finding.triage = buildTriage(ws, input.triage)
   finding.discussion.entries.push(

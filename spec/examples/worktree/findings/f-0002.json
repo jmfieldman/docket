@@ -37,23 +37,6 @@
       {
         "id": "A",
         "kind": "fix",
-        "title": "Remove the log line",
-        "description": "Delete the line on iOS.",
-        "pros": [
-          "Simple"
-        ],
-        "cons": [
-          "Loses refresh tracing"
-        ],
-        "effort": "trivial",
-        "blastRadius": {
-          "level": "surgical",
-          "estimatedFiles": 1
-        }
-      },
-      {
-        "id": "B",
-        "kind": "fix",
         "title": "Log a redacted marker on both platforms",
         "description": "Use redact() on iOS and Android.",
         "pros": [
@@ -70,9 +53,26 @@
             "Auth"
           ]
         }
+      },
+      {
+        "id": "B",
+        "kind": "fix",
+        "title": "Remove the log line",
+        "description": "Delete the line on iOS.",
+        "pros": [
+          "Simple"
+        ],
+        "cons": [
+          "Loses refresh tracing"
+        ],
+        "effort": "trivial",
+        "blastRadius": {
+          "level": "surgical",
+          "estimatedFiles": 1
+        }
       }
     ],
-    "recommendedOptionId": "B",
+    "recommendedOptionId": "A",
     "researchedAt": "2026-10-04T12:10:00Z",
     "researchedAtCommit": "2222222222222222222222222222222222222222"
   },
@@ -91,7 +91,7 @@
       "n": 1,
       "origin": "quick",
       "decision": {
-        "optionId": "A",
+        "optionId": "B",
         "kind": "fix"
       },
       "decidedAt": "2026-10-04T10:00:00Z",
@@ -129,7 +129,7 @@
       "n": 2,
       "origin": "session",
       "decision": {
-        "optionId": "B",
+        "optionId": "A",
         "kind": "fix",
         "instruction": "Use the existing redact() helper."
       },

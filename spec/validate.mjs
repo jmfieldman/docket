@@ -72,6 +72,11 @@ function validateWorktree(dir, name) {
     if (closed && finding.stale) fail(label, 'a closed finding must not carry the stale flag')
 
     if (finding.research && !finding.triage) fail(label, 'a researched finding needs triage')
+    if (finding.research) {
+      const ids = finding.research.options.map((o) => o.id)
+      if (finding.research.recommendedOptionId !== 'A') fail(label, 'the recommended option must be A (options are lettered by preference)')
+      if (ids.some((id, i) => id !== String.fromCharCode(65 + i))) fail(label, `options must be lettered A, B, C ... in order, got ${ids.join(', ')}`)
+    }
     if (finding.triage && finding.triage.lane !== laneFor(finding.triage)) {
       fail(label, `lane ${finding.triage.lane} does not match scores (expected ${laneFor(finding.triage)})`)
     }

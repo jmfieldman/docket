@@ -173,8 +173,11 @@ describe('lifecycle', () => {
 
   it('defers into a self-contained deferral file and walks its lifecycle', () => {
     const f = ok('finding', 'add', '--data', data({ title: 'Refresh races sign out', summary: 'Late refresh restores the session.', location: { path: 'token.ts', symbol: 'refresh', startLine: 3 }, sources: [{ sourceId: 'gh:comment:1', excerpt: '3. race', ordinal: 3 }] }))
-    ok('research', f.id, '--data', research([option('A', 'fix', 'Cancel task'), option('B', 'defer', 'Session generation counter', 'broad')], 'B', 3, 3))
-    const deferred = ok('decide', f.id, '--option', 'B', '--instruction', 'Own PR after this lands.')
+    const researched = ok('research', f.id, '--data', research([option('A', 'fix', 'Cancel task'), option('B', 'defer', 'Session generation counter', 'broad')], 'B', 3, 3))
+    // Options are lettered by preference: the recommended defer option becomes A.
+    assert.deepEqual(researched.research.options.map((o: any) => [o.id, o.title]), [['A', 'Session generation counter'], ['B', 'Cancel task']])
+    assert.equal(researched.research.recommendedOptionId, 'A')
+    const deferred = ok('decide', f.id, '--option', 'A', '--instruction', 'Own PR after this lands.')
     assert.equal(deferred.state, 'deferred')
     const path = deferred.resolution.deferral.path
     assert.ok(path.startsWith(home), `deferral written outside DOCKET_HOME: ${path}`)

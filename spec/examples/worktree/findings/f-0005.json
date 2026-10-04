@@ -32,26 +32,6 @@
     "options": [
       {
         "id": "A",
-        "kind": "fix",
-        "title": "Cancel refreshTask in signOut()",
-        "description": "Keep a handle and cancel it.",
-        "pros": [
-          "Small"
-        ],
-        "cons": [
-          "Needs a session generation check too"
-        ],
-        "effort": "small",
-        "blastRadius": {
-          "level": "contained",
-          "estimatedFiles": 3,
-          "areas": [
-            "Auth"
-          ]
-        }
-      },
-      {
-        "id": "B",
         "kind": "defer",
         "title": "Session generation counter (follow-up PR)",
         "description": "Stamp each refresh with a session generation and drop stale results.",
@@ -70,9 +50,29 @@
             "Networking"
           ]
         }
+      },
+      {
+        "id": "B",
+        "kind": "fix",
+        "title": "Cancel refreshTask in signOut()",
+        "description": "Keep a handle and cancel it.",
+        "pros": [
+          "Small"
+        ],
+        "cons": [
+          "Needs a session generation check too"
+        ],
+        "effort": "small",
+        "blastRadius": {
+          "level": "contained",
+          "estimatedFiles": 3,
+          "areas": [
+            "Auth"
+          ]
+        }
       }
     ],
-    "recommendedOptionId": "B",
+    "recommendedOptionId": "A",
     "researchedAt": "2026-10-04T12:40:00Z",
     "researchedAtCommit": "3333333333333333333333333333333333333333"
   },
@@ -91,7 +91,7 @@
       "n": 1,
       "origin": "panel",
       "decision": {
-        "optionId": "B",
+        "optionId": "A",
         "kind": "defer",
         "instruction": "Out of scope for a retry fix; do it in its own PR after #42 lands."
       },

@@ -63,7 +63,7 @@ For each finding, the subagent must:
 
 ### Options
 
-- Option ids are `A`, `B`, `C` … in order. 2 to 6 options.
+- List the options in order of preference: the recommended option first as `A`, the next best as `B`, and so on. 2 to 6 options. Docket letters them this way even if you do not.
 - A valid finding has at least one `fix` option. Offer the smallest correct fix first, then broader ones.
 - Add an `acknowledge` option when leaving the code as is is defensible. A `not_valid` finding recommends `acknowledge`, and its description says why the reviewer is wrong.
 - Add a `defer` option when the right fix is larger than this branch should carry.

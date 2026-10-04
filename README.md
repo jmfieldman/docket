@@ -38,7 +38,7 @@ Agent work runs as docket skills in the same session: **Ingest** runs `/docket:i
 | Key | Action | Key | Action |
 |---|---|---|---|
 | `1`–`9` | Expand a finding | `q` | Quick fix the expanded finding |
-| `i` | Ingest review comments | `f` | Queue, defer or leave, per the selected option |
+| `i` | Ingest review comments | `f` | Queue the selected option, or remove a queued finding from the queue |
 | `r` | Research new findings | `l` | Leave as is with your note |
 | `a` | Apply the queue | `d` | Discuss the expanded finding |
 | `y` | Draft and post replies | `z` | Accept all quick recommendations |

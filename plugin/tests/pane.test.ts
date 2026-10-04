@@ -194,9 +194,14 @@ test('a queued finding can be taken out of the queue', async ($, on) => {
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'f-f-0001' })
   expect(await ui.find({ type: 'Text', text: /Queued at position 1 with option A/ })).toBeDefined()
-  // The options stay editable, so the user can also pick another one.
-  expect(await ui.find({ key: 'decide-f-0001' })).toBeDefined()
-  await ui.press({ key: 'unqueue-f-0001' })
+  // f toggles: on the queued option it removes the finding from the queue.
+  const toggle = await ui.find({ key: 'decide-f-0001' })
+  expect(toggle?.props.label).toBe('f: Remove from queue')
+  // Picking another option turns f into a switch.
+  await ui.press({ key: 'opt-f-0001-B' })
+  expect((await ui.find({ key: 'decide-f-0001' }))?.props.label).toBe('f: Leave as is')
+  await ui.press({ key: 'opt-f-0001-A' })
+  await ui.press({ key: 'decide-f-0001' })
   const action = calls.find((c) => c[0] === 'action' && c[1] === 'unqueue') as string[]
   expect(JSON.parse(action[3])).toEqual({ id: 'f-0001' })
 })
