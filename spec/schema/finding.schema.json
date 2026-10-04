@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/finding.schema.json",
+  "title": "Docket finding",
+  "description": "One finding. Stored at docket/findings/<id>.json. Each finding moves through its states independently of every other finding.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "rev", "state", "title", "summary", "sources", "createdAt", "updatedAt"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "common.schema.json#/$defs/findingId" },
+    "rev": { "type": "integer", "minimum": 0, "description": "Incremented on every write. Writers pass the rev they read; the CLI rejects a mismatch." },
+    "state": { "$ref": "common.schema.json#/$defs/state" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "summary": { "type": "string", "minLength": 1, "description": "The issue in neutral words, normalized from the reviewer's text." },
+    "category": { "enum": ["bug", "security", "performance", "reliability", "test", "design", "style", "docs", "question", "other"] },
+    "reviewerSeverity": {
+      "enum": ["critical", "high", "medium", "low", "nit", "unknown"],
+      "description": "The severity the reviewer claimed. Research records its own assessment separately."
+    },
+    "location": {
+      "oneOf": [{ "type": "null" }, { "$ref": "common.schema.json#/$defs/location" }]
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Every source that raised this finding. More than one entry means reviewers reported the same issue.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceId", "excerpt"],
+        "properties": {
+          "sourceId": { "$ref": "common.schema.json#/$defs/sourceId" },
+          "excerpt": { "type": "string", "description": "The reviewer's text for this finding, verbatim." },
+          "ordinal": { "type": "integer", "minimum": 0, "description": "Position of this finding inside a multi-finding source." }
+        }
+      }
+    },
+    "research": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/research" }]
+    },
+    "decision": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/decision" }]
+    },
+    "notes": {
+      "type": "array",
+      "description": "Free-text notes from the user, oldest first.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["at", "text"],
+        "properties": {
+          "at": { "$ref": "common.schema.json#/$defs/timestamp" },
+          "text": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "investigation": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["startedAt"],
+          "properties": {
+            "terminalHandle": { "type": "string" },
+            "startedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+            "endedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+          }
+        }
+      ]
+    },
+    "queue": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["position", "queuedAt"],
+          "properties": {
+            "position": { "type": "integer", "minimum": 1 },
+            "queuedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+          }
+        }
+      ]
+    },
+    "application": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "commit": { "$ref": "common.schema.json#/$defs/sha" },
+            "appliedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+            "bounceReason": { "type": "string", "description": "Why the applier set needs_attention." }
+          }
+        }
+      ]
+    },
+    "reply": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/reply" }]
+    },
+    "staleReason": { "oneOf": [{ "type": "null" }, { "type": "string" }] },
+    "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+  },
+  "$defs": {
+    "research": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "confidence", "analysis", "options", "recommendedOptionId", "researchedAt", "researchedAtCommit"],
+      "properties": {
+        "verdict": { "enum": ["valid", "partially_valid", "not_valid", "unclear"] },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "assessedSeverity": { "enum": ["critical", "high", "medium", "low", "nit"] },
+        "analysis": { "type": "string", "description": "Markdown. Why the verdict holds, with references to the code." },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "note"],
+            "properties": {
+              "path": { "type": "string" },
+              "startLine": { "type": "integer", "minimum": 1 },
+              "endLine": { "type": "integer", "minimum": 1 },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/option" }
+        },
+        "recommendedOptionId": { "type": "string", "pattern": "^[A-D]$" },
+        "researchedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "researchedAtCommit": { "$ref": "common.schema.json#/$defs/sha" }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "title", "description", "pros", "cons", "effort"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-D]$" },
+        "kind": {
+          "enum": ["fix", "dismiss"],
+          "description": "fix leads to decided → queued → applied. dismiss leads to dismissed."
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "description": { "type": "string", "description": "Markdown. What the applier will change, or why no change is needed." },
+        "pros": { "type": "array", "items": { "type": "string" } },
+        "cons": { "type": "array", "items": { "type": "string" } },
+        "effort": { "enum": ["trivial", "small", "medium", "large"] }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["optionId", "decidedAt"],
+      "properties": {
+        "optionId": {
+          "type": "string",
+          "pattern": "^([A-D]|custom)$",
+          "description": "custom means the user wrote their own fix in instruction."
+        },
+        "kind": { "enum": ["fix", "dismiss"], "description": "Required when optionId is custom." },
+        "instruction": { "type": "string", "description": "Extra direction for the applier, or the custom fix." },
+        "decidedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+      },
+      "if": { "required": ["optionId"], "properties": { "optionId": { "const": "custom" } } },
+      "then": { "required": ["kind", "instruction"], "properties": { "kind": true, "instruction": true } }
+    },
+    "reply": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["none", "drafted", "approved", "posted", "skipped"] },
+        "draft": { "type": "string" },
+        "targetSourceId": { "$ref": "common.schema.json#/$defs/sourceId" },
+        "postedUrl": { "type": "string" },
+        "postedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    }
+  }
+}

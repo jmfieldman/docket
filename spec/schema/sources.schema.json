@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/sources.schema.json",
+  "title": "Docket sources",
+  "description": "Every ingested source of reviewer output, keyed by sourceId. Drives incremental ingest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sources"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sources": {
+      "type": "object",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/sourceId" },
+      "additionalProperties": { "$ref": "#/$defs/source" }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "externalId", "contentHash", "status", "findingIds", "ingestedAt"],
+      "properties": {
+        "kind": { "enum": ["github_review_thread", "github_review", "github_issue_comment", "local_report"] },
+        "externalId": { "type": "string", "description": "GraphQL node id, review id, comment id, or file path." },
+        "url": { "type": "string" },
+        "author": { "type": "string" },
+        "isBot": { "type": "boolean" },
+        "updatedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "contentHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$", "description": "Hash of the normalized text, including replies." },
+        "replyCount": { "type": "integer", "minimum": 0 },
+        "threadResolved": { "type": "boolean" },
+        "threadOutdated": { "type": "boolean" },
+        "status": { "enum": ["active", "deleted"] },
+        "findingIds": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/findingId" }, "uniqueItems": true },
+        "ingestedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    }
+  }
+}

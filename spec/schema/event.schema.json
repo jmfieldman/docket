@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/event.schema.json",
+  "title": "Docket event",
+  "description": "One line of events.jsonl. Append-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ts", "actor", "type"],
+  "properties": {
+    "ts": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "actor": { "enum": ["ingest", "research", "investigate", "ui", "dispatcher", "applier", "reply", "cli"] },
+    "type": {
+      "enum": [
+        "unit_created", "unit_marked_stale", "pr_attached",
+        "source_added", "source_changed", "source_deleted",
+        "finding_created", "finding_merged", "finding_updated",
+        "state_changed", "research_written", "decision_written", "note_written",
+        "investigation_started", "investigation_ended",
+        "apply_started", "apply_committed", "apply_bounced",
+        "reply_drafted", "reply_approved", "reply_posted"
+      ]
+    },
+    "findingId": { "$ref": "common.schema.json#/$defs/findingId" },
+    "sourceId": { "$ref": "common.schema.json#/$defs/sourceId" },
+    "from": { "$ref": "common.schema.json#/$defs/state" },
+    "to": { "$ref": "common.schema.json#/$defs/state" },
+    "rev": { "type": "integer", "minimum": 0 },
+    "data": { "type": "object" }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/common.schema.json",
+  "title": "Docket shared definitions",
+  "$defs": {
+    "timestamp": { "type": "string", "format": "date-time" },
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "findingId": { "type": "string", "pattern": "^f-[0-9]{4,}$" },
+    "sourceId": { "type": "string", "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:).+" },
+    "state": {
+      "enum": [
+        "new", "triaged", "investigating", "decided", "queued", "applying",
+        "applied", "dismissed", "needs_attention", "stale", "resolved_externally"
+      ]
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "startLine": { "type": "integer", "minimum": 1 },
+        "endLine": { "type": "integer", "minimum": 1 },
+        "commit": { "$ref": "#/$defs/sha" }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "repo": { "remoteUrl": "git@github.com:example/app.git", "owner": "example", "name": "app" },
+  "branch": "fix/login-retry",
+  "worktreePath": "/Users/me/conductor/workspaces/app/lisbon",
+  "firstSeenHead": "1111111111111111111111111111111111111111",
+  "pr": { "number": 42, "url": "https://github.com/example/app/pull/42" },
+  "lastIngest": { "at": "2026-10-03T18:00:00Z", "head": "2222222222222222222222222222222222222222" },
+  "nextFindingNumber": 3,
+  "createdAt": "2026-10-03T17:00:00Z",
+  "updatedAt": "2026-10-03T18:05:00Z"
+}

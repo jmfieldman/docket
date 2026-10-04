@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "f-0002",
+  "rev": 6,
+  "state": "applied",
+  "title": "Token logged at debug level",
+  "summary": "The refresh token is written to the debug log on refresh.",
+  "category": "security",
+  "reviewerSeverity": "critical",
+  "location": { "path": "Sources/Auth/TokenStore.swift", "startLine": 41, "commit": "2222222222222222222222222222222222222222" },
+  "sources": [
+    { "sourceId": "gh:comment:9001", "excerpt": "2. TokenStore logs the refresh token.", "ordinal": 1 },
+    { "sourceId": "gh:thread:PRRT_kwDOexample", "excerpt": "This prints the token in debug builds." }
+  ],
+  "research": {
+    "verdict": "valid",
+    "confidence": "high",
+    "assessedSeverity": "high",
+    "analysis": "TokenStore.swift:41 interpolates the token into a log line.",
+    "options": [
+      { "id": "A", "kind": "fix", "title": "Remove the log line", "description": "Delete the line.", "pros": ["Simple"], "cons": ["Loses refresh tracing"], "effort": "trivial" },
+      { "id": "B", "kind": "fix", "title": "Log a redacted marker", "description": "Log the token suffix only.", "pros": ["Keeps tracing"], "cons": ["Slightly more code"], "effort": "trivial" }
+    ],
+    "recommendedOptionId": "B",
+    "researchedAt": "2026-10-03T17:50:00Z",
+    "researchedAtCommit": "2222222222222222222222222222222222222222"
+  },
+  "decision": { "optionId": "B", "instruction": "Use the existing redact() helper.", "decidedAt": "2026-10-03T17:55:00Z" },
+  "notes": [{ "at": "2026-10-03T17:54:00Z", "text": "Check Android too." }],
+  "investigation": null,
+  "queue": { "position": 1, "queuedAt": "2026-10-03T17:55:00Z" },
+  "application": { "commit": "3333333333333333333333333333333333333333", "appliedAt": "2026-10-03T18:02:00Z" },
+  "reply": { "status": "drafted", "draft": "Fixed in 3333333: the token is now redacted.", "targetSourceId": "gh:thread:PRRT_kwDOexample" },
+  "staleReason": null,
+  "createdAt": "2026-10-03T17:31:00Z",
+  "updatedAt": "2026-10-03T18:02:00Z"
+}

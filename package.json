@@ -1,0 +1,14 @@
+{
+  "name": "orca-docket",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reviewer-agnostic findings resolution for coding agents, with an Orca panel.",
+  "scripts": {
+    "spec:validate": "node spec/validate.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}
