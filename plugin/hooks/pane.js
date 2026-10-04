@@ -288,9 +288,9 @@ export function register(on) {
     if (state === 'not_started') {
       gap()
       line('Docket is not started in this worktree.')
-      dim('It stays dormant here until you start it: no skills run on their own and no session brief appears. Use it on your own branches to track and resolve review findings.')
+      dim('It stays dormant here until you start it: no skills run on their own and no session brief appears. Start runs /docket:start, which also ingests the reviews in this conversation and on the PR.')
       gap()
-      buttons([Button({ key: 'start', label: 's: Start docket', hotkey: 's', autoFocus: true, onPress: () => act($, 'start', {}, 'Docket started. Ingest the review comments next.') })])
+      buttons([Button({ key: 'start', label: 's: Start docket', hotkey: 's', autoFocus: true, onPress: () => runSkill($, { command: 'docket:start', args: '', prompt: '/docket:start' }) })])
       if (snap.deferralsOpen) {
         gap()
         dim(snap.deferralsOpen + ' deferred item(s) are waiting. Run /docket:deferrals to pick one up.')

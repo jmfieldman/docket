@@ -19,7 +19,7 @@ export const SCHEMAS: Record<string, object> = {
       },
       "sourceId": {
         "type": "string",
-        "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:).+"
+        "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:|session:).+"
       },
       "deferralId": {
         "type": "string",
@@ -1357,12 +1357,18 @@ export const SCHEMAS: Record<string, object> = {
               "github_review_thread",
               "github_review",
               "github_issue_comment",
-              "local_report"
+              "local_report",
+              "session_review"
             ]
           },
           "externalId": {
             "type": "string",
-            "description": "GraphQL node id, review id, comment id, or file path."
+            "description": "GraphQL node id, review id, comment id, file path, or Claude Code session id."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "A short label for a session review, such as the tool that wrote it and when."
           },
           "url": {
             "type": "string"

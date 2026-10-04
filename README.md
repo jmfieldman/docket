@@ -53,8 +53,8 @@ Tab moves between controls, and Esc returns to the prompt. The pane draws in the
 
 ## Workflow
 
-1. Open a worktree for your branch. Run `/docket`, then press **Start docket** (or run `/docket:start`). Until you do, docket is dormant in that worktree: no skill acts on its own, the pane does not open by itself, and no brief appears.
-2. Ingest the review comments on the PR (`i`, or `/docket:ingest`), or run `/docket:ingest <file>` for a local review report.
+1. Review your change with any tool, in a Claude Code session in the worktree, or on the PR.
+2. In that session, run `/docket`, then press **Start docket** (or run `/docket:start`). Start creates the docket and ingests at once: first the review output in this conversation, then the branch's PR if there is one, then a report file if you pass a path (`/docket:start <file>`). Until you start it, docket is dormant in that worktree: no skill acts on its own, the pane does not open by itself, and no brief appears. Later, press `i` (or run `/docket:ingest`) to pick up new reviews the same way. Docket skips what it already has.
 3. Research (`r`). Each finding gets an explanation, options with pros, cons and blast radius, and a lane: `quick`, `decide`, `scope` or `dig`.
 4. Decide. Accept quick findings in bulk, pick options for the rest, and discuss anything that needs a conversation.
 5. Apply (`a`). The agent implements the queue in order, one commit and one verification per finding. It never pushes.

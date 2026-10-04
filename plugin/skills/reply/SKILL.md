@@ -2,12 +2,12 @@
 name: reply
 description: Draft replies to reviewers for closed docket findings and, after the user approves, post them and resolve the threads.
 disable-model-invocation: true
-allowed-tools: Bash(docket *), Bash(gh *)
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(gh *)
 ---
 
 # Reply to reviewers
 
-!`"${CLAUDE_PLUGIN_ROOT}/bin/docket" status`
+!`${CLAUDE_PLUGIN_ROOT}/bin/docket status`
 
 If the line above does not say "Docket is active.", stop and tell the user to start docket first.
 

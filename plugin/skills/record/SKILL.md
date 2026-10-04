@@ -1,12 +1,12 @@
 ---
 name: record
 description: Record that work in this session resolved a finding docket is tracking. Use only when the session brief says "Docket is active in this worktree" and you just committed a change that fixes one of the listed open findings.
-allowed-tools: Bash(docket *), Bash(git *)
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(git *)
 ---
 
 # Record session work on a docket finding
 
-!`"${CLAUDE_PLUGIN_ROOT}/bin/docket" status`
+!`${CLAUDE_PLUGIN_ROOT}/bin/docket status`
 
 If the line above does not say "Docket is active.", do nothing more with docket in this session.
 

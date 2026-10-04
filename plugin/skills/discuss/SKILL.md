@@ -3,12 +3,12 @@ name: discuss
 description: Hold a read-only conversation about one docket finding, updating the finding's options and triage as understanding improves.
 disable-model-invocation: true
 argument-hint: "<finding-id>"
-allowed-tools: Bash(docket *), Bash(git *), Read, Grep, Glob
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(git *), Read, Grep, Glob
 ---
 
 # Discuss a finding
 
-!`"${CLAUDE_PLUGIN_ROOT}/bin/docket" status`
+!`${CLAUDE_PLUGIN_ROOT}/bin/docket status`
 
 If the line above does not say "Docket is active.", stop and tell the user to start docket first.
 

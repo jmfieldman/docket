@@ -20,8 +20,9 @@
       "additionalProperties": false,
       "required": ["kind", "externalId", "contentHash", "status", "findingIds", "ingestedAt"],
       "properties": {
-        "kind": { "enum": ["github_review_thread", "github_review", "github_issue_comment", "local_report"] },
-        "externalId": { "type": "string", "description": "GraphQL node id, review id, comment id, or file path." },
+        "kind": { "enum": ["github_review_thread", "github_review", "github_issue_comment", "local_report", "session_review"] },
+        "externalId": { "type": "string", "description": "GraphQL node id, review id, comment id, file path, or Claude Code session id." },
+        "title": { "type": "string", "maxLength": 200, "description": "A short label for a session review, such as the tool that wrote it and when." },
         "url": { "type": "string" },
         "author": { "type": "string" },
         "isBot": { "type": "boolean" },

@@ -103,6 +103,30 @@ describe('docket ui server', () => {
     assert.equal(accepted.body.result[0].resolution.reason, 'The reviewer misread the loop.')
   })
 
+  it('records review output from a conversation once, keyed by session and text', async () => {
+    const { execFileSync } = await import('node:child_process')
+    const { writeFileSync } = await import('node:fs')
+    const cli = (...args: string[]) => JSON.parse(execFileSync(process.execPath, [join(import.meta.dirname, '..', 'src', 'cli.ts'), ...args, '--json'], { cwd: path(), env: process.env, encoding: 'utf8' }))
+    const file = join(process.env.DOCKET_HOME as string, 'review.md')
+    writeFileSync(file, '## Findings\n1. Retry loop has no bound.\n')
+    const first = cli('source', 'session', '--file', file, '--session-id', 'sess-abc-123', '--title', 'multi-lens run 1')
+    assert.equal(first.status, 'new')
+    assert.match(first.sourceId, /^session:sess-abc-123:[0-9a-f]{16}$/)
+    writeFileSync(file, '## Findings\n1.  Retry loop has no bound.\n\n')
+    assert.equal(cli('source', 'session', '--file', file, '--session-id', 'sess-abc-123').status, 'unchanged')
+    writeFileSync(file, '## Findings\n1. Retry loop has no bound.\n2. Token is logged.\n')
+    const second = cli('source', 'session', '--file', file, '--session-id', 'sess-abc-123')
+    assert.equal(second.status, 'new')
+    assert.notEqual(second.sourceId, first.sourceId)
+    const record = cli('source', 'list').sources[first.sourceId]
+    assert.equal(record.kind, 'session_review')
+    assert.equal(record.externalId, 'sess-abc-123')
+    assert.equal(record.title, 'multi-lens run 1')
+    const piped = JSON.parse(execFileSync(process.execPath, [join(import.meta.dirname, '..', 'src', 'cli.ts'), 'source', 'session', '--file', '-', '--session-id', 'sess-abc-123', '--json'], { cwd: path(), env: process.env, encoding: 'utf8', input: '## Findings\n1. Retry loop has no bound.\n2. Token is logged.\n' }))
+    assert.deepEqual([piped.status, piped.sourceId], ['unchanged', second.sourceId])
+    assert.throws(() => execFileSync(process.execPath, [join(import.meta.dirname, '..', 'src', 'cli.ts'), 'source', 'session', '--file', file, '--session-id', 'x y'], { cwd: path(), env: process.env, stdio: 'pipe' }))
+  })
+
   it('refuses origin session from the UI', async () => {
     const res = await post('/api/action', { path: path(), name: 'decide', args: { id: 'f-0001', optionId: 'A', origin: 'session' } })
     assert.equal(res.status, 400)

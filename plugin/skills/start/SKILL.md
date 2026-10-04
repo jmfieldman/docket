@@ -1,18 +1,23 @@
 ---
 name: start
-description: Start docket in the current worktree so review findings on this branch can be tracked and resolved.
+description: Start docket in the current worktree and ingest the review findings already available, so they can be tracked and resolved.
 disable-model-invocation: true
-allowed-tools: Bash(docket *)
+argument-hint: "[path-to-local-review-report]"
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(gh *), Bash(git *), Read
 ---
 
 # Start docket
 
-Docket stays dormant in a worktree until the user starts it. This skill starts it.
+Docket stays dormant in a worktree until the user starts it. This skill starts it, then ingests what is already there.
 
-1. Run `docket start --json`.
-2. If the result has an `error`, tell the user the message and stop.
-3. Tell the user that docket is active on branch `unit.branch`. If `unit.pr` is set, name the PR. If it is null, say that docket will attach the PR when one exists.
-4. Tell the user the next step: run `/docket:ingest` to read the review comments on the PR, or `/docket:ingest <path>` to read a local review report.
-5. Tell the user they can see and decide on findings in the Docket pane: run `/docket`. The pane also runs ingest, research, apply and replies for them. `docket ui --open` opens the same view in a browser.
+1. Run `docket start --json`. If the result has an `error`, tell the user the message and stop.
+2. Tell the user that docket is active on branch `unit.branch`, and name the PR when `unit.pr` is set.
+3. Ingest now, with the procedure below. The user should not need to run `/docket:ingest` after this.
+4. After the ingest report, tell the user they can see and decide on findings in the Docket pane: run `/docket`. The pane also runs research, apply and replies. `docket ui --open` opens the same view in a browser.
 
-Do not ingest, research or change code in this skill.
+Do not research or change code in this skill.
+
+- Session id: `${CLAUDE_SESSION_ID}`
+- File: `$ARGUMENTS` (none when this is empty)
+
+!`${CLAUDE_PLUGIN_ROOT}/bin/docket procedure ingest`

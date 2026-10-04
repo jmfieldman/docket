@@ -68,9 +68,9 @@ test('stays closed in a dormant worktree, and /docket offers Start', async ($, o
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   expect(await ui.find({ type: 'Text', text: 'Docket is not started in this worktree.' })).toBeDefined()
   await ui.press({ key: 'start' })
-  expect(calls.some((c) => c[0] === 'action' && c[1] === 'start')).toBe(true)
-  expect(await ui.find({ type: 'Text', text: /Docket started/ })).toBeDefined()
-  expect(skills).toEqual([])
+  // Start runs the skill, which starts docket and ingests in this session.
+  expect(calls.some((c) => c[0] === 'action' && c[1] === 'start')).toBe(false)
+  expect(skills).toEqual(['docket:start'])
 })
 
 test('opens by itself where docket is active and draws findings by lane', async ($, on) => {

@@ -3,12 +3,12 @@ name: research
 description: Investigate open docket findings and write a verdict, options with pros and cons, and triage scores for each.
 disable-model-invocation: true
 argument-hint: "[finding-id ...]"
-allowed-tools: Bash(docket *), Bash(git *), Read, Grep, Glob, Agent
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(git *), Read, Grep, Glob, Agent
 ---
 
 # Research findings
 
-!`"${CLAUDE_PLUGIN_ROOT}/bin/docket" status`
+!`${CLAUDE_PLUGIN_ROOT}/bin/docket status`
 
 If the line above does not say "Docket is active.", stop and tell the user to start docket first.
 

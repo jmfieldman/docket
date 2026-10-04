@@ -2,12 +2,12 @@
 name: apply
 description: Implement queued docket findings one at a time, in queue order, with one commit and a verification per finding.
 disable-model-invocation: true
-allowed-tools: Bash(docket *), Bash(git *), Read, Edit, Write, Grep, Glob, Bash
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(git *), Read, Edit, Write, Grep, Glob, Bash
 ---
 
 # Apply queued findings
 
-!`"${CLAUDE_PLUGIN_ROOT}/bin/docket" status`
+!`${CLAUDE_PLUGIN_ROOT}/bin/docket status`
 
 If the line above does not say "Docket is active.", stop and tell the user to start docket first.
 

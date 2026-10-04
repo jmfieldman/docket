@@ -101,7 +101,13 @@ The Docket pane shows `origin: session` iterations with an "inferred" badge. The
 
 ### Ingest triggers
 
-Ingest runs only when the user triggers it: from the Docket pane, or with `/docket:ingest`. When the docket is enabled, a skill can check the PR for sources newer than `unit.lastIngest`. It records the result in `unit.remoteCheck` and shows "N new" on the re-ingest control. The check never ingests.
+Ingest runs only when the user triggers it: with `/docket:start` (which ingests right after it creates the docket), from the Docket pane, or with `/docket:ingest`. One ingest run checks three places in order and skips any that has nothing:
+
+1. **This conversation.** Review output in the Claude Code session that runs the skill, such as a review skill's report or review comments the user pasted. Each review run becomes one `session_review` source, recorded with `docket source session`. Its id comes from the session and the text, so a review that docket already ingested reports `unchanged`.
+2. **The PR.** The PR attached to `unit.pr`, or the branch's PR that `docket pr attach` finds. Without a PR, ingest continues.
+3. **A file.** A local report file, only when the user passes its path.
+
+Both skills include the same procedure from `plugin/skills/ingest/procedure.md`, which `docket procedure ingest` prints at load time. When the docket is enabled, a skill can check the PR for sources newer than `unit.lastIngest`. It records the result in `unit.remoteCheck` and shows "N new" on the re-ingest control. The check never ingests.
 
 ## Sources
 
@@ -113,6 +119,7 @@ A source is one unit of reviewer output. Docket identifies a source by where the
 | `github_review` | `gh:review:<review id>` | The body of a submitted review |
 | `github_issue_comment` | `gh:comment:<comment id>` | A PR conversation comment |
 | `local_report` | `local:<sha256 of path>` | A file from a local review agent |
+| `session_review` | `session:<session id>:<first 16 hex of the text's sha256>` | Review output in a Claude Code conversation, such as a review skill's report. `externalId` is the session id. |
 
 One source can produce many findings, for example one PR comment that lists five issues. One finding can have many sources, for example two reviewers who report the same issue.
 

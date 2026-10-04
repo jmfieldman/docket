@@ -15404,7 +15404,7 @@ var SCHEMAS = {
       },
       "sourceId": {
         "type": "string",
-        "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:).+"
+        "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:|session:).+"
       },
       "deferralId": {
         "type": "string",
@@ -16742,12 +16742,18 @@ var SCHEMAS = {
               "github_review_thread",
               "github_review",
               "github_issue_comment",
-              "local_report"
+              "local_report",
+              "session_review"
             ]
           },
           "externalId": {
             "type": "string",
-            "description": "GraphQL node id, review id, comment id, or file path."
+            "description": "GraphQL node id, review id, comment id, file path, or Claude Code session id."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "A short label for a session review, such as the tool that wrote it and when."
           },
           "url": {
             "type": "string"
@@ -17597,6 +17603,7 @@ function upsertSource(ws, raw) {
   const record = compact({
     kind: input.kind,
     externalId: input.externalId,
+    title: input.title ?? previous?.title,
     url: input.url ?? previous?.url,
     author: input.author ?? previous?.author,
     isBot: input.isBot ?? previous?.isBot,
@@ -17613,6 +17620,15 @@ function upsertSource(ws, raw) {
   ws.saveSources(sources);
   if (status2 !== "unchanged") ws.event("ingest", status2 === "new" ? "source_added" : "source_changed", { sourceId: input.sourceId });
   return { sourceId: input.sourceId, status: status2, resolvedNow, findingIds: record.findingIds };
+}
+var SESSION_ID = /^[A-Za-z0-9_-]{8,128}$/;
+function upsertSessionSource(ws, input) {
+  if (!SESSION_ID.test(input.sessionId ?? "")) badInput("a Claude Code session id is required (--session-id)");
+  if (!input.text || !input.text.trim()) badInput("the review text is empty");
+  const contentHash = normalizedHash(input.text);
+  const sourceId = `session:${input.sessionId}:${contentHash.slice("sha256:".length, "sha256:".length + 16)}`;
+  const title = input.title?.trim() ? input.title.trim().slice(0, 200) : void 0;
+  return upsertSource(ws, compact({ sourceId, kind: "session_review", externalId: input.sessionId, title, text: input.text }));
 }
 function deleteSource(ws, sourceId) {
   const sources = ws.readSources();
@@ -19195,6 +19211,7 @@ async function runUi(options) {
 
 // src/cli.ts
 var import_node_path6 = require("node:path");
+var import_node_fs7 = require("node:fs");
 var USAGE = `Usage: docket [-C <path>] <command> [args] [options]
 
 Activation
@@ -19205,10 +19222,13 @@ Reading
   show <id>                           One finding (JSON)
   snapshot                            Everything the panel needs (JSON)
   brief [--hook]                      Session brief; prints nothing when dormant
+  procedure <name>                    Print a shared skill procedure (skills include it at load time)
   view                                Mark findings as seen
 
 Ingest
   source upsert --data <json>         Record a source; reports new, changed or unchanged
+  source session --file <path|-> --session-id <id> [--title <t>]
+                                      Record review output from this conversation (text from the file, or stdin with -)
   source delete <sourceId>
   source list
   finding add --data <json>
@@ -19273,6 +19293,8 @@ function parse(argv) {
       also: { type: "string" },
       "session-id": { type: "string" },
       text: { type: "string" },
+      file: { type: "string" },
+      title: { type: "string" },
       target: { type: "string" },
       "resolve-thread": { type: "boolean", default: false },
       url: { type: "string" },
@@ -19366,6 +19388,11 @@ function run(ctx, values, args) {
       return { output: write(markViewed) };
     case "source":
       if (sub === "upsert") return { output: write((ws) => upsertSource(ws, readData(values))) };
+      if (sub === "session") {
+        const file = need(values.file, "--file");
+        const text = (0, import_node_fs6.readFileSync)(file === "-" ? 0 : file, "utf8");
+        return { output: write((ws) => upsertSessionSource(ws, { sessionId: need(values["session-id"], "--session-id"), text, title: values.title })) };
+      }
       if (sub === "delete") return { output: write((ws) => deleteSource(ws, need(rest[0], "sourceId"))) };
       if (sub === "list") return { output: read((ws) => ws.readSources()) };
       break;
@@ -19477,6 +19504,20 @@ function run(ctx, values, args) {
   }
   badInput(`unknown command: ${args.join(" ")}`);
 }
+function printProcedure(name) {
+  if (!name || !/^[a-z][a-z-]*$/.test(name)) {
+    console.error("docket: procedure needs a name, such as ingest");
+    return 2;
+  }
+  const here = (0, import_node_path6.dirname)(process.argv[1] ?? ".");
+  const file = [(0, import_node_path6.resolve)(here, "..", "skills", name, "procedure.md"), (0, import_node_path6.resolve)(here, "..", "plugin", "skills", name, "procedure.md")].find((f) => (0, import_node_fs7.existsSync)(f));
+  if (!file) {
+    console.error(`docket: no procedure named ${name}`);
+    return 15;
+  }
+  process.stdout.write((0, import_node_fs6.readFileSync)(file, "utf8"));
+  return 0;
+}
 function runApi(path, args, values) {
   const [op, arg] = args;
   const data = () => values.data === void 0 ? {} : readData(values);
@@ -19518,6 +19559,7 @@ function main(argv) {
     now: () => process.env.DOCKET_NOW ?? (/* @__PURE__ */ new Date()).toISOString(),
     prLookup: !values["no-pr"] && process.env.DOCKET_NO_GH !== "1"
   };
+  if (name === "procedure") return printProcedure(positionals[1]);
   if (name === "api") return runApi((0, import_node_path6.resolve)(ctx.cwd), positionals.slice(1), values);
   if (name === "ui") {
     const port = values.port ? Number(values.port) : DEFAULT_PORT;

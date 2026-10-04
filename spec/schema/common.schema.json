@@ -6,7 +6,7 @@
     "timestamp": { "type": "string", "format": "date-time" },
     "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "findingId": { "type": "string", "pattern": "^f-[0-9]{4,}$" },
-    "sourceId": { "type": "string", "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:).+" },
+    "sourceId": { "type": "string", "pattern": "^(gh:thread:|gh:review:|gh:comment:|local:|session:).+" },
     "deferralId": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$" },
     "state": {
       "enum": [

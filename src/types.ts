@@ -146,8 +146,9 @@ export interface Finding {
 }
 
 export interface SourceRecord {
-  kind: 'github_review_thread' | 'github_review' | 'github_issue_comment' | 'local_report'
+  kind: 'github_review_thread' | 'github_review' | 'github_issue_comment' | 'local_report' | 'session_review'
   externalId: string
+  title?: string
   url?: string
   author?: string
   isBot?: boolean

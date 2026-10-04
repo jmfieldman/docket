@@ -27,6 +27,7 @@ import {
   setStale,
   startDiscussion,
   updateFinding,
+  upsertSessionSource,
   upsertSource,
   writeResearch
 } from './findings.ts'
@@ -35,7 +36,8 @@ import { brief, listFindings, panelSnapshot } from './view.ts'
 import { withWorkspace, type Workspace } from './workspace.ts'
 import { DEFAULT_PORT, runUi } from './ui-server.ts'
 import { action, finding, plan, snapshot, worktrees, type ActionName, type PlanKind } from './api.ts'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { existsSync } from 'node:fs'
 
 const USAGE = `Usage: docket [-C <path>] <command> [args] [options]
 
@@ -47,10 +49,13 @@ Reading
   show <id>                           One finding (JSON)
   snapshot                            Everything the panel needs (JSON)
   brief [--hook]                      Session brief; prints nothing when dormant
+  procedure <name>                    Print a shared skill procedure (skills include it at load time)
   view                                Mark findings as seen
 
 Ingest
   source upsert --data <json>         Record a source; reports new, changed or unchanged
+  source session --file <path|-> --session-id <id> [--title <t>]
+                                      Record review output from this conversation (text from the file, or stdin with -)
   source delete <sourceId>
   source list
   finding add --data <json>
@@ -118,6 +123,8 @@ function parse(argv: string[]) {
       also: { type: 'string' },
       'session-id': { type: 'string' },
       text: { type: 'string' },
+      file: { type: 'string' },
+      title: { type: 'string' },
       target: { type: 'string' },
       'resolve-thread': { type: 'boolean', default: false },
       url: { type: 'string' },
@@ -223,6 +230,11 @@ function run(ctx: Context, values: Values, args: string[]): { output: unknown; h
       return { output: write(markViewed) }
     case 'source':
       if (sub === 'upsert') return { output: write((ws) => upsertSource(ws, readData(values))) }
+      if (sub === 'session') {
+        const file = need(values.file, '--file')
+        const text = readFileSync(file === '-' ? 0 : file, 'utf8')
+        return { output: write((ws) => upsertSessionSource(ws, { sessionId: need(values['session-id'], '--session-id'), text, title: values.title })) }
+      }
       if (sub === 'delete') return { output: write((ws) => deleteSource(ws, need(rest[0], 'sourceId'))) }
       if (sub === 'list') return { output: read((ws) => ws.readSources()) }
       break
@@ -337,6 +349,26 @@ function run(ctx: Context, values: Values, args: string[]): { output: unknown; h
   badInput(`unknown command: ${args.join(' ')}`)
 }
 
+/**
+ * Prints `plugin/skills/<name>/procedure.md`. Skills include it with a
+ * load-time command, which must be the docket launcher to pass the session's
+ * permission check.
+ */
+function printProcedure(name: string | undefined): number {
+  if (!name || !/^[a-z][a-z-]*$/.test(name)) {
+    console.error('docket: procedure needs a name, such as ingest')
+    return 2
+  }
+  const here = dirname(process.argv[1] ?? '.')
+  const file = [resolve(here, '..', 'skills', name, 'procedure.md'), resolve(here, '..', 'plugin', 'skills', name, 'procedure.md')].find((f) => existsSync(f))
+  if (!file) {
+    console.error(`docket: no procedure named ${name}`)
+    return 15
+  }
+  process.stdout.write(readFileSync(file, 'utf8'))
+  return 0
+}
+
 /** `docket api`: one envelope for every outcome, so a caller parses stdout only. */
 function runApi(path: string, args: string[], values: Values): number {
   const [op, arg] = args
@@ -380,6 +412,7 @@ function main(argv: string[]): number {
     prLookup: !values['no-pr'] && process.env.DOCKET_NO_GH !== '1'
   }
 
+  if (name === 'procedure') return printProcedure(positionals[1])
   if (name === 'api') return runApi(resolve(ctx.cwd), positionals.slice(1), values)
 
   if (name === 'ui') {

@@ -92,6 +92,7 @@ export interface SourceInput {
   sourceId: string
   kind: SourceRecord['kind']
   externalId: string
+  title?: string
   /** Full text including replies. Hashed to detect changes. Give text or contentHash. */
   text?: string
   contentHash?: string
@@ -116,6 +117,7 @@ export function upsertSource(ws: Workspace, raw: SourceInput) {
   const record: SourceRecord = compact({
     kind: input.kind,
     externalId: input.externalId,
+    title: input.title ?? previous?.title,
     url: input.url ?? previous?.url,
     author: input.author ?? previous?.author,
     isBot: input.isBot ?? previous?.isBot,
@@ -132,6 +134,22 @@ export function upsertSource(ws: Workspace, raw: SourceInput) {
   ws.saveSources(sources)
   if (status !== 'unchanged') ws.event('ingest', status === 'new' ? 'source_added' : 'source_changed', { sourceId: input.sourceId })
   return { sourceId: input.sourceId, status, resolvedNow, findingIds: record.findingIds }
+}
+
+const SESSION_ID = /^[A-Za-z0-9_-]{8,128}$/
+
+/**
+ * Records review output from a Claude Code conversation. The id comes from the
+ * session and the text, so ingesting the same review twice reports `unchanged`,
+ * and a second review in the same session is a new source.
+ */
+export function upsertSessionSource(ws: Workspace, input: { sessionId: string; text: string; title?: string }) {
+  if (!SESSION_ID.test(input.sessionId ?? '')) badInput('a Claude Code session id is required (--session-id)')
+  if (!input.text || !input.text.trim()) badInput('the review text is empty')
+  const contentHash = normalizedHash(input.text)
+  const sourceId = `session:${input.sessionId}:${contentHash.slice('sha256:'.length, 'sha256:'.length + 16)}`
+  const title = input.title?.trim() ? input.title.trim().slice(0, 200) : undefined
+  return upsertSource(ws, compact({ sourceId, kind: 'session_review' as const, externalId: input.sessionId, title, text: input.text }))
 }
 
 export function deleteSource(ws: Workspace, sourceId: string) {
