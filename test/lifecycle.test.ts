@@ -241,3 +241,19 @@ describe('lifecycle', () => {
     assert.ok(events.length > 30)
   })
 })
+
+describe('agent-shaped input', () => {
+  it('drops null optional fields instead of rejecting them', () => {
+    const f = ok('finding', 'add', '--data', data({
+      title: 'Null fields', summary: 'An agent sent nulls.', category: null, reviewerSeverity: null,
+      location: { path: 'login.ts', symbol: null, startLine: null, endLine: null },
+      sources: [{ sourceId: 'gh:thread:T1', excerpt: 'x', ordinal: null }]
+    }))
+    assert.deepEqual(f.location, { path: 'login.ts' })
+    assert.equal('category' in f, false)
+    assert.equal('ordinal' in f.sources[0], false)
+    const noPath = ok('finding', 'update', f.id, '--data', data({ location: { path: null, startLine: null } }))
+    assert.equal(noPath.location, null)
+    assert.equal(ok('source', 'upsert', '--data', data({ sourceId: 'gh:comment:77', kind: 'github_issue_comment', externalId: '77', text: 't', url: null, author: null })).status, 'new')
+  })
+})

@@ -17550,6 +17550,15 @@ function invalidState(finding2, action2) {
 function compact(value) {
   return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== void 0));
 }
+function normalizeLocation(location) {
+  if (location === null || location === void 0) return null;
+  if (typeof location !== "object") badInput("location must be an object or null");
+  const clean = Object.fromEntries(Object.entries(location).filter(([, v]) => v !== null && v !== void 0 && v !== ""));
+  return typeof clean.path === "string" && clean.path ? clean : null;
+}
+function dropNulls(value) {
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== null && v !== void 0));
+}
 function requireString(value, name) {
   if (typeof value !== "string" || value.trim() === "") badInput(`${name} is required`);
   return value;
@@ -17579,7 +17588,8 @@ function abandonPending(ws, finding2) {
 function normalizedHash(text) {
   return `sha256:${(0, import_node_crypto.createHash)("sha256").update(text.replace(/\s+/g, " ").trim()).digest("hex")}`;
 }
-function upsertSource(ws, input) {
+function upsertSource(ws, raw) {
+  const input = dropNulls(raw);
   requireString(input.sourceId, "sourceId");
   const contentHash = input.contentHash ?? (input.text !== void 0 ? normalizedHash(input.text) : badInput("text or contentHash is required"));
   const sources = ws.readSources();
@@ -17638,13 +17648,13 @@ function addFinding(ws, input) {
     stale: null,
     title: input.title,
     summary: input.summary,
-    explanation: input.explanation,
-    severityRationale: input.severityRationale,
-    category: input.category,
-    reviewerSeverity: input.reviewerSeverity,
-    location: input.location ?? null,
+    explanation: input.explanation ?? void 0,
+    severityRationale: input.severityRationale ?? void 0,
+    category: input.category ?? void 0,
+    reviewerSeverity: input.reviewerSeverity ?? void 0,
+    location: normalizeLocation(input.location),
     detectedAtCommit: ws.head,
-    sources: input.sources.map((ref) => compact({ sourceId: ref.sourceId, excerpt: ref.excerpt, ordinal: ref.ordinal })),
+    sources: input.sources.map((ref) => compact({ sourceId: ref.sourceId, excerpt: ref.excerpt, ordinal: ref.ordinal ?? void 0 })),
     research: null,
     triage: null,
     discussion: null,
@@ -17675,7 +17685,10 @@ function updateFinding(ws, id, patch, rev2) {
   const finding2 = ws.readFinding(id);
   for (const key of Object.keys(patch)) {
     if (!UPDATABLE.includes(key)) badInput(`cannot update ${key}; allowed: ${UPDATABLE.join(", ")}`);
-    finding2[key] = patch[key];
+    const value = patch[key];
+    if (key === "location") finding2.location = normalizeLocation(value);
+    else if (value === null) delete finding2[key];
+    else finding2[key] = value;
   }
   const saved = ws.saveFinding(finding2, rev2);
   ws.event("ingest", "finding_updated", { findingId: id, rev: saved.rev, data: { fields: Object.keys(patch) } });

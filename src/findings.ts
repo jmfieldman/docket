@@ -33,6 +33,21 @@ export function compact<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T
 }
 
+/**
+ * Agents often send null for a field they do not know. Optional fields in
+ * the schema are absent, not null, so drop nulls instead of rejecting.
+ */
+function normalizeLocation(location: unknown): Location | null {
+  if (location === null || location === undefined) return null
+  if (typeof location !== 'object') badInput('location must be an object or null')
+  const clean = Object.fromEntries(Object.entries(location as Record<string, unknown>).filter(([, v]) => v !== null && v !== undefined && v !== ''))
+  return typeof clean.path === 'string' && clean.path ? (clean as unknown as Location) : null
+}
+
+function dropNulls<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== null && v !== undefined)) as T
+}
+
 function requireString(value: unknown, name: string): string {
   if (typeof value !== 'string' || value.trim() === '') badInput(`${name} is required`)
   return value
@@ -89,7 +104,8 @@ export interface SourceInput {
   threadOutdated?: boolean
 }
 
-export function upsertSource(ws: Workspace, input: SourceInput) {
+export function upsertSource(ws: Workspace, raw: SourceInput) {
+  const input = dropNulls(raw as unknown as Record<string, unknown>) as unknown as SourceInput
   requireString(input.sourceId, 'sourceId')
   const contentHash = input.contentHash ?? (input.text !== undefined ? normalizedHash(input.text) : badInput('text or contentHash is required'))
   const sources = ws.readSources()
@@ -166,13 +182,13 @@ export function addFinding(ws: Workspace, input: FindingInput): Finding {
     stale: null,
     title: input.title,
     summary: input.summary,
-    explanation: input.explanation,
-    severityRationale: input.severityRationale,
-    category: input.category,
-    reviewerSeverity: input.reviewerSeverity,
-    location: input.location ?? null,
+    explanation: input.explanation ?? undefined,
+    severityRationale: input.severityRationale ?? undefined,
+    category: input.category ?? undefined,
+    reviewerSeverity: input.reviewerSeverity ?? undefined,
+    location: normalizeLocation(input.location),
     detectedAtCommit: ws.head,
-    sources: input.sources.map((ref) => compact({ sourceId: ref.sourceId, excerpt: ref.excerpt, ordinal: ref.ordinal })),
+    sources: input.sources.map((ref) => compact({ sourceId: ref.sourceId, excerpt: ref.excerpt, ordinal: ref.ordinal ?? undefined })),
     research: null,
     triage: null,
     discussion: null,
@@ -206,7 +222,10 @@ export function updateFinding(ws: Workspace, id: string, patch: Partial<FindingI
   const finding = ws.readFinding(id) as unknown as Record<string, unknown>
   for (const key of Object.keys(patch)) {
     if (!(UPDATABLE as readonly string[]).includes(key)) badInput(`cannot update ${key}; allowed: ${UPDATABLE.join(', ')}`)
-    finding[key] = (patch as Record<string, unknown>)[key]
+    const value = (patch as Record<string, unknown>)[key]
+    if (key === 'location') finding.location = normalizeLocation(value)
+    else if (value === null) delete finding[key]
+    else finding[key] = value
   }
   const saved = ws.saveFinding(finding as unknown as Finding, rev)
   ws.event('ingest', 'finding_updated', { findingId: id, rev: saved.rev, data: { fields: Object.keys(patch) } })

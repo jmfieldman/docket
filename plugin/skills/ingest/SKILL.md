@@ -75,6 +75,8 @@ For each extracted issue:
   - `location`: `{"path","symbol","startLine","endLine"}` from the thread, or from the text. Use null when there is none.
   - `sources`: `[{"sourceId","excerpt","ordinal"}]`. `excerpt` is the reviewer's own words for this one issue, verbatim.
 
+Omit any field you do not know. Never pass `null` for a field; leave it out. Line numbers must be integers.
+
 Never invent an issue the reviewer did not raise.
 
 ## 4. Finish
