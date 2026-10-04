@@ -41,6 +41,7 @@
         "unit_paused",
         "unit_resumed",
         "remote_checked",
+        "unit_rebound",
         "source_added",
         "source_changed",
         "source_deleted",

@@ -9,7 +9,7 @@ Reviewers post findings in many formats: inline code comments, one large PR comm
 | Component | Status | Purpose |
 |---|---|---|
 | `spec/` | v1 draft | Data model, JSON Schemas, examples |
-| `docket` CLI | Not started | The only writer of docket files |
+| `docket` CLI | Activation done | The only writer of docket files |
 | `docket-ingest` skill | Not started | Converts PR comments or a local report into findings, incrementally |
 | `docket-research` skill | Not started | Investigates each finding and writes options with pros and cons |
 | `docket-discuss` skill | Not started | Read-only conversation about one finding. Updates the finding as it goes. |
@@ -31,9 +31,30 @@ Read [spec/SPEC.md](spec/SPEC.md). In summary:
 - A finding closes as `completed` (fixed and verified), `acknowledged` (no change, with a reason), `deferred`, or `resolved_externally`.
 - Research and discussion only read code, so they run in parallel. Only the applier edits code, one finding at a time.
 
-## Validate the spec
+## CLI
+
+Build and put `docket` on your PATH:
 
 ```bash
 pnpm install
-pnpm run spec:validate
+pnpm run build
+pnpm link --global
 ```
+
+| Command | Effect |
+|---|---|
+| `docket start` | Start docket in this worktree, or resume it if paused |
+| `docket status` | Exit 0 active, 10 not started, 11 paused, 12 branch mismatch |
+| `docket pause` | Make every docket skill and hook dormant. The data stays. |
+| `docket resume` | Make a paused docket active again |
+| `docket rebind` | Confirm that the branch was renamed |
+
+Every command accepts `-C <path>`, `--json` and `--quiet`. Skills and hooks gate on `docket status --quiet`.
+
+## Development
+
+```bash
+pnpm run check   # typecheck, tests, spec validation
+```
+
+Tests create temporary git repos and worktrees. Node 23.6 or later runs the TypeScript sources directly.
