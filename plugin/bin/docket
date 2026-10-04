@@ -1,4 +1,18 @@
 #!/bin/sh
-# Launches the bundled docket CLI. Resolves symlinks so a linked copy on PATH works.
+# Launches the bundled docket CLI. Resolves symlinks so a linked copy on PATH
+# works, and finds node outside a login shell (the Desktop app, hooks).
 SELF=$(readlink -f "$0" 2>/dev/null || echo "$0")
-exec node "$(dirname "$SELF")/docket.cjs" "$@"
+NODE=$(command -v node 2>/dev/null)
+if [ -z "$NODE" ]; then
+  for candidate in "$DOCKET_NODE" /opt/homebrew/bin/node /usr/local/bin/node "$HOME/.volta/bin/node" "$HOME/.local/share/mise/shims/node" "$HOME/.asdf/shims/node"; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then NODE=$candidate; break; fi
+  done
+fi
+if [ -z "$NODE" ] && [ -d "$HOME/.nvm/versions/node" ]; then
+  NODE=$(ls -d "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null | sort -V | tail -1)
+fi
+if [ -z "$NODE" ]; then
+  echo "docket: node (23.6 or later) was not found on PATH. Install Node.js, or set DOCKET_NODE." >&2
+  exit 127
+fi
+exec "$NODE" "$(dirname "$SELF")/docket.cjs" "$@"

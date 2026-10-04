@@ -48,7 +48,7 @@ function queued(ws: Workspace): Finding[] {
  * first, so an applier that restarts resumes its work. Returns null and marks
  * the applier idle when the queue is empty.
  */
-export function nextTask(ws: Workspace, terminalHandle?: string): ApplyTask | null {
+export function nextTask(ws: Workspace, sessionId?: string): ApplyTask | null {
   const inProgress = ws.allFindings().find((f) => f.state === 'fixing')
   const pending = queued(ws)
   const finding = inProgress ?? pending.shift()
@@ -68,7 +68,7 @@ export function nextTask(ws: Workspace, terminalHandle?: string): ApplyTask | nu
     saved = ws.saveFinding(finding)
     ws.event('applier', 'apply_started', { findingId: finding.id, iteration: iteration.n })
   }
-  ws.saveUnit({ ...ws.unit, applier: compact({ state: 'running' as const, terminalHandle: terminalHandle ?? ws.unit.applier?.terminalHandle, since: ws.unit.applier?.state === 'running' ? ws.unit.applier.since : ws.now }) })
+  ws.saveUnit({ ...ws.unit, applier: compact({ state: 'running' as const, sessionId: sessionId ?? ws.unit.applier?.sessionId, since: ws.unit.applier?.state === 'running' ? ws.unit.applier.since : ws.now }) })
   const it = currentIteration(saved)
   return { finding: saved, iteration: it, option: chosenOption(saved, it) ?? null, remainingInQueue: pending.length }
 }

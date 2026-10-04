@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/event.schema.json",
+  "$id": "https://github.com/jmfieldman/docket/spec/schema/event.schema.json",
   "title": "Docket event",
   "description": "One line of events.jsonl. Append-only. head is the worktree HEAD when the event occurred.",
   "type": "object",

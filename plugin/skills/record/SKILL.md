@@ -29,4 +29,4 @@ docket record <id> --data '{
 
 Add `"also": ["f-0004"]` when the same change resolved other open findings.
 
-5. If the result has a `warning`, tell the user. Tell the user the finding is recorded and shows as "inferred" in the panel.
+5. If the result has a `warning`, tell the user. Tell the user the finding is recorded and shows as "inferred" in the Docket pane.

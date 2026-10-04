@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/finding.schema.json",
+  "$id": "https://github.com/jmfieldman/docket/spec/schema/finding.schema.json",
   "title": "Docket finding",
   "description": "One finding. Stored at docket/findings/<id>.json. Each finding moves through its states independently of every other finding.",
   "type": "object",
@@ -160,7 +160,6 @@
       "required": ["startedAt", "entries"],
       "properties": {
         "sessionId": { "type": "string", "description": "Agent session ID, so the user can continue later." },
-        "terminalHandle": { "type": "string" },
         "startedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
         "lastActiveAt": { "$ref": "common.schema.json#/$defs/timestamp" },
         "entries": {
@@ -188,7 +187,7 @@
         "n": { "type": "integer", "minimum": 1 },
         "origin": {
           "enum": ["panel", "quick", "session"],
-          "description": "panel: decided in the panel. quick: quick fix or bulk accept. session: recorded by an ad-hoc agent session (the panel shows it as inferred)."
+          "description": "panel: decided in the Docket pane or the web view. quick: quick fix or bulk accept. session: recorded by an ad-hoc agent session (the pane shows it as inferred)."
         },
         "decision": { "$ref": "#/$defs/decision" },
         "decidedAt": { "$ref": "common.schema.json#/$defs/timestamp" },

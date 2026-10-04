@@ -100,7 +100,6 @@ export interface Resolution {
 
 export interface Discussion {
   sessionId?: string
-  terminalHandle?: string
   startedAt: string
   lastActiveAt?: string
   entries: Array<{ at: string; head: string; question: string; answer: string; optionsChanged?: boolean }>

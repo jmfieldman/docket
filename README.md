@@ -1,50 +1,64 @@
-# orca-docket
+# docket
 
-Docket collects review findings on a branch and helps you resolve each one. It works with any review agent or reviewer.
+Docket is a Claude Code plugin. It collects the review findings on a branch and helps you resolve each one. It works with any review agent or reviewer.
 
 Reviewers post findings in many formats: inline code comments, one large PR comment, review bodies, or a local report file. Docket converts all of them into one data model. Each finding then moves through research, decision and fix on its own, so easy findings do not wait for hard ones.
 
 ## Install
 
-### Claude Code plugin
+Docket needs Claude Code 2.1.287 or later (for the pane) and Node.js 23.6 or later.
 
 In Claude Code, add this repository as a marketplace and install the plugin:
 
 ```
-/plugin marketplace add jmfieldman/orca-docket
-/plugin install docket@orca-docket
+/plugin marketplace add jmfieldman/docket
+/plugin install docket@docket
 ```
 
-To use a local clone instead, run `/plugin marketplace add ~/Development/orca-docket`.
+To use a local clone instead, run `/plugin marketplace add ~/Development/docket`.
 
 The plugin puts `docket` on the PATH of Claude's Bash tool. To use `docket` in your own shell, link the launcher:
 
 ```bash
-ln -s ~/Development/orca-docket/plugin/bin/docket /usr/local/bin/docket
+ln -s ~/Development/docket/plugin/bin/docket /usr/local/bin/docket
 ```
 
-The launcher needs Node 22 or later.
+The launcher finds `node` on your PATH, in Homebrew, Volta, mise, asdf or nvm locations, or at `$DOCKET_NODE`.
 
-### Docket view
+## The Docket pane
 
-`docket ui --open` starts the Docket web app on `127.0.0.1:4747` (in the background, if it is not already running) and opens the current worktree in Orca's browser, or in your default browser without Orca. `docket ui` runs it in the foreground. Writes need a custom header and a same-origin request, so other web pages cannot drive it.
+Run `/docket` in a Claude Code session. The pane opens beside the transcript (or above the prompt in a narrow terminal) and shows:
 
-### Orca plugin
+- the findings by lane, with complexity and confidence meters and the recommended option,
+- the full finding when you press its number: summary, verdict, options with blast radius, pros and cons, discussion, and the reviewer's words,
+- controls to decide, queue, quick-fix, leave as is, discuss, approve replies, reopen, pause and resume.
 
-1. In Orca, open **Settings → Plugins** and turn the plugin system on.
-2. Add `~/Development/orca-docket/orca-plugin` as a dev plugin path, then enable **Docket** and accept its permissions.
-3. Run **Docket: Open for this worktree** from the command palette. It starts the Docket view server and opens the focused worktree in Orca's browser.
+Agent work runs as docket skills in the same session: **Ingest** runs `/docket:ingest`, **Quick fix** queues the finding and runs `/docket:apply`, and so on. While Claude is working, the pane holds the run and starts it when the turn ends.
 
-The plugin also adds a **Docket** panel to the right sidebar. Orca 1.4.220 does not let a panel read data from its own plugin yet ([stablyai/orca#12229](https://github.com/stablyai/orca/pull/12229) is open), so today the panel is a launcher. The panel uses the same page as the Docket view and switches to the full view inside the sidebar once Orca supports that call.
+| Key | Action | Key | Action |
+|---|---|---|---|
+| `1`–`9` | Expand a finding | `q` | Quick fix the expanded finding |
+| `i` | Ingest review comments | `f` | Queue, defer or leave, per the selected option |
+| `r` | Research new findings | `l` | Leave as is with your note |
+| `a` | Apply the queue | `d` | Discuss the expanded finding |
+| `y` | Draft and post replies | `z` | Accept all quick recommendations |
+| `o` / `c` | Open or closed findings | `b` | Open the browser view |
+| `p` | Pause or resume | `s` | Start docket (dormant worktrees) |
+
+Tab moves between controls, and Esc returns to the prompt. The pane draws in the Claude Code CLI and in the Code tab of the Claude Desktop app. The VS Code extension, `claude -p` and cloud sessions run the skills but do not draw panes.
+
+### Browser view
+
+`docket ui --open` starts a local web app on `127.0.0.1:4747` (in the background, if it is not already running) and opens the current worktree in your browser. It records decisions like the pane. For agent work, it shows the skill command to run in Claude Code and copies it. Writes need a custom header and a same-origin request, so other web pages cannot drive it.
 
 ## Workflow
 
-1. Open a worktree for your branch. Run `/docket:start` (or press **Start docket** in the Orca panel). Until you do, docket is dormant in that worktree.
-2. Run `/docket:ingest` to read the review comments on the PR, or `/docket:ingest <file>` for a local review report.
-3. Run `/docket:research`. Each finding gets an explanation, options with pros, cons and blast radius, and a lane: `quick`, `decide`, `scope` or `dig`.
-4. Decide. Accept quick findings in bulk, pick options for the rest, and run `/docket:discuss <id>` for anything that needs a conversation.
-5. Run `/docket:apply`. One agent implements the queue in order, one commit and one verification per finding.
-6. Run `/docket:reply` to draft replies to reviewers. Nothing posts until you approve it.
+1. Open a worktree for your branch. Run `/docket`, then press **Start docket** (or run `/docket:start`). Until you do, docket is dormant in that worktree: no skill acts on its own, the pane does not open by itself, and no brief appears.
+2. Ingest the review comments on the PR (`i`, or `/docket:ingest`), or run `/docket:ingest <file>` for a local review report.
+3. Research (`r`). Each finding gets an explanation, options with pros, cons and blast radius, and a lane: `quick`, `decide`, `scope` or `dig`.
+4. Decide. Accept quick findings in bulk, pick options for the rest, and discuss anything that needs a conversation.
+5. Apply (`a`). The agent implements the queue in order, one commit and one verification per finding. It never pushes.
+6. Replies (`y`). The agent drafts replies to reviewers. Nothing posts until you approve it.
 7. Later, run `/docket:deferrals` from anywhere to pick up work you deferred.
 
 In any ordinary session in a worktree where docket is active, a session-start brief lists the open findings. If you fix one there, the agent records it with the `record` skill.
@@ -56,10 +70,11 @@ In any ordinary session in a worktree where docket is active, a session-start br
 | `spec/` | Data model, JSON Schemas, examples |
 | `src/` → `plugin/bin/docket.cjs` | The `docket` CLI, the only writer of docket files. Bundled with its dependencies and schemas. |
 | `plugin/skills/` | `start`, `ingest`, `research`, `discuss`, `apply`, `record`, `reply`, `deferrals` |
-| `plugin/hooks/hooks.json` | `SessionStart` brief, empty unless docket is active in the worktree |
-| `ui/index.html` | The Docket view: findings by lane, decisions, discussion, history, replies. One page for the browser and the Orca panel. |
-| `src/ui-server.ts`, `src/api.ts` | `docket ui`: local HTTP server and the action layer behind every UI |
-| `orca-plugin/` | Orca plugin: "Docket: Open" command, right-sidebar panel, worker |
+| `plugin/hooks/pane.js` | The Docket pane and the `/docket` command (a Claude Code mod) |
+| `plugin/hooks/hooks.json` | Loads the pane, and a `SessionStart` brief that is empty unless docket is active |
+| `plugin/tests/` | Pane tests, run with `claude plugin test ./plugin` |
+| `src/api.ts` | The action layer behind the pane (`docket api`) and the browser view |
+| `ui/index.html`, `src/ui-server.ts` | The browser view and its local HTTP server (`docket ui`) |
 | `scripts/demo.mjs` | `pnpm run demo`: a throwaway repo with findings in every lane, served on port 4848 |
 
 ## Data model
@@ -87,6 +102,7 @@ Run `docket --help` for every command. The main groups:
 | Decide and apply | `decide`, `accept`, `reopen`, `apply next`, `apply commit`, `apply verify`, `apply complete`, `apply bounce`, `record` |
 | Replies | `reply draft`, `reply approve`, `reply posted`, `reply skip` |
 | Deferrals | `deferrals list`, `show`, `pickup`, `done`, `drop`, `reopen` |
+| UI | `ui [--open]`, `api snapshot`, `api worktrees`, `api finding`, `api action`, `api plan` |
 
 Every command accepts `-C <path>` and `--json`. Writes accept `--rev <n>` and fail with exit 13 when the finding changed since it was read. `docket status` exits 0 when active, 10 when not started, 11 when paused, 12 on a branch mismatch.
 
@@ -97,4 +113,6 @@ pnpm install
 pnpm run check
 ```
 
-`check` regenerates the embedded schemas, typechecks, runs the tests against the TypeScript sources and against the bundle, validates the spec examples and the plugin, and fails if the committed bundle is stale. Tests use temporary git repos and a temporary `DOCKET_HOME`. Node 23.6 or later runs the TypeScript sources directly.
+`check` regenerates the embedded schemas, typechecks, runs the tests against the TypeScript sources and against the bundle, runs the pane tests, validates the spec examples and the plugin, and fails if the committed bundle is stale. Tests use temporary git repos and a temporary `DOCKET_HOME`.
+
+To work on the pane, start Claude Code with `claude --plugin-dir ./plugin`. Claude Code reloads the pane when you save `plugin/hooks/pane.js`. Tested with Claude Code 2.1.289.

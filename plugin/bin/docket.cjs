@@ -10311,7 +10311,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve3.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
@@ -10338,7 +10338,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve3(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -11168,7 +11168,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve3(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -11537,7 +11537,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve2,
+      resolve: resolve3,
       resolveComponent,
       equal,
       serialize,
@@ -15351,8 +15351,8 @@ var require_dist2 = __commonJS({
 });
 
 // src/cli.ts
-var import_node_child_process7 = require("node:child_process");
-var import_node_fs7 = require("node:fs");
+var import_node_child_process6 = require("node:child_process");
+var import_node_fs6 = require("node:fs");
 var import_node_util = require("node:util");
 
 // src/apply.ts
@@ -15387,7 +15387,7 @@ var import_ajv_formats = __toESM(require_dist2(), 1);
 var SCHEMAS = {
   "common.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/common.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/common.schema.json",
     "title": "Docket shared definitions",
     "$defs": {
       "timestamp": {
@@ -15533,7 +15533,7 @@ var SCHEMAS = {
   },
   "deferral.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/deferral.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/deferral.schema.json",
     "title": "Docket deferral frontmatter",
     "description": "YAML frontmatter of a deferral file at ${DOCKET_HOME:-~/.docket}/deferrals/<id>.md. The body sections are defined in SPEC.md.",
     "type": "object",
@@ -15786,7 +15786,7 @@ var SCHEMAS = {
   },
   "event.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/event.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/event.schema.json",
     "title": "Docket event",
     "description": "One line of events.jsonl. Append-only. head is the worktree HEAD when the event occurred.",
     "type": "object",
@@ -15884,7 +15884,7 @@ var SCHEMAS = {
   },
   "finding.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/finding.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/finding.schema.json",
     "title": "Docket finding",
     "description": "One finding. Stored at docket/findings/<id>.json. Each finding moves through its states independently of every other finding.",
     "type": "object",
@@ -16288,9 +16288,6 @@ var SCHEMAS = {
             "type": "string",
             "description": "Agent session ID, so the user can continue later."
           },
-          "terminalHandle": {
-            "type": "string"
-          },
           "startedAt": {
             "$ref": "common.schema.json#/$defs/timestamp"
           },
@@ -16353,7 +16350,7 @@ var SCHEMAS = {
               "quick",
               "session"
             ],
-            "description": "panel: decided in the panel. quick: quick fix or bulk accept. session: recorded by an ad-hoc agent session (the panel shows it as inferred)."
+            "description": "panel: decided in the Docket pane or the web view. quick: quick fix or bulk accept. session: recorded by an ad-hoc agent session (the pane shows it as inferred)."
           },
           "decision": {
             "$ref": "#/$defs/decision"
@@ -16704,7 +16701,7 @@ var SCHEMAS = {
   },
   "sources.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/sources.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/sources.schema.json",
     "title": "Docket sources",
     "description": "Every ingested source of reviewer output, keyed by sourceId. Drives incremental ingest.",
     "type": "object",
@@ -16801,7 +16798,7 @@ var SCHEMAS = {
   },
   "unit.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/unit.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/unit.schema.json",
     "title": "Docket unit",
     "description": "One docket per git worktree. Stored at $(git rev-parse --git-dir)/docket/unit.json.",
     "type": "object",
@@ -16968,8 +16965,9 @@ var SCHEMAS = {
               "running"
             ]
           },
-          "terminalHandle": {
-            "type": "string"
+          "sessionId": {
+            "type": "string",
+            "description": "The Claude Code session the applier runs in."
           },
           "since": {
             "$ref": "common.schema.json#/$defs/timestamp"
@@ -17752,7 +17750,6 @@ function startDiscussion(ws, id, input) {
   const previous = finding2.discussion;
   finding2.discussion = compact({
     sessionId: input.sessionId ?? previous?.sessionId,
-    terminalHandle: input.terminalHandle ?? previous?.terminalHandle,
     startedAt: previous?.startedAt ?? ws.now,
     lastActiveAt: ws.now,
     entries: previous?.entries ?? []
@@ -17807,6 +17804,15 @@ function firstLine(text, max = 100) {
   const line = text.split("\n")[0]?.trim() ?? "";
   return line.length > max ? `${line.slice(0, max - 1)}\u2026` : line;
 }
+function acceptRecommended(ws, ids) {
+  const plan2 = ids.map((fid) => {
+    const finding2 = ws.readFinding(fid);
+    if (!["new", "ready", "discussing", "needs_attention"].includes(finding2.state)) invalidState(finding2, "accept");
+    const optionId = finding2.research?.recommendedOptionId ?? badInput(`${fid} has no recommendation; research it first`);
+    return { fid, optionId };
+  });
+  return plan2.map(({ fid, optionId }) => decide(ws, fid, { optionId, origin: "quick" }));
+}
 function decide(ws, id, input, rev2) {
   const finding2 = ws.readFinding(id);
   if (!["new", "ready", "discussing", "needs_attention"].includes(finding2.state)) invalidState(finding2, "decide on");
@@ -17816,12 +17822,14 @@ function decide(ws, id, input, rev2) {
   const kind = input.kind ?? option?.kind ?? badInput("kind is required for a custom decision");
   if (optionId === "custom" && !input.instruction) badInput("instruction is required for a custom decision");
   const origin = input.origin ?? "panel";
+  const instruction = input.instruction ?? (kind !== "fix" ? option?.description : void 0);
+  if (kind !== "fix" && !instruction) badInput("a reason (instruction) is required");
   abandonPending(ws, finding2);
   const n = finding2.iterations.length + 1;
   const iteration = compact({
     n,
     origin,
-    decision: compact({ optionId, kind, instruction: input.instruction }),
+    decision: compact({ optionId, kind, instruction }),
     decidedAt: ws.now,
     decidedAtCommit: ws.head,
     outcome: "pending"
@@ -17837,7 +17845,7 @@ function decide(ws, id, input, rev2) {
     ws.event("ui", "queued", { findingId: id, iteration: n, data: { position: iteration.queue.position } });
     return saved2;
   }
-  const reason = input.instruction ?? option?.description ?? badInput("a reason (instruction) is required");
+  const reason = instruction;
   iteration.endedAt = ws.now;
   if (kind === "acknowledge") {
     iteration.outcome = "acknowledged";
@@ -17945,7 +17953,7 @@ function chosenOption(finding2, it) {
 function queued(ws) {
   return ws.allFindings().filter((f) => f.state === "queued").sort((a, b) => (currentIteration(a).queue?.position ?? 0) - (currentIteration(b).queue?.position ?? 0));
 }
-function nextTask(ws, terminalHandle) {
+function nextTask(ws, sessionId) {
   const inProgress = ws.allFindings().find((f) => f.state === "fixing");
   const pending = queued(ws);
   const finding2 = inProgress ?? pending.shift();
@@ -17965,7 +17973,7 @@ function nextTask(ws, terminalHandle) {
     saved = ws.saveFinding(finding2);
     ws.event("applier", "apply_started", { findingId: finding2.id, iteration: iteration.n });
   }
-  ws.saveUnit({ ...ws.unit, applier: compact({ state: "running", terminalHandle: terminalHandle ?? ws.unit.applier?.terminalHandle, since: ws.unit.applier?.state === "running" ? ws.unit.applier.since : ws.now }) });
+  ws.saveUnit({ ...ws.unit, applier: compact({ state: "running", sessionId: sessionId ?? ws.unit.applier?.sessionId, since: ws.unit.applier?.state === "running" ? ws.unit.applier.since : ws.now }) });
   const it = currentIteration(saved);
   return { finding: saved, iteration: it, option: chosenOption(saved, it) ?? null, remainingInQueue: pending.length };
 }
@@ -18203,87 +18211,14 @@ function brief(ctx, read) {
 }
 
 // src/ui-server.ts
-var import_node_child_process6 = require("node:child_process");
+var import_node_child_process5 = require("node:child_process");
 var import_node_http = require("node:http");
 
 // src/api.ts
-var import_node_fs6 = require("node:fs");
-var import_node_path6 = require("node:path");
-
-// src/orca.ts
-var import_node_child_process4 = require("node:child_process");
 var import_node_fs5 = require("node:fs");
 var import_node_path5 = require("node:path");
-var APP_CLI = "/Applications/Orca.app/Contents/Resources/bin/orca";
-function findOrca() {
-  if (process.env.DOCKET_ORCA) return process.env.DOCKET_ORCA === "none" ? null : process.env.DOCKET_ORCA;
-  for (const dir of (process.env.PATH ?? "").split(import_node_path5.delimiter)) {
-    if (dir && (0, import_node_fs5.existsSync)((0, import_node_path5.join)(dir, "orca"))) return (0, import_node_path5.join)(dir, "orca");
-  }
-  return (0, import_node_fs5.existsSync)(APP_CLI) ? APP_CLI : null;
-}
-function orcaJson(args) {
-  const orca = findOrca();
-  if (!orca) throw new DocketError("orca_missing", "The Orca CLI was not found. Install Orca, or set DOCKET_ORCA.");
-  let out;
-  try {
-    out = (0, import_node_child_process4.execFileSync)(orca, [...args, "--json"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 15e3 });
-  } catch (error) {
-    const e = error;
-    out = e.stdout ?? "";
-    if (!out.trim()) throw new DocketError("orca_failed", `orca ${args.join(" ")} failed: ${e.stderr?.trim() ?? "no output"}`);
-  }
-  const parsed = JSON.parse(out);
-  if (parsed.ok === false) throw new DocketError("orca_failed", parsed.error?.message ?? `orca ${args.join(" ")} failed`);
-  return parsed.result ?? parsed;
-}
-function listOrcaWorktrees() {
-  const result = orcaJson(["worktree", "list"]);
-  const items = Array.isArray(result) ? result : result.worktrees ?? [];
-  return items.filter((w) => typeof w.path === "string" && !w.isBare).map((w) => ({
-    path: w.path,
-    displayName: w.displayName ?? w.path,
-    branch: typeof w.branch === "string" ? w.branch.replace(/^refs\/heads\//, "") : null,
-    repo: typeof w.projectId === "string" ? w.projectId.replace(/^github:/, "") : null,
-    isArchived: Boolean(w.isArchived)
-  }));
-}
-function createTerminal(worktreePath, title, command, focus) {
-  const args = ["terminal", "create", "--worktree", `path:${worktreePath}`, "--title", title, "--command", command];
-  if (focus) args.push("--focus");
-  const result = orcaJson(args);
-  const handle = result?.handle ?? result?.terminal?.handle ?? result?.terminalHandle ?? result?.startupTerminal?.handle;
-  if (typeof handle !== "string") throw new DocketError("orca_failed", "orca terminal create returned no handle");
-  return handle;
-}
-function terminalAlive(handle) {
-  try {
-    const result = orcaJson(["terminal", "list"]);
-    const terminals = Array.isArray(result) ? result : result.terminals ?? [];
-    return terminals.some((t) => t.handle === handle && t.connected !== false && t.orphaned !== true);
-  } catch {
-    return false;
-  }
-}
-function sendToTerminal(handle, text) {
-  orcaJson(["terminal", "send", "--terminal", handle, "--text", text, "--enter"]);
-}
-function focusTerminal(handle) {
-  orcaJson(["terminal", "switch", "--terminal", handle]);
-}
-function openBrowserTab(url) {
-  try {
-    orcaJson(["tab", "create", "--url", url]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// src/api.ts
-var import_node_child_process5 = require("node:child_process");
+var import_node_child_process4 = require("node:child_process");
 var FINDING_ID = /^f-\d{4,}$/;
-var SESSION_ID = /^[A-Za-z0-9_-]{8,128}$/;
 function ctxFor(path, options = {}) {
   if (typeof path !== "string" || !path.startsWith("/")) throw new DocketError("bad_input", "path must be an absolute worktree path", EXIT.badInput);
   return { cwd: path, now: options.now ?? (() => (/* @__PURE__ */ new Date()).toISOString()), prLookup: options.prLookup ?? true };
@@ -18298,23 +18233,42 @@ function findingId(value) {
 function peek(path) {
   try {
     const wt = readWorktree(path);
-    const unitPath = (0, import_node_path6.join)(wt.gitDir, "docket", "unit.json");
-    if (!(0, import_node_fs6.existsSync)(unitPath)) return { state: "not_started", open: 0 };
+    const unitPath = (0, import_node_path5.join)(wt.gitDir, "docket", "unit.json");
+    if (!(0, import_node_fs5.existsSync)(unitPath)) return { state: "not_started", open: 0 };
     const unit = readJson(unitPath);
     return { state: unit.status, open: 0 };
   } catch {
     return { state: "unknown", open: 0 };
   }
 }
-function worktrees() {
-  const orca = findOrca();
-  if (!orca) return { orca: false, items: [] };
-  const items = listOrcaWorktrees().filter((w) => !w.isArchived).map((w) => ({ ...w, docket: peek(w.path).state }));
-  return { orca: true, items };
+function worktrees(path) {
+  ctxFor(path);
+  let out;
+  try {
+    out = (0, import_node_child_process4.execFileSync)("git", ["worktree", "list", "--porcelain"], { cwd: path, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  } catch {
+    return { items: [] };
+  }
+  let current = null;
+  try {
+    current = (0, import_node_child_process4.execFileSync)("git", ["rev-parse", "--show-toplevel"], { cwd: path, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    current = null;
+  }
+  const items = [];
+  for (const block of out.split(/\n\n+/)) {
+    const lines = block.split("\n");
+    const wtPath = lines.find((l) => l.startsWith("worktree "))?.slice(9);
+    if (!wtPath || lines.includes("bare") || lines.includes("prunable")) continue;
+    const branch = lines.find((l) => l.startsWith("branch "))?.slice(7).replace(/^refs\/heads\//, "") ?? null;
+    const head = lines.find((l) => l.startsWith("HEAD "))?.slice(5) ?? null;
+    items.push({ path: wtPath, branch, head, isCurrent: wtPath === current, docket: peek(wtPath).state });
+  }
+  return { items };
 }
 function unpushed(cwd) {
   try {
-    return Number((0, import_node_child_process5.execFileSync)("git", ["rev-list", "--count", "@{upstream}..HEAD"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
+    return Number((0, import_node_child_process4.execFileSync)("git", ["rev-list", "--count", "@{upstream}..HEAD"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
   } catch {
     return null;
   }
@@ -18333,7 +18287,7 @@ function snapshot(path, options = {}) {
       return {
         ...s,
         options: s.open ? (f.research?.options ?? []).map((o) => ({ id: o.id, kind: o.kind, title: o.title, effort: o.effort, blast: o.blastRadius.level })) : [],
-        discussionLive: Boolean(f.discussion?.terminalHandle) && f.state === "discussing",
+        discussionSessionId: f.discussion?.sessionId ?? null,
         lastIterationOutcome: f.iterations.at(-1)?.outcome ?? null,
         bounceReason: f.state === "needs_attention" ? f.iterations.at(-1)?.bounceReason ?? null : null
       };
@@ -18373,14 +18327,7 @@ function action(path, name, args = {}, options = {}) {
     case "accept": {
       const ids = args.ids;
       if (!Array.isArray(ids) || ids.length === 0) bad("ids must be a non-empty array");
-      return write(
-        (ws) => ids.map((raw) => {
-          const fid = findingId(raw);
-          const f = ws.readFinding(fid);
-          const optionId = f.research?.recommendedOptionId ?? bad(`${fid} has no recommendation; research it first`);
-          return decide(ws, fid, { optionId, origin: "quick" });
-        })
-      );
+      return write((ws) => acceptRecommended(ws, ids.map(findingId)));
     }
     case "decide": {
       const input = {
@@ -18415,44 +18362,31 @@ function action(path, name, args = {}, options = {}) {
   }
   bad(`unknown action ${String(name)}`);
 }
-var recentAppliers = /* @__PURE__ */ new Map();
-function claudeCommand(prompt) {
-  if (!/^[\w:\s/.-]+$/.test(prompt)) bad("unsafe prompt");
-  return `claude "${prompt}"`;
+function planFor(command, args = [], extra = {}) {
+  const joined = args.join(" ");
+  return { command: `docket:${command}`, args: joined, prompt: `/docket:${command}${joined ? ` ${joined}` : ""}`, ...extra };
 }
-function requireOrca(command) {
-  if (!findOrca()) throw new DocketError("orca_missing", `The Orca CLI was not found. Run this in a terminal in the worktree instead: ${command}`);
+function applyPlan(unit, sessionId) {
+  const applier = unit.applier;
+  const elsewhere = applier?.state === "running" && applier.sessionId && applier.sessionId !== sessionId;
+  return planFor("apply", [], elsewhere ? { warning: `An applier has been running in another session since ${applier.since ?? "earlier"}. Run apply here only if that session ended.` } : {});
 }
-function applierHandle(path, unit) {
-  const recent = recentAppliers.get(path);
-  if (recent && Date.now() - recent.at < 12e4 && terminalAlive(recent.handle)) return recent.handle;
-  if (unit.applier?.state === "running" && unit.applier.terminalHandle && terminalAlive(unit.applier.terminalHandle)) return unit.applier.terminalHandle;
-  return null;
-}
-function startApplier(path, unit) {
-  const command = claudeCommand("/docket:apply");
-  requireOrca(command);
-  const existing = applierHandle(path, unit);
-  if (existing) return { handle: existing, reused: true, command };
-  const handle = createTerminal(path, "docket: apply", command, false);
-  recentAppliers.set(path, { handle, at: Date.now() });
-  return { handle, reused: false, command };
-}
-function dispatch(path, kind, args = {}, options = {}) {
+function plan(path, kind, args = {}, options = {}) {
   const ctx = ctxFor(path, options);
   const unitOf = () => withWorkspace(ctx, "read", (ws) => ws.unit);
+  const sessionId = typeof args.sessionId === "string" ? args.sessionId : void 0;
   switch (kind) {
     case "ingest":
-    case "research":
-    case "reply": {
+    case "reply":
       unitOf();
-      const ids = kind === "research" && Array.isArray(args.ids) ? args.ids.map(findingId) : [];
-      const command = claudeCommand(`/docket:${kind}${ids.length ? ` ${ids.join(" ")}` : ""}`);
-      requireOrca(command);
-      return { handle: createTerminal(path, `docket: ${kind}`, command, true), command };
+      return planFor(kind);
+    case "research": {
+      unitOf();
+      const ids = Array.isArray(args.ids) ? args.ids.map(findingId) : [];
+      return planFor("research", ids);
     }
     case "apply":
-      return startApplier(path, unitOf());
+      return applyPlan(unitOf(), sessionId);
     case "quickFix": {
       const id = findingId(args.id);
       const decided = withWorkspace(ctx, "write", (ws) => {
@@ -18460,46 +18394,16 @@ function dispatch(path, kind, args = {}, options = {}) {
         const optionId = typeof args.optionId === "string" ? args.optionId : f.research?.recommendedOptionId ?? bad(`${id} has no recommendation; research it first`);
         return decide(ws, id, { optionId, origin: "quick" });
       });
-      if (decided.state !== "queued") return { finding: decided, applier: null };
-      try {
-        return { finding: decided, applier: startApplier(path, unitOf()) };
-      } catch (error) {
-        if (!(error instanceof DocketError)) throw error;
-        return { finding: decided, applier: null, applierError: error.message };
-      }
+      return { finding: decided, plan: decided.state === "queued" ? applyPlan(unitOf(), sessionId) : null };
     }
     case "discuss": {
       const id = findingId(args.id);
       const f = withWorkspace(ctx, "read", (ws) => ws.readFinding(id));
       if (!isOpen(f.state)) bad(`${id} is closed; reopen it to discuss`);
-      const live = f.discussion?.terminalHandle && terminalAlive(f.discussion.terminalHandle) ? f.discussion.terminalHandle : null;
-      if (live) {
-        focusTerminal(live);
-        return { handle: live, reused: true };
-      }
-      const sessionId = f.discussion?.sessionId;
-      const command = sessionId && SESSION_ID.test(sessionId) ? `claude --resume ${sessionId}` : claudeCommand(`/docket:discuss ${id}`);
-      requireOrca(command);
-      const handle = createTerminal(path, `docket: ${id}`, command, true);
-      withWorkspace(ctx, "write", (ws) => startDiscussion(ws, id, { terminalHandle: handle }));
-      return { handle, reused: false, command };
-    }
-    case "ask": {
-      const id = findingId(args.id);
-      const text = typeof args.text === "string" && args.text.trim() ? args.text.trim() : bad("text is required");
-      const f = withWorkspace(ctx, "read", (ws) => ws.readFinding(id));
-      const handle = f.discussion?.terminalHandle;
-      if (!handle || !terminalAlive(handle)) throw new DocketError("no_discussion", `No live discussion for ${id}. Press Discuss first.`, EXIT.invalidState);
-      sendToTerminal(handle, text);
-      return { handle, sent: true };
-    }
-    case "focus": {
-      const handle = typeof args.handle === "string" ? args.handle : bad("handle is required");
-      focusTerminal(handle);
-      return { handle };
+      return planFor("discuss", [id], f.discussion?.sessionId ? { resumeSessionId: f.discussion.sessionId } : {});
     }
   }
-  bad(`unknown dispatch ${String(kind)}`);
+  bad(`unknown plan ${String(kind)}`);
 }
 
 // src/ui.generated.ts
@@ -18626,8 +18530,7 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 dialog h3 { margin: 0 0 8px; }
 .check-list { display: grid; gap: 6px; max-height: 50vh; overflow: auto; margin: 10px 0; }
 .check-list label { display: flex; gap: 8px; align-items: baseline; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; }
-.launcher { padding: 24px 16px; text-align: center; }
-.launcher p { color: var(--muted); }
+pre.run { font-size: 13px; padding: 8px 10px; user-select: all; }
 </style>
 </head>
 <body>
@@ -18646,35 +18549,10 @@ dialog h3 { margin: 0 0 8px; }
 <script>
 'use strict'
 // ---------- transport ----------
-// One file serves two hosts. In a browser tab it talks to \`docket ui\` over
-// HTTP. Inside an Orca plugin panel it calls the plugin worker through
-// plugin.command.invoke when the host supports it.
-const inPanel = window.parent !== window && location.protocol !== 'http:' && location.protocol !== 'https:'
-let seq = 0
-const pending = {}
-function panelCall(action, params) {
-  return new Promise((resolve) => {
-    const requestId = 'req-' + ++seq
-    pending[requestId] = resolve
-    window.parent.postMessage({ type: 'orca-panel-action', requestId, action, params }, '*')
-  })
-}
-window.addEventListener('message', (event) => {
-  const data = event.data
-  if (!data || data.type !== 'orca-panel-action-result') return
-  const resolve = pending[data.requestId]
-  if (resolve) { delete pending[data.requestId]; resolve(data) }
-})
-async function invoke(op, args) {
-  const result = await panelCall('plugin.command.invoke', { commandId: 'docket-api', args: Object.assign({ op }, args || {}) })
-  if (!result.ok) throw new Error(result.error || result.errorCode || 'panel call failed')
-  const value = result.value && 'value' in result.value ? result.value.value : result.value
-  if (value && value.error) throw new Error(value.error.message)
-  return value
-}
+// The page talks to \`docket ui\` over HTTP. Agent work runs as docket skills in
+// Claude Code, so the page shows the command to run rather than running it.
 const api = {
   async get(route, params) {
-    if (inPanel) return invoke(route, params)
     const query = new URLSearchParams(params || {}).toString()
     const res = await fetch('/api/' + route + (query ? '?' + query : ''))
     const body = await res.json()
@@ -18682,7 +18560,6 @@ const api = {
     return body
   },
   async post(route, payload) {
-    if (inPanel) return invoke(route, payload)
     const res = await fetch('/api/' + route, { method: 'POST', headers: { 'content-type': 'application/json', 'x-docket': '1' }, body: JSON.stringify(payload) })
     const body = await res.json()
     if (!res.ok) throw new Error(body.error ? body.error.message : res.statusText)
@@ -18766,8 +18643,8 @@ function summaryOf(id) { return ((S.snap && S.snap.summaries) || []).find((s) =>
 
 // ---------- data ----------
 async function loadWorktrees() {
-  if (inPanel) return
-  try { S.worktrees = (await api.get('worktrees')).items || [] } catch (e) { S.worktrees = [] }
+  if (!S.path) { S.worktrees = []; return renderWorktreePicker() }
+  try { S.worktrees = (await api.get('worktrees', { path: S.path })).items || [] } catch (e) { S.worktrees = [] }
   renderWorktreePicker()
 }
 let lastKey = ''
@@ -18808,31 +18685,36 @@ async function act(name, args, message) {
     return result
   } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
 }
-async function dispatch(kind, args, message) {
+// Agent work is a docket skill. The page cannot reach a Claude Code session,
+// so it shows the command and copies it for the user to run there.
+async function runPlan(kind, args) {
   if (S.busy) return
   S.busy = true
+  let result
   try {
-    const result = await api.post('dispatch', { path: S.path, kind, args: args || {} })
-    if (result && result.applierError) toast('Queued, but the applier did not start. ' + result.applierError, true)
-    else if (message) toast(result && result.reused ? message.replace(/^(Started|Opened)/, 'Focused') : message)
-    S.busy = false
-    await refresh(true)
-    return result
-  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
+    result = await api.post('plan', { path: S.path, kind, args: args || {} })
+  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true); return } finally { S.busy = false }
+  await refresh(true)
+  const plan = result && 'plan' in result ? result.plan : result
+  if (!plan) return toast('Recorded')
+  let copied = false
+  try { await navigator.clipboard.writeText(plan.prompt); copied = true } catch (e) { copied = false }
+  const resume = plan.resumeSessionId ? '<p class="meta">Or continue the earlier discussion from a shell:</p><pre class="run">claude --resume ' + esc(plan.resumeSessionId) + '</pre>' : ''
+  await confirmDialog(kind === 'quickFix' ? 'Queued. Start the applier' : 'Run in Claude Code',
+    (plan.warning ? '<div class="banner warn"><span>' + esc(plan.warning) + '</span></div>' : '') +
+    '<p class="meta">Run this in a Claude Code session in this worktree' + (copied ? ' (copied to the clipboard)' : '') + '. The <code>/docket</code> pane runs it for you.</p><pre class="run">' + esc(plan.prompt) + '</pre>' + resume,
+    [{ label: 'Done', value: 'ok', primary: true }])
 }
 
 // ---------- render ----------
 function renderWorktreePicker() {
   const select = $('#worktree')
-  if (inPanel && !S.worktrees.length) { select.hidden = true; return }
   const items = S.worktrees.slice()
-  if (S.path && !items.some((w) => w.path === S.path)) items.unshift({ path: S.path, displayName: S.path.split('/').pop(), repo: '', docket: '' })
-  const byRepo = {}
-  for (const w of items) (byRepo[w.repo || 'Other'] = byRepo[w.repo || 'Other'] || []).push(w)
+  if (S.path && !items.some((w) => w.path === S.path)) items.unshift({ path: S.path, branch: null, docket: '' })
+  select.hidden = items.length === 0
   const mark = (state) => (state === 'active' ? ' \u25CF' : state === 'paused' ? ' \u25D0' : '')
-  select.innerHTML = '<option value="">Choose a worktree\u2026</option>' + Object.keys(byRepo).sort().map((repo) =>
-    '<optgroup label="' + esc(repo) + '">' + byRepo[repo].map((w) =>
-      '<option value="' + esc(w.path) + '"' + (w.path === S.path ? ' selected' : '') + '>' + esc(w.displayName + (w.branch ? ' \xB7 ' + w.branch : '') + mark(w.docket)) + '</option>').join('') + '</optgroup>').join('')
+  select.innerHTML = items.map((w) =>
+    '<option value="' + esc(w.path) + '"' + (w.path === S.path ? ' selected' : '') + ' title="' + esc(w.path) + '">' + esc(w.path.split('/').pop() + (w.branch ? ' \xB7 ' + w.branch : '') + mark(w.docket)) + '</option>').join('')
 }
 
 function render() {
@@ -18842,7 +18724,7 @@ function render() {
   if (!S.path) {
     pill.textContent = ''
     toolbar.innerHTML = ''
-    main.innerHTML = '<div class="empty"><h2>Choose a worktree</h2>Docket tracks review findings per worktree.</div>'
+    main.innerHTML = '<div class="empty"><h2>Open a worktree</h2>Run <code>docket ui --open</code> in a worktree, or add <code>?path=/absolute/worktree/path</code> to this address.</div>'
     return
   }
   if (!snap) return
@@ -18874,10 +18756,10 @@ function renderToolbar() {
   const parts = []
   if (snap.state === 'paused') parts.push(b('class="primary" data-act="resume"', 'Resume'))
   else {
-    parts.push(b('data-dispatch="ingest"', 'Ingest', remoteNew, 'Read review comments on the PR'))
-    parts.push(b('data-dispatch="research"', 'Research', untriaged, 'Investigate unresearched findings'))
-    parts.push(b('data-dispatch="apply"', applierRunning ? 'Applier running' : 'Apply queue', queued, 'Implement queued fixes in order'))
-    parts.push(b('data-dispatch="reply"', 'Replies', drafts, 'Draft and post replies to reviewers'))
+    parts.push(b('data-plan="ingest"', 'Ingest', remoteNew, 'Read review comments on the PR'))
+    parts.push(b('data-plan="research"', 'Research', untriaged, 'Investigate unresearched findings'))
+    parts.push(b('data-plan="apply"', applierRunning ? 'Applier running' : 'Apply queue', queued, 'Implement queued fixes in order'))
+    parts.push(b('data-plan="reply"', 'Replies', drafts, 'Draft and post replies to reviewers'))
     parts.push(b('class="ghost" data-act="pause"', 'Pause'))
   }
   if (newCount) parts.push(b('class="ghost" data-act="view"', newCount + ' new \xB7 mark seen'))
@@ -18898,7 +18780,7 @@ function renderFindings() {
   if (snap.state === 'paused') html += '<div class="banner warn"><span>Docket is paused. Skills and hooks are dormant in this worktree. The data stays.</span><button data-act="resume">Resume</button></div>'
   if (!sums.length) {
     html += '<div class="empty"><h2>No findings yet</h2><p>Ingest the review comments on your PR, or a local review report.</p>' +
-      (snap.state === 'active' ? '<button class="primary" data-dispatch="ingest">Ingest review comments</button>' : '') + '</div>'
+      (snap.state === 'active' ? '<button class="primary" data-plan="ingest">Ingest review comments</button>' : '') + '</div>'
   }
   for (const [lane, label, hint] of LANES) {
     const items = open.filter((s) => laneOf(s) === lane)
@@ -18906,7 +18788,7 @@ function renderFindings() {
     const quickReady = lane === 'quick' ? items.filter((s) => s.state === 'ready' || s.state === 'discussing') : []
     const extra = snap.state !== 'active' ? ''
       : lane === 'quick' && quickReady.length > 1 ? '<button class="primary" data-bulk="quick">Accept all (' + quickReady.length + ')</button>'
-      : lane === 'research' ? '<button data-dispatch="research">Research all</button>' : ''
+      : lane === 'research' ? '<button data-plan="research">Research all</button>' : ''
     html += '<section class="lane"><h3>' + esc(label) + ' <span class="hint">' + esc(hint) + '</span><span class="spacer"></span>' + extra + '</h3>' + items.map(card).join('') + '</section>'
   }
   if (closed.length) html += '<details class="closed-list"' + (S.showClosed ? ' open' : '') + ' id="closed"><summary>Closed (' + closed.length + ')</summary>' + closed.map(card).join('') + '</details>'
@@ -18948,7 +18830,7 @@ function card(s) {
 function quickActions(s, lane) {
   if (S.snap.state !== 'active' || s.state === 'queued' || s.state === 'fixing') return ''
   const id = esc(s.id)
-  if (lane === 'research') return '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research</button></div>'
+  if (lane === 'research') return '<div class="actions"><button data-plan="research" data-ids="' + id + '">Research</button></div>'
   if (lane === 'quick' && s.recommended) {
     const label = s.recommended.kind === 'acknowledge' ? 'Accept (leave as is)' : s.recommended.kind === 'defer' ? 'Accept (defer)' : 'Quick fix'
     return '<div class="actions"><button class="primary" data-quick="' + id + '">' + label + '</button><button data-discuss="' + id + '">Discuss</button></div>'
@@ -18964,7 +18846,7 @@ function quickActions(s, lane) {
     return '<div class="actions"><button class="primary" data-quick="' + id + '">Fix now</button>' +
       (defer ? '<button data-defer="' + id + '" data-option="' + esc(defer.id) + '">Defer</button>' : '') + '<button data-discuss="' + id + '">Discuss</button></div>'
   }
-  if (lane === 'dig' || lane === 'attention') return '<div class="actions"><button class="primary" data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : 'Discuss') + '</button></div>'
+  if (lane === 'dig' || lane === 'attention') return '<div class="actions"><button class="primary" data-discuss="' + id + '">' + (s.state === 'discussing' ? 'Continue discussion' : 'Discuss') + '</button></div>'
   return ''
 }
 
@@ -18996,13 +18878,12 @@ function body(s) {
     if (editable) {
       html += '<div class="decide-box"><textarea data-draft="' + id + '" placeholder="Optional: extra direction for the applier, or the reason when you acknowledge or defer">' + esc(S.drafts[f.id] || '') + '</textarea><div class="actions">' +
         '<button class="primary" data-decide="' + id + '">Use selected option</button><button data-quick="' + id + '" data-selected="1">Quick fix with selected</button>' +
-        '<button data-ack="' + id + '">Leave as is\u2026</button><button data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : f.discussion && f.discussion.sessionId ? 'Resume discussion' : 'Discuss') + '</button>' +
+        '<button data-ack="' + id + '">Leave as is\u2026</button><button data-discuss="' + id + '">' + (s.state === 'discussing' ? 'Continue discussion' : f.discussion && f.discussion.sessionId ? 'Resume discussion' : 'Discuss') + '</button>' +
         (f.stale ? '<button class="ghost" data-act="unstale" data-arg-id="' + id + '">Clear stale flag</button>' : '') + '</div></div>'
     }
   } else if (s.open && S.snap.state === 'active') {
-    html += '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research this finding</button></div>'
+    html += '<div class="actions"><button data-plan="research" data-ids="' + id + '">Research this finding</button></div>'
   }
-  if (s.discussionLive) html += '<h4>Ask in the discussion</h4><div class="row"><input style="flex:1" data-ask-input="' + id + '" placeholder="Ask a question\u2026"><button data-ask="' + id + '">Send</button></div>'
   if (f.discussion && f.discussion.entries.length) {
     html += '<h4>Discussion</h4>' + f.discussion.entries.map((e) => '<div class="entry"><div class="q">' + esc(e.question) + '</div><div class="md">' + md(e.answer) + '</div>' + (e.optionsChanged ? '<div class="meta">Options revised</div>' : '') + '</div>').join('')
   }
@@ -19067,7 +18948,7 @@ async function bulkAccept() {
   const result = await confirmDialog('Accept quick findings', html, [{ label: 'Cancel' }, { label: 'Accept', value: 'accept' }, { label: 'Accept and apply', value: 'apply', primary: true }])
   if (!result || !result.checked.length) return
   await act('accept', { ids: result.checked }, 'Accepted ' + result.checked.length)
-  if (result.value === 'apply' && ((S.snap.counts || {}).queued || 0) > 0) await dispatch('apply', {}, 'Started the applier')
+  if (result.value === 'apply' && ((S.snap.counts || {}).queued || 0) > 0) await runPlan('apply')
 }
 
 async function reasonDialog(title, hint, initial) {
@@ -19089,7 +18970,7 @@ document.addEventListener('click', async (event) => {
     return render()
   }
   if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : null)
-  if (d.dispatch) return dispatch(d.dispatch, d.ids ? { ids: d.ids.split(',') } : {}, 'Started ' + d.dispatch + ' in a new terminal')
+  if (d.plan) return runPlan(d.plan, d.ids ? { ids: d.ids.split(',') } : {})
   if (d.bulk) return bulkAccept()
   if (d.quick) {
     const id = d.quick
@@ -19098,9 +18979,9 @@ document.addEventListener('click', async (event) => {
       const rec = S.details[id] && S.details[id].data.finding.research
       await act('decide', { id, optionId: optionId || (rec && rec.recommendedOptionId), instruction: S.drafts[id], origin: 'quick' })
       delete S.drafts[id]
-      return dispatch('apply', {}, 'Queued and started the applier')
+      return runPlan('apply')
     }
-    return dispatch('quickFix', optionId ? { id, optionId } : { id }, 'Queued; the applier is running')
+    return runPlan('quickFix', optionId ? { id, optionId } : { id })
   }
   if (d.decide) {
     const id = d.decide
@@ -19127,14 +19008,7 @@ document.addEventListener('click', async (event) => {
     if (reason) await act('decide', { id: d.ack, optionId: 'custom', kind: 'acknowledge', instruction: reason }, 'Acknowledged ' + d.ack)
     return
   }
-  if (d.discuss) return dispatch('discuss', { id: d.discuss }, 'Opened the discussion in a terminal')
-  if (d.ask) {
-    const input = $('[data-ask-input="' + d.ask + '"]')
-    if (!input.value.trim()) return
-    await dispatch('ask', { id: d.ask, text: input.value }, 'Sent to the discussion')
-    input.value = ''
-    return
-  }
+  if (d.discuss) return runPlan('discuss', { id: d.discuss })
   if (d.reopen) {
     const reason = await reasonDialog('Reopen ' + d.reopen, 'Why does this need another look?')
     if (reason) await act('reopen', { id: d.reopen, reason }, 'Reopened ' + d.reopen)
@@ -19154,20 +19028,15 @@ document.addEventListener('change', (event) => {
   if (t.id === 'worktree') {
     S.path = t.value
     S.snap = null; S.expanded.clear(); S.details = {}; lastKey = ''
-    if (!inPanel) {
-      const url = new URL(location.href)
-      if (S.path) url.searchParams.set('path', S.path); else url.searchParams.delete('path')
-      history.replaceState(null, '', url)
-    }
+    const url = new URL(location.href)
+    if (S.path) url.searchParams.set('path', S.path); else url.searchParams.delete('path')
+    history.replaceState(null, '', url)
+    loadWorktrees()
     refresh()
   }
 })
 document.addEventListener('input', (event) => {
   if (event.target.dataset.draft) S.drafts[event.target.dataset.draft] = event.target.value
-})
-document.addEventListener('keydown', (event) => {
-  const t = event.target
-  if (event.key === 'Enter' && t.dataset && t.dataset.askInput) { event.preventDefault(); $('[data-ask="' + t.dataset.askInput + '"]').click() }
 })
 document.addEventListener('toggle', (event) => {
   const t = event.target
@@ -19182,34 +19051,7 @@ async function tick() {
   setTimeout(tick, 2000)
 }
 
-// ---------- panel boot ----------
-async function bootPanel() {
-  const ctxResult = await panelCall('workspace.readContext')
-  const context = ctxResult.ok ? ctxResult.value : null
-  try {
-    const resolved = await invoke('resolve', { branch: context && context.branch, displayName: context && context.displayName })
-    if (resolved.candidates.length === 1) { S.path = resolved.candidates[0].path; return true }
-    S.worktrees = resolved.candidates
-    renderWorktreePicker()
-    return true
-  } catch (e) {
-    // This Orca does not let panels call their worker yet: show a launcher.
-    const terminals = context ? context.terminals : []
-    $('#main').innerHTML = '<div class="launcher"><h2>Docket</h2><p>' + (context ? esc(context.displayName) + ' \xB7 ' + esc(context.branch) : 'No worktree is focused.') + '</p>' +
-      '<p>This version of Orca cannot show docket data inside the panel yet. Open the full Docket view in Orca\\'s browser instead.</p>' +
-      '<p><button class="primary" id="open-ui"' + (terminals.length ? '' : ' disabled') + '>Open Docket</button></p>' +
-      '<p class="meta">' + (terminals.length ? 'Types <code>docket ui --open</code> into this worktree\\'s terminal.' : 'Open a terminal in this worktree first.') + '</p></div>'
-    const button = $('#open-ui')
-    if (button) button.onclick = async () => {
-      const r = await panelCall('terminal.sendText', { terminalId: terminals[0].id, text: 'docket ui --open', enter: true })
-      toast(r.ok ? 'Opening Docket\u2026' : 'Could not type into the terminal', !r.ok)
-    }
-    return false
-  }
-}
-
 (async () => {
-  if (inPanel && !(await bootPanel())) return
   await loadWorktrees()
   await refresh()
   tick()
@@ -19234,7 +19076,7 @@ function send(res, status2, body, type = "application/json") {
   res.end(text);
 }
 function readBody(req) {
-  return new Promise((resolve2, reject) => {
+  return new Promise((resolve3, reject) => {
     let size = 0;
     const chunks = [];
     req.on("data", (chunk) => {
@@ -19246,7 +19088,7 @@ function readBody(req) {
     });
     req.on("end", () => {
       try {
-        resolve2(chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {});
+        resolve3(chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {});
       } catch {
         reject(new DocketError("bad_input", "request body is not valid JSON", 2));
       }
@@ -19263,7 +19105,6 @@ function errorStatus(error) {
   if (error.code === "not_found") return 404;
   if (error.code === "rev_conflict") return 409;
   if (["bad_input", "invalid_state", "not_started", "paused", "branch_mismatch", "no_discussion"].includes(error.code)) return 400;
-  if (error.code === "orca_missing") return 424;
   return 500;
 }
 function createUiServer(port) {
@@ -19272,15 +19113,15 @@ function createUiServer(port) {
     try {
       if (req.method === "GET" && url.pathname === "/") return send(res, 200, UI_HTML, "text/html");
       if (req.method === "GET" && url.pathname === "/api/health") return send(res, 200, { docket: true, version: VERSION });
-      if (req.method === "GET" && url.pathname === "/api/worktrees") return send(res, 200, worktrees());
+      if (req.method === "GET" && url.pathname === "/api/worktrees") return send(res, 200, worktrees(url.searchParams.get("path") ?? ""));
       if (req.method === "GET" && url.pathname === "/api/snapshot") return send(res, 200, snapshot(url.searchParams.get("path") ?? ""));
       if (req.method === "GET" && url.pathname === "/api/finding") {
         return send(res, 200, finding(url.searchParams.get("path") ?? "", url.searchParams.get("id") ?? ""));
       }
-      if (req.method === "POST" && (url.pathname === "/api/action" || url.pathname === "/api/dispatch")) {
+      if (req.method === "POST" && (url.pathname === "/api/action" || url.pathname === "/api/plan")) {
         if (!allowedWrite(req, port)) return send(res, 403, { error: { code: "forbidden", message: "missing x-docket header or foreign origin" } });
         const body = await readBody(req);
-        const result = url.pathname === "/api/action" ? action(body.path, body.name, body.args ?? {}) : dispatch(body.path, body.kind, body.args ?? {});
+        const result = url.pathname === "/api/action" ? action(body.path, body.name, body.args ?? {}) : plan(body.path, body.kind, body.args ?? {});
         return send(res, 200, { ok: true, result: result ?? null });
       }
       return send(res, 404, { error: { code: "not_found", message: `no route ${req.method} ${url.pathname}` } });
@@ -19291,25 +19132,33 @@ function createUiServer(port) {
   });
 }
 function probe(port) {
-  return new Promise((resolve2) => {
+  return new Promise((resolve3) => {
     const req = (0, import_node_http.request)({ host: "127.0.0.1", port, path: "/api/health", timeout: 800 }, (res) => {
       let body = "";
       res.on("data", (c) => body += c);
       res.on("end", () => {
         try {
-          resolve2(JSON.parse(body).docket === true);
+          resolve3(JSON.parse(body).docket === true);
         } catch {
-          resolve2(false);
+          resolve3(false);
         }
       });
     });
-    req.on("error", () => resolve2(false));
+    req.on("error", () => resolve3(false));
     req.on("timeout", () => {
       req.destroy();
-      resolve2(false);
+      resolve3(false);
     });
     req.end();
   });
+}
+function openInBrowser(url) {
+  const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "explorer" : "xdg-open";
+  try {
+    (0, import_node_child_process5.spawn)(opener, [url], { detached: true, stdio: "ignore" }).on("error", () => {
+    }).unref();
+  } catch {
+  }
 }
 function uiUrl(port, path) {
   return `http://127.0.0.1:${port}/${path ? `?path=${encodeURIComponent(path)}` : ""}`;
@@ -19318,7 +19167,7 @@ async function runUi(options) {
   const url = uiUrl(options.port, options.cwd);
   if (options.open) {
     if (!await probe(options.port)) {
-      const child = (0, import_node_child_process6.spawn)(process.execPath, [...process.execArgv, process.argv[1], "ui", "--port", String(options.port)], {
+      const child = (0, import_node_child_process5.spawn)(process.execPath, [...process.execArgv, process.argv[1], "ui", "--port", String(options.port)], {
         detached: true,
         stdio: "ignore",
         env: process.env
@@ -19326,7 +19175,7 @@ async function runUi(options) {
       child.unref();
       for (let i = 0; i < 40 && !await probe(options.port); i++) await new Promise((r) => setTimeout(r, 100));
     }
-    if (!openBrowserTab(url)) (0, import_node_child_process6.spawn)("open", [url], { detached: true, stdio: "ignore" }).unref();
+    openInBrowser(url);
     console.log(url);
     return 0;
   }
@@ -19335,9 +19184,9 @@ async function runUi(options) {
     return 0;
   }
   const server = createUiServer(options.port);
-  await new Promise((resolve2, reject) => {
+  await new Promise((resolve3, reject) => {
     server.once("error", reject);
-    server.listen(options.port, "127.0.0.1", () => resolve2());
+    server.listen(options.port, "127.0.0.1", () => resolve3());
   });
   console.log(`Docket UI: ${url}`);
   return await new Promise(() => {
@@ -19345,6 +19194,7 @@ async function runUi(options) {
 }
 
 // src/cli.ts
+var import_node_path6 = require("node:path");
 var USAGE = `Usage: docket [-C <path>] <command> [args] [options]
 
 Activation
@@ -19370,7 +19220,7 @@ Ingest
 Research and discussion
   research <id> --data <json>         Write research and triage (lane is computed)
   stale <id> --reason <text> | unstale <id>
-  discuss start <id> [--session-id <s>] [--terminal <t>]
+  discuss start <id> [--session-id <s>]
   discuss entry <id> --data <json>
   discuss end <id>
 
@@ -19378,7 +19228,7 @@ Decisions and apply
   decide <id> --option <A-F|custom> [--kind fix|acknowledge|defer] [--instruction <text>] [--origin panel|quick|session]
   accept <id>...                      Take the recommended option (origin quick)
   reopen <id> --reason <text>
-  apply next [--terminal <t>] | apply queue
+  apply next [--session-id <s>] | apply queue
   apply commit <id> <sha> | apply verify <id> --data <json>
   apply complete <id> --summary <text> [--also <id,id>] | apply bounce <id> --reason <text>
   record <id> --data <json>           Record work an ad-hoc session already committed
@@ -19389,7 +19239,10 @@ Replies
 
 UI
   ui [--open] [--port <n>]            Serve the Docket web UI on 127.0.0.1 (default port 4747);
-                                      --open starts it in the background and opens this worktree in Orca's browser
+                                      --open starts it in the background and opens this worktree in the browser
+  api snapshot | api worktrees | api finding <id>
+  api action <name> --data <json> | api plan <kind> --data <json>
+                                      The UI action layer as JSON: always {"ok":true,"result"} or {"ok":false,"error"}
 
 Deferrals (any directory)
   deferrals list [--all] | deferrals show <id>
@@ -19418,7 +19271,6 @@ function parse(argv) {
       reason: { type: "string" },
       summary: { type: "string" },
       also: { type: "string" },
-      terminal: { type: "string" },
       "session-id": { type: "string" },
       text: { type: "string" },
       target: { type: "string" },
@@ -19438,7 +19290,7 @@ function parse(argv) {
 function readData(values) {
   const raw = values.data;
   if (raw === void 0) badInput("--data is required");
-  const text = raw === "-" ? (0, import_node_fs7.readFileSync)(0, "utf8") : raw.startsWith("@") ? (0, import_node_fs7.readFileSync)(raw.slice(1), "utf8") : raw;
+  const text = raw === "-" ? (0, import_node_fs6.readFileSync)(0, "utf8") : raw.startsWith("@") ? (0, import_node_fs6.readFileSync)(raw.slice(1), "utf8") : raw;
   try {
     return JSON.parse(text);
   } catch {
@@ -19457,14 +19309,14 @@ function need(value, name) {
 }
 function unpushedCommits(cwd) {
   try {
-    return Number((0, import_node_child_process7.execFileSync)("git", ["rev-list", "--count", "@{upstream}..HEAD"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
+    return Number((0, import_node_child_process6.execFileSync)("git", ["rev-list", "--count", "@{upstream}..HEAD"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
   } catch {
     return null;
   }
 }
 function lookupPr2(cwd) {
   try {
-    const out = (0, import_node_child_process7.execFileSync)("gh", ["pr", "view", "--json", "number,url"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 1e4 });
+    const out = (0, import_node_child_process6.execFileSync)("gh", ["pr", "view", "--json", "number,url"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 1e4 });
     return JSON.parse(out);
   } catch {
     throw new DocketError("not_found", "gh found no PR for this branch; pass --number and --url", 15);
@@ -19473,7 +19325,7 @@ function lookupPr2(cwd) {
 function hookCwd() {
   if (process.stdin.isTTY) return void 0;
   try {
-    const input = JSON.parse((0, import_node_fs7.readFileSync)(0, "utf8") || "{}");
+    const input = JSON.parse((0, import_node_fs6.readFileSync)(0, "utf8") || "{}");
     return typeof input.cwd === "string" ? input.cwd : void 0;
   } catch {
     return void 0;
@@ -19548,7 +19400,7 @@ function run(ctx, values, args) {
       return { output: write((ws) => clearStale(ws, need(id, "finding id"))) };
     case "discuss": {
       const target = need(rest[0], "finding id");
-      if (sub === "start") return { output: write((ws) => startDiscussion(ws, target, { sessionId: values["session-id"], terminalHandle: values.terminal })) };
+      if (sub === "start") return { output: write((ws) => startDiscussion(ws, target, { sessionId: values["session-id"] })) };
       if (sub === "entry") return { output: write((ws) => addDiscussionEntry(ws, target, readData(values), rev(values))) };
       if (sub === "end") return { output: write((ws) => endDiscussion(ws, target)) };
       break;
@@ -19575,21 +19427,13 @@ function run(ctx, values, args) {
     case "accept": {
       const ids = [sub, ...rest].filter((x) => Boolean(x));
       if (ids.length === 0) badInput("accept needs at least one finding id");
-      return {
-        output: write(
-          (ws) => ids.map((fid) => {
-            const finding2 = ws.readFinding(fid);
-            const optionId = finding2.research?.recommendedOptionId ?? badInput(`${fid} has no recommendation; research it first`);
-            return decide(ws, fid, { optionId, origin: "quick" });
-          })
-        )
-      };
+      return { output: write((ws) => acceptRecommended(ws, ids)) };
     }
     case "reopen":
       return { output: write((ws) => reopen(ws, need(id, "finding id"), need(values.reason, "--reason"))) };
     case "apply": {
       const target = rest[0];
-      if (sub === "next") return { output: write((ws) => nextTask(ws, values.terminal)) };
+      if (sub === "next") return { output: write((ws) => nextTask(ws, values["session-id"])) };
       if (sub === "queue") return { output: read(queueSummary) };
       if (sub === "commit") return { output: write((ws) => addCommit(ws, need(target, "finding id"), need(rest[1], "commit sha"))) };
       if (sub === "verify") return { output: write((ws) => writeVerification(ws, need(target, "finding id"), readData(values))) };
@@ -19621,7 +19465,7 @@ function run(ctx, values, args) {
       }
       if (sub === "show") {
         const d = findDeferral(need(target, "deferral id"));
-        return { output: { ...d.frontmatter, path: d.path, body: d.body }, human: (0, import_node_fs7.readFileSync)(d.path, "utf8") };
+        return { output: { ...d.frontmatter, path: d.path, body: d.body }, human: (0, import_node_fs6.readFileSync)(d.path, "utf8") };
       }
       if (sub === "pickup") return { output: pickUpDeferral(need(target, "deferral id"), { ref: need(values.ref, "--ref"), by: values.by }, ctx.now()).frontmatter };
       if (sub === "done" || sub === "drop") {
@@ -19632,6 +19476,27 @@ function run(ctx, values, args) {
     }
   }
   badInput(`unknown command: ${args.join(" ")}`);
+}
+function runApi(path, args, values) {
+  const [op, arg] = args;
+  const data = () => values.data === void 0 ? {} : readData(values);
+  try {
+    let result;
+    if (op === "snapshot") result = snapshot(path);
+    else if (op === "worktrees") result = worktrees(path);
+    else if (op === "finding") result = finding(path, need(arg, "finding id"));
+    else if (op === "action") result = action(path, need(arg, "action name"), data());
+    else if (op === "plan") result = plan(path, need(arg, "plan kind"), data());
+    else badInput(`unknown api call: ${args.join(" ") || "(none)"}`);
+    console.log(JSON.stringify({ ok: true, result: result ?? null }));
+  } catch (error) {
+    if (!(error instanceof DocketError)) {
+      console.log(JSON.stringify({ ok: false, error: { code: "internal", message: error.message } }));
+      return 1;
+    }
+    console.log(JSON.stringify({ ok: false, error: { code: error.code, message: error.message } }));
+  }
+  return 0;
 }
 function main(argv) {
   let values;
@@ -19653,6 +19518,7 @@ function main(argv) {
     now: () => process.env.DOCKET_NOW ?? (/* @__PURE__ */ new Date()).toISOString(),
     prLookup: !values["no-pr"] && process.env.DOCKET_NO_GH !== "1"
   };
+  if (name === "api") return runApi((0, import_node_path6.resolve)(ctx.cwd), positionals.slice(1), values);
   if (name === "ui") {
     const port = values.port ? Number(values.port) : DEFAULT_PORT;
     if (!Number.isInteger(port) || port < 1 || port > 65535) {

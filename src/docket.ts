@@ -19,7 +19,7 @@ export interface Unit {
   lastIngest: { at: string; head: string } | null
   remoteCheck: { at: string; newSourceCount: number } | null
   lastViewedAt: string | null
-  applier: { state: 'idle' | 'running'; terminalHandle?: string; since?: string }
+  applier: { state: 'idle' | 'running'; sessionId?: string; since?: string }
   nextFindingNumber: number
   createdAt: string
   updatedAt: string

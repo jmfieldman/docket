@@ -116,7 +116,7 @@ describe('lifecycle', () => {
   })
 
   it('discussion revises options and triage, moving the card to another lane', () => {
-    ok('discuss', 'start', 'f-0002', '--session-id', 'sess-1', '--terminal', 'term-1')
+    ok('discuss', 'start', 'f-0002', '--session-id', 'sess-1')
     assert.equal(finding('f-0002').state, 'discussing')
     const entry = ok('discuss', 'entry', 'f-0002', '--data', data({
       question: 'Is redaction enough?',
@@ -133,12 +133,13 @@ describe('lifecycle', () => {
   })
 
   it('applies in queue order, flags overlapping findings stale, and closes a second finding', () => {
-    const task = ok('apply', 'next', '--terminal', 'applier-1')
+    const task = ok('apply', 'next', '--session-id', 'applier-session-1')
     assert.equal(task.finding.id, 'f-0001')
     assert.equal(task.finding.state, 'fixing')
     assert.equal(task.option.title, 'Cap at 3')
     assert.equal(task.remainingInQueue, 1)
     assert.equal(ok('apply', 'queue').applier.state, 'running')
+    assert.equal(ok('apply', 'queue').applier.sessionId, 'applier-session-1')
 
     const sha = commitFile('login.ts', Array.from({ length: 40 }, (_, i) => (i === 6 ? 'capped' : `line ${i + 1}`)).join('\n'), 'cap retries')
     const committed = ok('apply', 'commit', 'f-0001', sha)

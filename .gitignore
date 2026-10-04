@@ -1,2 +1,5 @@
 node_modules/
 dist/
+# Written by Claude Code when it loads the mod with --plugin-dir
+plugin/.claude-plugin/types/
+plugin/tsconfig.json

@@ -1,5 +1,6 @@
 {
-  "description": "Brief each session on open docket findings, only in worktrees where docket is active.",
+  "description": "The Docket pane and /docket command, plus a session brief on open findings in worktrees where docket is active.",
+  "modules": ["./pane.js"],
   "hooks": {
     "SessionStart": [
       {

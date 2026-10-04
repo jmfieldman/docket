@@ -1,6 +1,7 @@
 // Builds a throwaway repo with findings in every lane and state, then serves
-// the Docket UI for it. Orca dispatch is disabled and DOCKET_HOME is a temp
-// directory, so nothing touches real worktrees or deferrals.
+// the Docket browser view for it. DOCKET_HOME is a temp directory, so nothing
+// touches real worktrees or deferrals. For the pane, run Claude Code in the
+// fixture: claude --plugin-dir <repo>/plugin
 //
 //   pnpm run demo            # build the fixture and serve on port 4848
 //   node scripts/demo.mjs --fixture-only
@@ -13,7 +14,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CLI = join(ROOT, 'plugin', 'bin', 'docket.cjs')
 const BASE = process.env.DOCKET_DEMO_DIR ?? '/tmp/docket-demo'
 const REPO = join(BASE, 'app')
-const env = { ...process.env, DOCKET_HOME: join(BASE, 'home'), DOCKET_NO_GH: '1', DOCKET_ORCA: 'none' }
+const env = { ...process.env, DOCKET_HOME: join(BASE, 'home'), DOCKET_NO_GH: '1' }
 
 const git = (...args) => execFileSync('git', ['-c', 'user.name=Demo', '-c', 'user.email=demo@example.com', ...args], { cwd: REPO, env, encoding: 'utf8' }).trim()
 const docket = (...args) => JSON.parse(execFileSync(process.execPath, [CLI, ...args, '--json'], { cwd: REPO, env, encoding: 'utf8' }) || 'null')

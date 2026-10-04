@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/common.schema.json",
+  "$id": "https://github.com/jmfieldman/docket/spec/schema/common.schema.json",
   "title": "Docket shared definitions",
   "$defs": {
     "timestamp": { "type": "string", "format": "date-time" },

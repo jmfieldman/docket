@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/deferral.schema.json",
+  "$id": "https://github.com/jmfieldman/docket/spec/schema/deferral.schema.json",
   "title": "Docket deferral frontmatter",
   "description": "YAML frontmatter of a deferral file at ${DOCKET_HOME:-~/.docket}/deferrals/<id>.md. The body sections are defined in SPEC.md.",
   "type": "object",

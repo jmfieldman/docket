@@ -7,7 +7,6 @@ import { after, before, describe, it } from 'node:test'
 import { makeRepo } from './helpers.ts'
 
 process.env.DOCKET_HOME = mkdtempSync(join(tmpdir(), 'docket-home-'))
-process.env.DOCKET_ORCA = 'none'
 process.env.DOCKET_NO_GH = '1'
 const { createUiServer } = await import('../src/ui-server.ts')
 
@@ -85,24 +84,78 @@ describe('docket ui server', () => {
     assert.equal(accepted.body.result[0].iterations[0].origin, 'quick')
   })
 
+  it('accepts a leave-as-is recommendation, and applies a batch whole or not at all', async () => {
+    const { execFileSync } = await import('node:child_process')
+    const cli = (...args: string[]) => JSON.parse(execFileSync(process.execPath, [join(import.meta.dirname, '..', 'src', 'cli.ts'), ...args, '--json'], { cwd: path(), env: process.env, encoding: 'utf8' }))
+    const f = cli('finding', 'add', '--data', JSON.stringify({ title: 'Three', summary: 's', sources: [{ sourceId: 'gh:comment:1', excerpt: 'Three' }] }))
+    cli('research', f.id, '--data', JSON.stringify({
+      research: { verdict: 'not_valid', confidence: 'high', analysis: 'a', recommendedOptionId: 'B', options: ['A', 'B'].map((id) => ({ id, kind: id === 'A' ? 'fix' : 'acknowledge', title: id, description: id === 'B' ? 'The reviewer misread the loop.' : id, pros: [], cons: [], effort: 'trivial', blastRadius: { level: 'surgical' } })) },
+      triage: { complexity: 1, complexityReason: 'c', confidence: 4, confidenceReason: 'c' }
+    }))
+    // f-0001 is already queued, so this batch must change nothing.
+    const refused = await post('/api/action', { path: path(), name: 'accept', args: { ids: [f.id, 'f-0001'] } })
+    assert.equal(refused.status, 400)
+    assert.equal(cli('show', f.id).state, 'ready')
+    const accepted = await post('/api/action', { path: path(), name: 'accept', args: { ids: [f.id] } })
+    assert.equal(accepted.status, 200)
+    assert.equal(accepted.body.result[0].state, 'acknowledged')
+    assert.equal(accepted.body.result[0].iterations[0].decision.instruction, 'The reviewer misread the loop.')
+    assert.equal(accepted.body.result[0].resolution.reason, 'The reviewer misread the loop.')
+  })
+
   it('refuses origin session from the UI', async () => {
     const res = await post('/api/action', { path: path(), name: 'decide', args: { id: 'f-0001', optionId: 'A', origin: 'session' } })
     assert.equal(res.status, 400)
   })
 
-  it('explains how to run an agent when Orca is missing', async () => {
-    const res = await post('/api/dispatch', { path: path(), kind: 'ingest' })
-    assert.equal(res.status, 424)
-    assert.match(res.body.error.message, /claude "\/docket:ingest"/)
+  it('plans agent work as docket skills', async () => {
+    const ingest = await post('/api/plan', { path: path(), kind: 'ingest' })
+    assert.equal(ingest.status, 200)
+    assert.deepEqual(ingest.body.result, { command: 'docket:ingest', args: '', prompt: '/docket:ingest' })
+    const research = await post('/api/plan', { path: path(), kind: 'research', args: { ids: ['f-0001', 'f-0002'] } })
+    assert.equal(research.body.result.prompt, '/docket:research f-0001 f-0002')
+    assert.equal((await post('/api/plan', { path: path(), kind: 'research', args: { ids: ['f-1; rm -rf /'] } })).status, 400)
   })
 
-  it('quick fix keeps the decision and reports why the applier did not start', async () => {
+  it('quick fix records the decision and plans the applier', async () => {
     const { execFileSync } = await import('node:child_process')
     execFileSync(process.execPath, [join(import.meta.dirname, '..', 'src', 'cli.ts'), 'reopen', 'f-0002', '--reason', 'r'], { cwd: path(), env: process.env })
-    const res = await post('/api/dispatch', { path: path(), kind: 'quickFix', args: { id: 'f-0002' } })
+    const res = await post('/api/plan', { path: path(), kind: 'quickFix', args: { id: 'f-0002' } })
     assert.equal(res.status, 200)
     assert.equal(res.body.result.finding.state, 'queued')
-    assert.match(res.body.result.applierError, /Orca CLI was not found/)
+    assert.equal(res.body.result.plan.prompt, '/docket:apply')
+    assert.equal(res.body.result.plan.warning, undefined)
+  })
+
+  it('warns when an applier runs in another session', async () => {
+    const { execFileSync } = await import('node:child_process')
+    execFileSync(process.execPath, [join(import.meta.dirname, '..', 'src', 'cli.ts'), 'apply', 'next', '--session-id', 'other-session'], { cwd: path(), env: process.env })
+    const elsewhere = await post('/api/plan', { path: path(), kind: 'apply', args: { sessionId: 'this-session' } })
+    assert.match(elsewhere.body.result.warning, /another session/)
+    const same = await post('/api/plan', { path: path(), kind: 'apply', args: { sessionId: 'other-session' } })
+    assert.equal(same.body.result.warning, undefined)
+  })
+
+  it('lists the repository worktrees from git', async () => {
+    const { body } = await get('/api/worktrees?path=' + encodeURIComponent(path()))
+    assert.equal(body.items.length >= 1, true)
+    const current = body.items.find((w: any) => w.isCurrent)
+    assert.equal(current.docket, 'active')
+  })
+
+  it('docket api answers in one JSON envelope', async () => {
+    const { execFileSync } = await import('node:child_process')
+    const api = (...args: string[]) => JSON.parse(execFileSync(process.execPath, [join(import.meta.dirname, '..', 'src', 'cli.ts'), 'api', ...args], { cwd: path(), env: process.env, encoding: 'utf8' }))
+    const snap = api('snapshot')
+    assert.equal(snap.ok, true)
+    assert.equal(snap.result.state, 'active')
+    assert.equal(api('finding', 'f-0001').result.finding.id, 'f-0001')
+    assert.deepEqual(api('finding', 'f-0099').error.code, 'not_found')
+    assert.equal(api('plan', 'discuss', '--data', '{"id":"f-0001"}').result.prompt, '/docket:discuss f-0001')
+    assert.equal(api('action', 'pause').result.state, 'paused')
+    assert.equal(api('snapshot').result.state, 'paused')
+    assert.equal(api('action', 'resume').result.state, 'active')
+    assert.equal(api('bogus').ok, false)
   })
 
   it('returns 404 for unknown routes and findings', async () => {

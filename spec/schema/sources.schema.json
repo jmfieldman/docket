@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/sources.schema.json",
+  "$id": "https://github.com/jmfieldman/docket/spec/schema/sources.schema.json",
   "title": "Docket sources",
   "description": "Every ingested source of reviewer output, keyed by sourceId. Drives incremental ingest.",
   "type": "object",

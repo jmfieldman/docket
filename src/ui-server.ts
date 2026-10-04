@@ -1,8 +1,7 @@
 import { spawn } from 'node:child_process'
 import { createServer, request, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
-import { action, dispatch, finding, snapshot, worktrees, type ActionName, type DispatchKind } from './api.ts'
+import { action, finding, plan, snapshot, worktrees, type ActionName, type PlanKind } from './api.ts'
 import { DocketError } from './errors.ts'
-import { openBrowserTab } from './orca.ts'
 import { UI_HTML } from './ui.generated.ts'
 
 export const DEFAULT_PORT = Number(process.env.DOCKET_UI_PORT ?? 4747)
@@ -57,7 +56,6 @@ function errorStatus(error: DocketError): number {
   if (error.code === 'not_found') return 404
   if (error.code === 'rev_conflict') return 409
   if (['bad_input', 'invalid_state', 'not_started', 'paused', 'branch_mismatch', 'no_discussion'].includes(error.code)) return 400
-  if (error.code === 'orca_missing') return 424
   return 500
 }
 
@@ -67,18 +65,18 @@ export function createUiServer(port: number): Server {
     try {
       if (req.method === 'GET' && url.pathname === '/') return send(res, 200, UI_HTML, 'text/html')
       if (req.method === 'GET' && url.pathname === '/api/health') return send(res, 200, { docket: true, version: VERSION })
-      if (req.method === 'GET' && url.pathname === '/api/worktrees') return send(res, 200, worktrees())
+      if (req.method === 'GET' && url.pathname === '/api/worktrees') return send(res, 200, worktrees(url.searchParams.get('path') ?? ''))
       if (req.method === 'GET' && url.pathname === '/api/snapshot') return send(res, 200, snapshot(url.searchParams.get('path') ?? ''))
       if (req.method === 'GET' && url.pathname === '/api/finding') {
         return send(res, 200, finding(url.searchParams.get('path') ?? '', url.searchParams.get('id') ?? ''))
       }
-      if (req.method === 'POST' && (url.pathname === '/api/action' || url.pathname === '/api/dispatch')) {
+      if (req.method === 'POST' && (url.pathname === '/api/action' || url.pathname === '/api/plan')) {
         if (!allowedWrite(req, port)) return send(res, 403, { error: { code: 'forbidden', message: 'missing x-docket header or foreign origin' } })
         const body = await readBody(req)
         const result =
           url.pathname === '/api/action'
             ? action(body.path, body.name as ActionName, body.args ?? {})
-            : dispatch(body.path, body.kind as DispatchKind, body.args ?? {})
+            : plan(body.path, body.kind as PlanKind, body.args ?? {})
         return send(res, 200, { ok: true, result: result ?? null })
       }
       return send(res, 404, { error: { code: 'not_found', message: `no route ${req.method} ${url.pathname}` } })
@@ -112,6 +110,15 @@ export function probe(port: number): Promise<boolean> {
   })
 }
 
+function openInBrowser(url: string): void {
+  const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'explorer' : 'xdg-open'
+  try {
+    spawn(opener, [url], { detached: true, stdio: 'ignore' }).on('error', () => {}).unref()
+  } catch {
+    // The URL is printed either way.
+  }
+}
+
 export function uiUrl(port: number, path?: string): string {
   return `http://127.0.0.1:${port}/${path ? `?path=${encodeURIComponent(path)}` : ''}`
 }
@@ -119,7 +126,7 @@ export function uiUrl(port: number, path?: string): string {
 /**
  * `docket ui`: serve in the foreground. `docket ui --open`: make sure a server
  * runs (detached when it must start one), then open the UI for the worktree
- * in Orca's browser, or the system browser without Orca.
+ * in the system browser.
  */
 export async function runUi(options: { port: number; open: boolean; cwd: string }): Promise<number> {
   const url = uiUrl(options.port, options.cwd)
@@ -133,7 +140,7 @@ export async function runUi(options: { port: number; open: boolean; cwd: string 
       child.unref()
       for (let i = 0; i < 40 && !(await probe(options.port)); i++) await new Promise((r) => setTimeout(r, 100))
     }
-    if (!openBrowserTab(url)) spawn('open', [url], { detached: true, stdio: 'ignore' }).unref()
+    openInBrowser(url)
     console.log(url)
     return 0
   }

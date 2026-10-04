@@ -1,6 +1,6 @@
 # Docket data model — v1
 
-This document defines the docket data model. Every docket component reads and writes this model: the ingest, research, discuss, apply, reply and deferrals skills, the `docket` CLI, and the Orca plugin.
+This document defines the docket data model. Every docket component reads and writes this model: the ingest, research, discuss, apply, reply and deferrals skills, the `docket` CLI, the Docket pane in Claude Code, and the Docket web view.
 
 ## Scope
 
@@ -75,17 +75,18 @@ Docket is dormant in a worktree until the user starts it.
 | `unit.status` is `paused` | Dormant | Same as above. The data stays. |
 | `unit.status` is `active` | Enabled | Skills and hooks act, including in ad-hoc sessions. |
 
-Only two actions create a docket: the **Start docket** button in the panel, and the explicit `/docket-start` command. Both run `docket start`. No other skill, hook or command creates the `docket/` directory.
+Only two actions create a docket: the **Start docket** button in the Docket pane, and the explicit `/docket:start` command. Both run `docket start`. No other skill, hook or command creates the `docket/` directory.
 
 **Pause** sets `status` to `paused`. **Resume** sets it to `active`. Deleting the worktree deletes the docket.
 
 ### How docket stays dormant
 
-Skill instructions alone cannot keep an agent dormant, because the agent selects a skill from its description. Docket uses three layers:
+Skill instructions alone cannot keep an agent dormant, because the agent selects a skill from its description. Docket uses four layers:
 
 1. **Session hook.** A `SessionStart` hook runs `docket status`. If the docket is dormant, the hook injects nothing, and the agent has no information about docket in that session. If the docket is enabled, the hook injects a short brief: the open findings and how to record work with the CLI.
-2. **Gate in every skill.** The first step of every skill is `docket status`. If the docket is dormant, the skill stops, says so in one line, and writes nothing.
-3. **Explicit-only skills.** `docket-start` and `docket-ingest` run only when the user names them. Automatic selection is turned off in their frontmatter.
+2. **A quiet pane.** The Docket pane opens by itself only where the docket is enabled. Elsewhere it opens only when the user runs `/docket`, and then it offers **Start docket**.
+3. **Gate in every skill.** The first step of every skill is `docket status`. If the docket is dormant, the skill stops, says so in one line, and writes nothing.
+4. **Explicit-only skills.** Every skill except `record` runs only when the user names it, or when the user presses its control in the Docket pane. Automatic selection is turned off in their frontmatter.
 
 ### Ad-hoc sessions
 
@@ -96,11 +97,11 @@ When the docket is enabled, an agent session that the user started for another r
 - It obeys the single-applier rule. If `unit.applier.state` is `running`, it warns the user before it edits code.
 - After it commits, it sets the stale flag on open findings whose `location` overlaps the changed lines.
 
-The panel shows `origin: session` iterations with an "inferred" badge. The user can reopen the finding in one action if the agent linked the wrong one.
+The Docket pane shows `origin: session` iterations with an "inferred" badge. The user can reopen the finding in one action if the agent linked the wrong one.
 
 ### Ingest triggers
 
-Ingest runs only when the user triggers it: from the panel, or with `/docket-ingest`. When the docket is enabled, the panel can check the PR for sources newer than `unit.lastIngest`. It records the result in `unit.remoteCheck` and shows "N new" on the re-ingest control. The check never ingests.
+Ingest runs only when the user triggers it: from the Docket pane, or with `/docket:ingest`. When the docket is enabled, a skill can check the PR for sources newer than `unit.lastIngest`. It records the result in `unit.remoteCheck` and shows "N new" on the re-ingest control. The check never ingests.
 
 ## Sources
 
@@ -125,7 +126,7 @@ Each source records `contentHash` (a sha256 of its normalized text, including re
 4. A new reply in a thread: record it on the source. If the reply disagrees with an `acknowledged` finding, reopen the finding.
 5. A source that no longer exists: set the source `status` to `deleted`. Its findings keep their state.
 
-New findings have `createdAt` later than `unit.lastViewedAt`. The panel shows them as new and lists them first.
+New findings have `createdAt` later than `unit.lastViewedAt`. The Docket pane shows them as new and lists them first.
 
 ## Finding content
 
@@ -183,7 +184,7 @@ The CLI derives one lane from the two scores. The lane name says what the user d
 
 Each score has 4 levels, so each lane boundary falls between levels 2 and 3. No score is ambiguous.
 
-### Panel presentation
+### Presentation in the Docket pane and the web view
 
 - Open findings group by lane in this order: `quick`, `decide`, `scope`, `dig`. The fast decisions come first. Inside a lane, findings sort by assessed severity, then by `createdAt`.
 - Each card shows the lane as a colored chip and the two scores as two 4-segment meters, labeled "Complexity" and "Confidence", with the level name. The reasons show on hover and in the expanded card.
@@ -251,7 +252,7 @@ One fix can close several findings. The iteration lists them in `alsoResolves`. 
 
 ### History
 
-Every event in `events.jsonl` records `head`, the worktree HEAD commit when the event occurred. The history of one finding is its iterations plus its events. The panel shows it when the user expands a finding.
+Every event in `events.jsonl` records `head`, the worktree HEAD commit when the event occurred. The history of one finding is its iterations plus its events. The Docket pane shows it when the user expands a finding.
 
 | Milestone | Where it is recorded |
 |---|---|
@@ -262,15 +263,15 @@ Every event in `events.jsonl` records `head`, the worktree HEAD commit when the 
 
 ### Discussion
 
-A discussion is a conversation between the user and an agent about one finding. It runs in its own terminal, in the same worktree, and it only reads code. The full conversation stays in that terminal. After each exchange, the agent writes one entry to `discussion.entries[]`: the question, a short answer, and whether it changed the options. If it changed them, it writes the new options to `research.options`. The panel updates from these writes.
+A discussion is a conversation between the user and an agent about one finding. It runs as the `discuss` skill in a Claude Code session in the same worktree, and it only reads code. The full conversation stays in that session. After each exchange, the agent writes one entry to `discussion.entries[]`: the question, a short answer, and whether it changed the options. If it changed them, it writes the new options to `research.options`. The Docket pane updates from these writes.
 
-`discussion.sessionId` stores the agent session ID, so the user can continue the discussion later.
+`discussion.sessionId` stores the Claude Code session ID, so the user can continue the discussion later with `claude --resume <sessionId>`.
 
 ## Apply
 
 Research and discussion only read code, so they can run in parallel. Only the applier edits code.
 
-1. One applier runs per worktree. `unit.applier` records whether it is running.
+1. One applier runs per worktree. `unit.applier` records whether it is running, and in which Claude Code session (`sessionId`). The Docket pane warns before it starts a second applier in another session.
 2. It takes `queued` findings in queue order.
 3. Before each fix, it checks that the decision still fits the code. If it does not, it sets `needs_attention` with a reason and continues with the next finding. It never makes a fix the user did not choose.
 4. It makes one commit per iteration.
@@ -278,9 +279,25 @@ Research and discussion only read code, so they can run in parallel. Only the ap
 6. If verification passes, it closes the finding as `completed` and writes `resolution.summary`.
 7. After each commit, it sets the stale flag on open findings whose `location` overlaps the changed lines.
 
-A quick fix records the decision with `origin: quick`, queues the finding, and starts the applier if it is idle. It does not skip the queue.
+A quick fix records the decision with `origin: quick`, queues the finding, and runs the `apply` skill. It does not skip the queue.
 
 The applier commits. It never pushes. The user pushes.
+
+## Surfaces
+
+Docket is a Claude Code plugin. It has no dependency on a particular terminal or workspace manager.
+
+| Surface | What it does |
+|---|---|
+| Skills (`/docket:start`, `/docket:ingest`, …) | The agent work: ingest, research, discuss, apply, record, reply, deferrals. |
+| `SessionStart` hook | Injects the brief in enabled worktrees. Injects nothing elsewhere. |
+| Docket pane (`/docket`) | A Claude Code mod. It draws findings by lane in a pane beside the transcript, records decisions through `docket api`, and runs skills in its own session with `$.command.run`. While a turn runs, it holds a skill run and starts it when the turn ends. |
+| `docket api` | The action layer as JSON for the pane: `snapshot`, `worktrees`, `finding`, `action`, `plan`. Each call prints one envelope, `{"ok":true,"result"}` or `{"ok":false,"error"}`. |
+| Docket web view (`docket ui --open`) | The same action layer over HTTP on `127.0.0.1`, for a browser. It records decisions. For agent work, it shows the skill command to run in Claude Code. |
+
+A **plan** names the skill for one piece of agent work: `command` (such as `docket:apply`), `args`, `prompt` (what the user types), an optional `warning`, and for a discussion an optional `resumeSessionId`. The pane runs a plan. The web view shows it.
+
+The pane draws in the Claude Code CLI and in the Code tab of the Claude Desktop app. Its hooks run but draw nothing in the VS Code extension, in `claude -p`, and in cloud sessions. On those surfaces the skills and the web view still work.
 
 ## Replies
 

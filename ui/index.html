@@ -121,8 +121,7 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 dialog h3 { margin: 0 0 8px; }
 .check-list { display: grid; gap: 6px; max-height: 50vh; overflow: auto; margin: 10px 0; }
 .check-list label { display: flex; gap: 8px; align-items: baseline; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; }
-.launcher { padding: 24px 16px; text-align: center; }
-.launcher p { color: var(--muted); }
+pre.run { font-size: 13px; padding: 8px 10px; user-select: all; }
 </style>
 </head>
 <body>
@@ -141,35 +140,10 @@ dialog h3 { margin: 0 0 8px; }
 <script>
 'use strict'
 // ---------- transport ----------
-// One file serves two hosts. In a browser tab it talks to `docket ui` over
-// HTTP. Inside an Orca plugin panel it calls the plugin worker through
-// plugin.command.invoke when the host supports it.
-const inPanel = window.parent !== window && location.protocol !== 'http:' && location.protocol !== 'https:'
-let seq = 0
-const pending = {}
-function panelCall(action, params) {
-  return new Promise((resolve) => {
-    const requestId = 'req-' + ++seq
-    pending[requestId] = resolve
-    window.parent.postMessage({ type: 'orca-panel-action', requestId, action, params }, '*')
-  })
-}
-window.addEventListener('message', (event) => {
-  const data = event.data
-  if (!data || data.type !== 'orca-panel-action-result') return
-  const resolve = pending[data.requestId]
-  if (resolve) { delete pending[data.requestId]; resolve(data) }
-})
-async function invoke(op, args) {
-  const result = await panelCall('plugin.command.invoke', { commandId: 'docket-api', args: Object.assign({ op }, args || {}) })
-  if (!result.ok) throw new Error(result.error || result.errorCode || 'panel call failed')
-  const value = result.value && 'value' in result.value ? result.value.value : result.value
-  if (value && value.error) throw new Error(value.error.message)
-  return value
-}
+// The page talks to `docket ui` over HTTP. Agent work runs as docket skills in
+// Claude Code, so the page shows the command to run rather than running it.
 const api = {
   async get(route, params) {
-    if (inPanel) return invoke(route, params)
     const query = new URLSearchParams(params || {}).toString()
     const res = await fetch('/api/' + route + (query ? '?' + query : ''))
     const body = await res.json()
@@ -177,7 +151,6 @@ const api = {
     return body
   },
   async post(route, payload) {
-    if (inPanel) return invoke(route, payload)
     const res = await fetch('/api/' + route, { method: 'POST', headers: { 'content-type': 'application/json', 'x-docket': '1' }, body: JSON.stringify(payload) })
     const body = await res.json()
     if (!res.ok) throw new Error(body.error ? body.error.message : res.statusText)
@@ -261,8 +234,8 @@ function summaryOf(id) { return ((S.snap && S.snap.summaries) || []).find((s) =>
 
 // ---------- data ----------
 async function loadWorktrees() {
-  if (inPanel) return
-  try { S.worktrees = (await api.get('worktrees')).items || [] } catch (e) { S.worktrees = [] }
+  if (!S.path) { S.worktrees = []; return renderWorktreePicker() }
+  try { S.worktrees = (await api.get('worktrees', { path: S.path })).items || [] } catch (e) { S.worktrees = [] }
   renderWorktreePicker()
 }
 let lastKey = ''
@@ -303,31 +276,36 @@ async function act(name, args, message) {
     return result
   } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
 }
-async function dispatch(kind, args, message) {
+// Agent work is a docket skill. The page cannot reach a Claude Code session,
+// so it shows the command and copies it for the user to run there.
+async function runPlan(kind, args) {
   if (S.busy) return
   S.busy = true
+  let result
   try {
-    const result = await api.post('dispatch', { path: S.path, kind, args: args || {} })
-    if (result && result.applierError) toast('Queued, but the applier did not start. ' + result.applierError, true)
-    else if (message) toast(result && result.reused ? message.replace(/^(Started|Opened)/, 'Focused') : message)
-    S.busy = false
-    await refresh(true)
-    return result
-  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true) } finally { S.busy = false }
+    result = await api.post('plan', { path: S.path, kind, args: args || {} })
+  } catch (e) { toast(e.message, true); S.busy = false; await refresh(true); return } finally { S.busy = false }
+  await refresh(true)
+  const plan = result && 'plan' in result ? result.plan : result
+  if (!plan) return toast('Recorded')
+  let copied = false
+  try { await navigator.clipboard.writeText(plan.prompt); copied = true } catch (e) { copied = false }
+  const resume = plan.resumeSessionId ? '<p class="meta">Or continue the earlier discussion from a shell:</p><pre class="run">claude --resume ' + esc(plan.resumeSessionId) + '</pre>' : ''
+  await confirmDialog(kind === 'quickFix' ? 'Queued. Start the applier' : 'Run in Claude Code',
+    (plan.warning ? '<div class="banner warn"><span>' + esc(plan.warning) + '</span></div>' : '') +
+    '<p class="meta">Run this in a Claude Code session in this worktree' + (copied ? ' (copied to the clipboard)' : '') + '. The <code>/docket</code> pane runs it for you.</p><pre class="run">' + esc(plan.prompt) + '</pre>' + resume,
+    [{ label: 'Done', value: 'ok', primary: true }])
 }
 
 // ---------- render ----------
 function renderWorktreePicker() {
   const select = $('#worktree')
-  if (inPanel && !S.worktrees.length) { select.hidden = true; return }
   const items = S.worktrees.slice()
-  if (S.path && !items.some((w) => w.path === S.path)) items.unshift({ path: S.path, displayName: S.path.split('/').pop(), repo: '', docket: '' })
-  const byRepo = {}
-  for (const w of items) (byRepo[w.repo || 'Other'] = byRepo[w.repo || 'Other'] || []).push(w)
+  if (S.path && !items.some((w) => w.path === S.path)) items.unshift({ path: S.path, branch: null, docket: '' })
+  select.hidden = items.length === 0
   const mark = (state) => (state === 'active' ? ' ●' : state === 'paused' ? ' ◐' : '')
-  select.innerHTML = '<option value="">Choose a worktree…</option>' + Object.keys(byRepo).sort().map((repo) =>
-    '<optgroup label="' + esc(repo) + '">' + byRepo[repo].map((w) =>
-      '<option value="' + esc(w.path) + '"' + (w.path === S.path ? ' selected' : '') + '>' + esc(w.displayName + (w.branch ? ' · ' + w.branch : '') + mark(w.docket)) + '</option>').join('') + '</optgroup>').join('')
+  select.innerHTML = items.map((w) =>
+    '<option value="' + esc(w.path) + '"' + (w.path === S.path ? ' selected' : '') + ' title="' + esc(w.path) + '">' + esc(w.path.split('/').pop() + (w.branch ? ' · ' + w.branch : '') + mark(w.docket)) + '</option>').join('')
 }
 
 function render() {
@@ -337,7 +315,7 @@ function render() {
   if (!S.path) {
     pill.textContent = ''
     toolbar.innerHTML = ''
-    main.innerHTML = '<div class="empty"><h2>Choose a worktree</h2>Docket tracks review findings per worktree.</div>'
+    main.innerHTML = '<div class="empty"><h2>Open a worktree</h2>Run <code>docket ui --open</code> in a worktree, or add <code>?path=/absolute/worktree/path</code> to this address.</div>'
     return
   }
   if (!snap) return
@@ -369,10 +347,10 @@ function renderToolbar() {
   const parts = []
   if (snap.state === 'paused') parts.push(b('class="primary" data-act="resume"', 'Resume'))
   else {
-    parts.push(b('data-dispatch="ingest"', 'Ingest', remoteNew, 'Read review comments on the PR'))
-    parts.push(b('data-dispatch="research"', 'Research', untriaged, 'Investigate unresearched findings'))
-    parts.push(b('data-dispatch="apply"', applierRunning ? 'Applier running' : 'Apply queue', queued, 'Implement queued fixes in order'))
-    parts.push(b('data-dispatch="reply"', 'Replies', drafts, 'Draft and post replies to reviewers'))
+    parts.push(b('data-plan="ingest"', 'Ingest', remoteNew, 'Read review comments on the PR'))
+    parts.push(b('data-plan="research"', 'Research', untriaged, 'Investigate unresearched findings'))
+    parts.push(b('data-plan="apply"', applierRunning ? 'Applier running' : 'Apply queue', queued, 'Implement queued fixes in order'))
+    parts.push(b('data-plan="reply"', 'Replies', drafts, 'Draft and post replies to reviewers'))
     parts.push(b('class="ghost" data-act="pause"', 'Pause'))
   }
   if (newCount) parts.push(b('class="ghost" data-act="view"', newCount + ' new · mark seen'))
@@ -393,7 +371,7 @@ function renderFindings() {
   if (snap.state === 'paused') html += '<div class="banner warn"><span>Docket is paused. Skills and hooks are dormant in this worktree. The data stays.</span><button data-act="resume">Resume</button></div>'
   if (!sums.length) {
     html += '<div class="empty"><h2>No findings yet</h2><p>Ingest the review comments on your PR, or a local review report.</p>' +
-      (snap.state === 'active' ? '<button class="primary" data-dispatch="ingest">Ingest review comments</button>' : '') + '</div>'
+      (snap.state === 'active' ? '<button class="primary" data-plan="ingest">Ingest review comments</button>' : '') + '</div>'
   }
   for (const [lane, label, hint] of LANES) {
     const items = open.filter((s) => laneOf(s) === lane)
@@ -401,7 +379,7 @@ function renderFindings() {
     const quickReady = lane === 'quick' ? items.filter((s) => s.state === 'ready' || s.state === 'discussing') : []
     const extra = snap.state !== 'active' ? ''
       : lane === 'quick' && quickReady.length > 1 ? '<button class="primary" data-bulk="quick">Accept all (' + quickReady.length + ')</button>'
-      : lane === 'research' ? '<button data-dispatch="research">Research all</button>' : ''
+      : lane === 'research' ? '<button data-plan="research">Research all</button>' : ''
     html += '<section class="lane"><h3>' + esc(label) + ' <span class="hint">' + esc(hint) + '</span><span class="spacer"></span>' + extra + '</h3>' + items.map(card).join('') + '</section>'
   }
   if (closed.length) html += '<details class="closed-list"' + (S.showClosed ? ' open' : '') + ' id="closed"><summary>Closed (' + closed.length + ')</summary>' + closed.map(card).join('') + '</details>'
@@ -443,7 +421,7 @@ function card(s) {
 function quickActions(s, lane) {
   if (S.snap.state !== 'active' || s.state === 'queued' || s.state === 'fixing') return ''
   const id = esc(s.id)
-  if (lane === 'research') return '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research</button></div>'
+  if (lane === 'research') return '<div class="actions"><button data-plan="research" data-ids="' + id + '">Research</button></div>'
   if (lane === 'quick' && s.recommended) {
     const label = s.recommended.kind === 'acknowledge' ? 'Accept (leave as is)' : s.recommended.kind === 'defer' ? 'Accept (defer)' : 'Quick fix'
     return '<div class="actions"><button class="primary" data-quick="' + id + '">' + label + '</button><button data-discuss="' + id + '">Discuss</button></div>'
@@ -459,7 +437,7 @@ function quickActions(s, lane) {
     return '<div class="actions"><button class="primary" data-quick="' + id + '">Fix now</button>' +
       (defer ? '<button data-defer="' + id + '" data-option="' + esc(defer.id) + '">Defer</button>' : '') + '<button data-discuss="' + id + '">Discuss</button></div>'
   }
-  if (lane === 'dig' || lane === 'attention') return '<div class="actions"><button class="primary" data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : 'Discuss') + '</button></div>'
+  if (lane === 'dig' || lane === 'attention') return '<div class="actions"><button class="primary" data-discuss="' + id + '">' + (s.state === 'discussing' ? 'Continue discussion' : 'Discuss') + '</button></div>'
   return ''
 }
 
@@ -491,13 +469,12 @@ function body(s) {
     if (editable) {
       html += '<div class="decide-box"><textarea data-draft="' + id + '" placeholder="Optional: extra direction for the applier, or the reason when you acknowledge or defer">' + esc(S.drafts[f.id] || '') + '</textarea><div class="actions">' +
         '<button class="primary" data-decide="' + id + '">Use selected option</button><button data-quick="' + id + '" data-selected="1">Quick fix with selected</button>' +
-        '<button data-ack="' + id + '">Leave as is…</button><button data-discuss="' + id + '">' + (s.discussionLive ? 'Open discussion' : f.discussion && f.discussion.sessionId ? 'Resume discussion' : 'Discuss') + '</button>' +
+        '<button data-ack="' + id + '">Leave as is…</button><button data-discuss="' + id + '">' + (s.state === 'discussing' ? 'Continue discussion' : f.discussion && f.discussion.sessionId ? 'Resume discussion' : 'Discuss') + '</button>' +
         (f.stale ? '<button class="ghost" data-act="unstale" data-arg-id="' + id + '">Clear stale flag</button>' : '') + '</div></div>'
     }
   } else if (s.open && S.snap.state === 'active') {
-    html += '<div class="actions"><button data-dispatch="research" data-ids="' + id + '">Research this finding</button></div>'
+    html += '<div class="actions"><button data-plan="research" data-ids="' + id + '">Research this finding</button></div>'
   }
-  if (s.discussionLive) html += '<h4>Ask in the discussion</h4><div class="row"><input style="flex:1" data-ask-input="' + id + '" placeholder="Ask a question…"><button data-ask="' + id + '">Send</button></div>'
   if (f.discussion && f.discussion.entries.length) {
     html += '<h4>Discussion</h4>' + f.discussion.entries.map((e) => '<div class="entry"><div class="q">' + esc(e.question) + '</div><div class="md">' + md(e.answer) + '</div>' + (e.optionsChanged ? '<div class="meta">Options revised</div>' : '') + '</div>').join('')
   }
@@ -562,7 +539,7 @@ async function bulkAccept() {
   const result = await confirmDialog('Accept quick findings', html, [{ label: 'Cancel' }, { label: 'Accept', value: 'accept' }, { label: 'Accept and apply', value: 'apply', primary: true }])
   if (!result || !result.checked.length) return
   await act('accept', { ids: result.checked }, 'Accepted ' + result.checked.length)
-  if (result.value === 'apply' && ((S.snap.counts || {}).queued || 0) > 0) await dispatch('apply', {}, 'Started the applier')
+  if (result.value === 'apply' && ((S.snap.counts || {}).queued || 0) > 0) await runPlan('apply')
 }
 
 async function reasonDialog(title, hint, initial) {
@@ -584,7 +561,7 @@ document.addEventListener('click', async (event) => {
     return render()
   }
   if (d.act) return act(d.act, d.argId ? { id: d.argId } : {}, d.act === 'start' ? 'Docket started' : null)
-  if (d.dispatch) return dispatch(d.dispatch, d.ids ? { ids: d.ids.split(',') } : {}, 'Started ' + d.dispatch + ' in a new terminal')
+  if (d.plan) return runPlan(d.plan, d.ids ? { ids: d.ids.split(',') } : {})
   if (d.bulk) return bulkAccept()
   if (d.quick) {
     const id = d.quick
@@ -593,9 +570,9 @@ document.addEventListener('click', async (event) => {
       const rec = S.details[id] && S.details[id].data.finding.research
       await act('decide', { id, optionId: optionId || (rec && rec.recommendedOptionId), instruction: S.drafts[id], origin: 'quick' })
       delete S.drafts[id]
-      return dispatch('apply', {}, 'Queued and started the applier')
+      return runPlan('apply')
     }
-    return dispatch('quickFix', optionId ? { id, optionId } : { id }, 'Queued; the applier is running')
+    return runPlan('quickFix', optionId ? { id, optionId } : { id })
   }
   if (d.decide) {
     const id = d.decide
@@ -622,14 +599,7 @@ document.addEventListener('click', async (event) => {
     if (reason) await act('decide', { id: d.ack, optionId: 'custom', kind: 'acknowledge', instruction: reason }, 'Acknowledged ' + d.ack)
     return
   }
-  if (d.discuss) return dispatch('discuss', { id: d.discuss }, 'Opened the discussion in a terminal')
-  if (d.ask) {
-    const input = $('[data-ask-input="' + d.ask + '"]')
-    if (!input.value.trim()) return
-    await dispatch('ask', { id: d.ask, text: input.value }, 'Sent to the discussion')
-    input.value = ''
-    return
-  }
+  if (d.discuss) return runPlan('discuss', { id: d.discuss })
   if (d.reopen) {
     const reason = await reasonDialog('Reopen ' + d.reopen, 'Why does this need another look?')
     if (reason) await act('reopen', { id: d.reopen, reason }, 'Reopened ' + d.reopen)
@@ -649,20 +619,15 @@ document.addEventListener('change', (event) => {
   if (t.id === 'worktree') {
     S.path = t.value
     S.snap = null; S.expanded.clear(); S.details = {}; lastKey = ''
-    if (!inPanel) {
-      const url = new URL(location.href)
-      if (S.path) url.searchParams.set('path', S.path); else url.searchParams.delete('path')
-      history.replaceState(null, '', url)
-    }
+    const url = new URL(location.href)
+    if (S.path) url.searchParams.set('path', S.path); else url.searchParams.delete('path')
+    history.replaceState(null, '', url)
+    loadWorktrees()
     refresh()
   }
 })
 document.addEventListener('input', (event) => {
   if (event.target.dataset.draft) S.drafts[event.target.dataset.draft] = event.target.value
-})
-document.addEventListener('keydown', (event) => {
-  const t = event.target
-  if (event.key === 'Enter' && t.dataset && t.dataset.askInput) { event.preventDefault(); $('[data-ask="' + t.dataset.askInput + '"]').click() }
 })
 document.addEventListener('toggle', (event) => {
   const t = event.target
@@ -677,34 +642,7 @@ async function tick() {
   setTimeout(tick, 2000)
 }
 
-// ---------- panel boot ----------
-async function bootPanel() {
-  const ctxResult = await panelCall('workspace.readContext')
-  const context = ctxResult.ok ? ctxResult.value : null
-  try {
-    const resolved = await invoke('resolve', { branch: context && context.branch, displayName: context && context.displayName })
-    if (resolved.candidates.length === 1) { S.path = resolved.candidates[0].path; return true }
-    S.worktrees = resolved.candidates
-    renderWorktreePicker()
-    return true
-  } catch (e) {
-    // This Orca does not let panels call their worker yet: show a launcher.
-    const terminals = context ? context.terminals : []
-    $('#main').innerHTML = '<div class="launcher"><h2>Docket</h2><p>' + (context ? esc(context.displayName) + ' · ' + esc(context.branch) : 'No worktree is focused.') + '</p>' +
-      '<p>This version of Orca cannot show docket data inside the panel yet. Open the full Docket view in Orca\'s browser instead.</p>' +
-      '<p><button class="primary" id="open-ui"' + (terminals.length ? '' : ' disabled') + '>Open Docket</button></p>' +
-      '<p class="meta">' + (terminals.length ? 'Types <code>docket ui --open</code> into this worktree\'s terminal.' : 'Open a terminal in this worktree first.') + '</p></div>'
-    const button = $('#open-ui')
-    if (button) button.onclick = async () => {
-      const r = await panelCall('terminal.sendText', { terminalId: terminals[0].id, text: 'docket ui --open', enter: true })
-      toast(r.ok ? 'Opening Docket…' : 'Could not type into the terminal', !r.ok)
-    }
-    return false
-  }
-}
-
 (async () => {
-  if (inPanel && !(await bootPanel())) return
   await loadWorktrees()
   await refresh()
   tick()

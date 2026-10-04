@@ -15,7 +15,7 @@ You are the only agent that edits code for docket in this worktree. Work through
 
 ## Loop
 
-1. Run `docket apply next --json`. If it prints `null`, the queue is empty: report what you did and stop.
+1. Run `docket apply next --session-id ${CLAUDE_SESSION_ID} --json`. If it prints `null`, the queue is empty: report what you did and stop.
 2. The result has `finding`, `iteration` (with `decision.optionId`, `decision.kind`, `decision.instruction`) and `option` (the chosen option, or null for a custom decision). Read the finding's `explanation`, `research.analysis` and the code at `location`.
 3. **Check that the decision still fits the code.** The code can have changed since the decision. If the chosen fix no longer applies, or applying it would mean doing something the user did not choose, run `docket apply bounce <id> --reason "<what changed and why>"` and go back to step 1. Never substitute a different fix.
 4. Implement exactly the chosen option and the instruction. Keep the change as small as the option describes.

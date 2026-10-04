@@ -1,13 +1,13 @@
-// The action layer behind every docket UI: the local web app (`docket ui`)
-// and the Orca panel worker. Each call names a worktree path explicitly.
+// The action layer behind every docket UI: the Claude Code pane (through
+// `docket api`) and the local web app (`docket ui`). Each call names a
+// worktree path explicitly.
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { pause, resume, start, status, type Context, type Unit } from './docket.ts'
 import { DocketError } from './errors.ts'
 import { readJson } from './fsio.ts'
-import { decide, draftReply, endDiscussion, markViewed, reopen, setReplyStatus, startDiscussion, clearStale, type DecisionInput } from './findings.ts'
+import { acceptRecommended, decide, draftReply, endDiscussion, markViewed, reopen, setReplyStatus, clearStale, type DecisionInput } from './findings.ts'
 import { readWorktree } from './git.ts'
-import { createTerminal, findOrca, focusTerminal, listOrcaWorktrees, sendToTerminal, terminalAlive } from './orca.ts'
 import { isOpen, type Finding, type OptionKind, type Origin } from './types.ts'
 import { sortSummaries, summarize } from './view.ts'
 import { EXIT, withWorkspace } from './workspace.ts'
@@ -20,7 +20,6 @@ export interface ApiOptions {
 }
 
 const FINDING_ID = /^f-\d{4,}$/
-const SESSION_ID = /^[A-Za-z0-9_-]{8,128}$/
 
 function ctxFor(path: string, options: ApiOptions = {}): Context {
   if (typeof path !== 'string' || !path.startsWith('/')) throw new DocketError('bad_input', 'path must be an absolute worktree path', EXIT.badInput)
@@ -53,13 +52,39 @@ function peek(path: string): { state: PeekState; open: number } {
   }
 }
 
-export function worktrees() {
-  const orca = findOrca()
-  if (!orca) return { orca: false, items: [] as Array<Record<string, unknown>> }
-  const items = listOrcaWorktrees()
-    .filter((w) => !w.isArchived)
-    .map((w) => ({ ...w, docket: peek(w.path).state }))
-  return { orca: true, items }
+export interface WorktreeItem {
+  path: string
+  branch: string | null
+  head: string | null
+  isCurrent: boolean
+  docket: PeekState
+}
+
+/** The repository's worktrees from `git worktree list`, with docket's state in each. */
+export function worktrees(path: string): { items: WorktreeItem[] } {
+  ctxFor(path)
+  let out: string
+  try {
+    out = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd: path, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+  } catch {
+    return { items: [] }
+  }
+  let current: string | null = null
+  try {
+    current = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: path, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    current = null
+  }
+  const items: WorktreeItem[] = []
+  for (const block of out.split(/\n\n+/)) {
+    const lines = block.split('\n')
+    const wtPath = lines.find((l) => l.startsWith('worktree '))?.slice(9)
+    if (!wtPath || lines.includes('bare') || lines.includes('prunable')) continue
+    const branch = lines.find((l) => l.startsWith('branch '))?.slice(7).replace(/^refs\/heads\//, '') ?? null
+    const head = lines.find((l) => l.startsWith('HEAD '))?.slice(5) ?? null
+    items.push({ path: wtPath, branch, head, isCurrent: wtPath === current, docket: peek(wtPath).state })
+  }
+  return { items }
 }
 
 // ---------- reads ----------
@@ -89,7 +114,7 @@ export function snapshot(path: string, options: ApiOptions = {}) {
         options: s.open
           ? (f.research?.options ?? []).map((o) => ({ id: o.id, kind: o.kind, title: o.title, effort: o.effort, blast: o.blastRadius.level }))
           : [],
-        discussionLive: Boolean(f.discussion?.terminalHandle) && f.state === 'discussing',
+        discussionSessionId: f.discussion?.sessionId ?? null,
         lastIterationOutcome: f.iterations.at(-1)?.outcome ?? null,
         bounceReason: f.state === 'needs_attention' ? (f.iterations.at(-1)?.bounceReason ?? null) : null
       }
@@ -139,14 +164,7 @@ export function action(path: string, name: ActionName, args: Record<string, any>
     case 'accept': {
       const ids: unknown = args.ids
       if (!Array.isArray(ids) || ids.length === 0) bad('ids must be a non-empty array')
-      return write((ws) =>
-        ids.map((raw) => {
-          const fid = findingId(raw)
-          const f = ws.readFinding(fid)
-          const optionId = f.research?.recommendedOptionId ?? bad(`${fid} has no recommendation; research it first`)
-          return decide(ws, fid, { optionId, origin: 'quick' })
-        })
-      )
+      return write((ws) => acceptRecommended(ws, ids.map(findingId)))
     }
     case 'decide': {
       const input: DecisionInput = {
@@ -182,56 +200,55 @@ export function action(path: string, name: ActionName, args: Record<string, any>
   bad(`unknown action ${String(name)}`)
 }
 
-// ---------- agent dispatch ----------
+// ---------- agent plans ----------
+//
+// Agent work runs as a docket skill in a Claude Code session. A plan names the
+// skill and its arguments; the pane runs it in its own session, and the web
+// app shows it for the user to run.
 
-export type DispatchKind = 'ingest' | 'research' | 'apply' | 'reply' | 'discuss' | 'ask' | 'quickFix' | 'focus'
+export type PlanKind = 'ingest' | 'research' | 'apply' | 'reply' | 'discuss' | 'quickFix'
 
-/** Appliers started in the last two minutes, so a double click cannot start two. */
-const recentAppliers = new Map<string, { handle: string; at: number }>()
-
-function claudeCommand(prompt: string): string {
-  // Prompts are built from fixed skill names and validated ids only.
-  if (!/^[\w:\s/.-]+$/.test(prompt)) bad('unsafe prompt')
-  return `claude "${prompt}"`
+export interface AgentPlan {
+  /** The skill to run, such as `docket:apply`. */
+  command: string
+  /** Its arguments, such as `f-0003`. */
+  args: string
+  /** What the user types in Claude Code: `/docket:apply`. */
+  prompt: string
+  /** Set when something deserves a word before the skill runs. */
+  warning?: string
+  /** For a discussion: the session that held it before, for `claude --resume`. */
+  resumeSessionId?: string
 }
 
-function requireOrca(command: string): void {
-  if (!findOrca()) throw new DocketError('orca_missing', `The Orca CLI was not found. Run this in a terminal in the worktree instead: ${command}`)
+function planFor(command: string, args: string[] = [], extra: Partial<AgentPlan> = {}): AgentPlan {
+  const joined = args.join(' ')
+  return { command: `docket:${command}`, args: joined, prompt: `/docket:${command}${joined ? ` ${joined}` : ''}`, ...extra }
 }
 
-function applierHandle(path: string, unit: Unit): string | null {
-  const recent = recentAppliers.get(path)
-  if (recent && Date.now() - recent.at < 120_000 && terminalAlive(recent.handle)) return recent.handle
-  if (unit.applier?.state === 'running' && unit.applier.terminalHandle && terminalAlive(unit.applier.terminalHandle)) return unit.applier.terminalHandle
-  return null
+function applyPlan(unit: Unit, sessionId?: string): AgentPlan {
+  const applier = unit.applier
+  const elsewhere = applier?.state === 'running' && applier.sessionId && applier.sessionId !== sessionId
+  return planFor('apply', [], elsewhere ? { warning: `An applier has been running in another session since ${applier.since ?? 'earlier'}. Run apply here only if that session ended.` } : {})
 }
 
-function startApplier(path: string, unit: Unit): { handle: string; reused: boolean; command: string } {
-  const command = claudeCommand('/docket:apply')
-  requireOrca(command)
-  const existing = applierHandle(path, unit)
-  if (existing) return { handle: existing, reused: true, command }
-  const handle = createTerminal(path, 'docket: apply', command, false)
-  recentAppliers.set(path, { handle, at: Date.now() })
-  return { handle, reused: false, command }
-}
-
-export function dispatch(path: string, kind: DispatchKind, args: Record<string, any> = {}, options: ApiOptions = {}) {
+export function plan(path: string, kind: PlanKind, args: Record<string, any> = {}, options: ApiOptions = {}) {
   const ctx = ctxFor(path, options)
   const unitOf = () => withWorkspace(ctx, 'read', (ws) => ws.unit)
+  const sessionId = typeof args.sessionId === 'string' ? args.sessionId : undefined
 
   switch (kind) {
     case 'ingest':
-    case 'research':
-    case 'reply': {
+    case 'reply':
       unitOf()
-      const ids = kind === 'research' && Array.isArray(args.ids) ? args.ids.map(findingId) : []
-      const command = claudeCommand(`/docket:${kind}${ids.length ? ` ${ids.join(' ')}` : ''}`)
-      requireOrca(command)
-      return { handle: createTerminal(path, `docket: ${kind}`, command, true), command }
+      return planFor(kind)
+    case 'research': {
+      unitOf()
+      const ids = Array.isArray(args.ids) ? args.ids.map(findingId) : []
+      return planFor('research', ids)
     }
     case 'apply':
-      return startApplier(path, unitOf())
+      return applyPlan(unitOf(), sessionId)
     case 'quickFix': {
       const id = findingId(args.id)
       const decided = withWorkspace(ctx, 'write', (ws) => {
@@ -239,45 +256,14 @@ export function dispatch(path: string, kind: DispatchKind, args: Record<string, 
         const optionId = typeof args.optionId === 'string' ? args.optionId : (f.research?.recommendedOptionId ?? bad(`${id} has no recommendation; research it first`))
         return decide(ws, id, { optionId, origin: 'quick' })
       })
-      // The decision stands even when the applier cannot start, so report both.
-      if (decided.state !== 'queued') return { finding: decided, applier: null }
-      try {
-        return { finding: decided, applier: startApplier(path, unitOf()) }
-      } catch (error) {
-        if (!(error instanceof DocketError)) throw error
-        return { finding: decided, applier: null, applierError: error.message }
-      }
+      return { finding: decided, plan: decided.state === 'queued' ? applyPlan(unitOf(), sessionId) : null }
     }
     case 'discuss': {
       const id = findingId(args.id)
       const f = withWorkspace(ctx, 'read', (ws) => ws.readFinding(id))
       if (!isOpen(f.state)) bad(`${id} is closed; reopen it to discuss`)
-      const live = f.discussion?.terminalHandle && terminalAlive(f.discussion.terminalHandle) ? f.discussion.terminalHandle : null
-      if (live) {
-        focusTerminal(live)
-        return { handle: live, reused: true }
-      }
-      const sessionId = f.discussion?.sessionId
-      const command = sessionId && SESSION_ID.test(sessionId) ? `claude --resume ${sessionId}` : claudeCommand(`/docket:discuss ${id}`)
-      requireOrca(command)
-      const handle = createTerminal(path, `docket: ${id}`, command, true)
-      withWorkspace(ctx, 'write', (ws) => startDiscussion(ws, id, { terminalHandle: handle }))
-      return { handle, reused: false, command }
-    }
-    case 'ask': {
-      const id = findingId(args.id)
-      const text = typeof args.text === 'string' && args.text.trim() ? args.text.trim() : bad('text is required')
-      const f = withWorkspace(ctx, 'read', (ws) => ws.readFinding(id))
-      const handle = f.discussion?.terminalHandle
-      if (!handle || !terminalAlive(handle)) throw new DocketError('no_discussion', `No live discussion for ${id}. Press Discuss first.`, EXIT.invalidState)
-      sendToTerminal(handle, text)
-      return { handle, sent: true }
-    }
-    case 'focus': {
-      const handle = typeof args.handle === 'string' ? args.handle : bad('handle is required')
-      focusTerminal(handle)
-      return { handle }
+      return planFor('discuss', [id], f.discussion?.sessionId ? { resumeSessionId: f.discussion.sessionId } : {})
     }
   }
-  bad(`unknown dispatch ${String(kind)}`)
+  bad(`unknown plan ${String(kind)}`)
 }

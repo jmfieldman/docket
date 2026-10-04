@@ -2,7 +2,7 @@
 export const SCHEMAS: Record<string, object> = {
   "common.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/common.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/common.schema.json",
     "title": "Docket shared definitions",
     "$defs": {
       "timestamp": {
@@ -148,7 +148,7 @@ export const SCHEMAS: Record<string, object> = {
   },
   "deferral.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/deferral.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/deferral.schema.json",
     "title": "Docket deferral frontmatter",
     "description": "YAML frontmatter of a deferral file at ${DOCKET_HOME:-~/.docket}/deferrals/<id>.md. The body sections are defined in SPEC.md.",
     "type": "object",
@@ -401,7 +401,7 @@ export const SCHEMAS: Record<string, object> = {
   },
   "event.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/event.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/event.schema.json",
     "title": "Docket event",
     "description": "One line of events.jsonl. Append-only. head is the worktree HEAD when the event occurred.",
     "type": "object",
@@ -499,7 +499,7 @@ export const SCHEMAS: Record<string, object> = {
   },
   "finding.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/finding.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/finding.schema.json",
     "title": "Docket finding",
     "description": "One finding. Stored at docket/findings/<id>.json. Each finding moves through its states independently of every other finding.",
     "type": "object",
@@ -903,9 +903,6 @@ export const SCHEMAS: Record<string, object> = {
             "type": "string",
             "description": "Agent session ID, so the user can continue later."
           },
-          "terminalHandle": {
-            "type": "string"
-          },
           "startedAt": {
             "$ref": "common.schema.json#/$defs/timestamp"
           },
@@ -968,7 +965,7 @@ export const SCHEMAS: Record<string, object> = {
               "quick",
               "session"
             ],
-            "description": "panel: decided in the panel. quick: quick fix or bulk accept. session: recorded by an ad-hoc agent session (the panel shows it as inferred)."
+            "description": "panel: decided in the Docket pane or the web view. quick: quick fix or bulk accept. session: recorded by an ad-hoc agent session (the pane shows it as inferred)."
           },
           "decision": {
             "$ref": "#/$defs/decision"
@@ -1319,7 +1316,7 @@ export const SCHEMAS: Record<string, object> = {
   },
   "sources.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/sources.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/sources.schema.json",
     "title": "Docket sources",
     "description": "Every ingested source of reviewer output, keyed by sourceId. Drives incremental ingest.",
     "type": "object",
@@ -1416,7 +1413,7 @@ export const SCHEMAS: Record<string, object> = {
   },
   "unit.schema.json": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/unit.schema.json",
+    "$id": "https://github.com/jmfieldman/docket/spec/schema/unit.schema.json",
     "title": "Docket unit",
     "description": "One docket per git worktree. Stored at $(git rev-parse --git-dir)/docket/unit.json.",
     "type": "object",
@@ -1583,8 +1580,9 @@ export const SCHEMAS: Record<string, object> = {
               "running"
             ]
           },
-          "terminalHandle": {
-            "type": "string"
+          "sessionId": {
+            "type": "string",
+            "description": "The Claude Code session the applier runs in."
           },
           "since": {
             "$ref": "common.schema.json#/$defs/timestamp"

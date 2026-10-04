@@ -26,7 +26,7 @@ Report what you found and recommend: pick up, drop, or mark done.
 
 ## 3. Act on the user's choice
 
-- **Pick up**: ask where the work will happen (a new worktree, a branch, a ticket). If the user wants a worktree and the Orca CLI exists, offer `orca worktree create --repo <repo> --name <slug> --agent claude --prompt "<the deferral body>"`. Then record it: `docket deferrals pickup <id> --ref "<branch, PR URL, ticket or brain page>" --by <who>`.
+- **Pick up**: ask where the work will happen (a new worktree, a branch, a ticket). If the user wants a worktree, offer `git -C <clone of origin.repo> worktree add -b <slug> ../<slug> <default branch>`, and give them the deferral body to paste into a Claude Code session there. Then record it: `docket deferrals pickup <id> --ref "<branch, PR URL, ticket or brain page>" --by <who>`.
 - **Done**: `docket deferrals done <id> --reason "<where it landed>"`. The file moves to `archive/`.
 - **Drop**: `docket deferrals drop <id> --reason "<why it is no longer needed>"`. The file moves to `archive/`.
 

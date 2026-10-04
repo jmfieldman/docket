@@ -1,12 +1,14 @@
 {
-  "name": "orca-docket",
+  "name": "docket",
   "description": "Docket: resolve review findings on your own branches.",
-  "owner": { "name": "Jason Fieldman" },
+  "owner": {
+    "name": "Jason Fieldman"
+  },
   "plugins": [
     {
       "name": "docket",
       "source": "./plugin",
-      "description": "Reviewer-agnostic findings resolution with an Orca panel."
+      "description": "Reviewer-agnostic findings resolution for Claude Code, with a /docket pane."
     }
   ]
 }

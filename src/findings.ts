@@ -308,13 +308,12 @@ export function clearStale(ws: Workspace, id: string): Finding {
 
 // ---------- discussion ----------
 
-export function startDiscussion(ws: Workspace, id: string, input: { sessionId?: string; terminalHandle?: string }): Finding {
+export function startDiscussion(ws: Workspace, id: string, input: { sessionId?: string }): Finding {
   const finding = ws.readFinding(id)
   if (!['new', 'ready', 'needs_attention', 'discussing'].includes(finding.state)) invalidState(finding, 'discuss')
   const previous = finding.discussion
   finding.discussion = compact({
     sessionId: input.sessionId ?? previous?.sessionId,
-    terminalHandle: input.terminalHandle ?? previous?.terminalHandle,
     startedAt: previous?.startedAt ?? ws.now,
     lastActiveAt: ws.now,
     entries: previous?.entries ?? []
@@ -393,6 +392,20 @@ function firstLine(text: string, max = 100): string {
   return line.length > max ? `${line.slice(0, max - 1)}…` : line
 }
 
+/**
+ * Takes each finding's recommended option (origin quick). Checks every finding
+ * first, so a batch either applies whole or not at all.
+ */
+export function acceptRecommended(ws: Workspace, ids: string[]): Finding[] {
+  const plan = ids.map((fid) => {
+    const finding = ws.readFinding(fid)
+    if (!['new', 'ready', 'discussing', 'needs_attention'].includes(finding.state)) invalidState(finding, 'accept')
+    const optionId = finding.research?.recommendedOptionId ?? badInput(`${fid} has no recommendation; research it first`)
+    return { fid, optionId }
+  })
+  return plan.map(({ fid, optionId }) => decide(ws, fid, { optionId, origin: 'quick' }))
+}
+
 export function decide(ws: Workspace, id: string, input: DecisionInput, rev?: number): Finding {
   const finding = ws.readFinding(id)
   if (!['new', 'ready', 'discussing', 'needs_attention'].includes(finding.state)) invalidState(finding, 'decide on')
@@ -402,6 +415,9 @@ export function decide(ws: Workspace, id: string, input: DecisionInput, rev?: nu
   const kind = input.kind ?? option?.kind ?? badInput('kind is required for a custom decision')
   if (optionId === 'custom' && !input.instruction) badInput('instruction is required for a custom decision')
   const origin = input.origin ?? 'panel'
+  // Leaving or deferring with a research option: the option's description is the reason.
+  const instruction = input.instruction ?? (kind !== 'fix' ? option?.description : undefined)
+  if (kind !== 'fix' && !instruction) badInput('a reason (instruction) is required')
 
   abandonPending(ws, finding)
 
@@ -409,7 +425,7 @@ export function decide(ws: Workspace, id: string, input: DecisionInput, rev?: nu
   const iteration: Iteration = compact({
     n,
     origin,
-    decision: compact({ optionId, kind, instruction: input.instruction }),
+    decision: compact({ optionId, kind, instruction }),
     decidedAt: ws.now,
     decidedAtCommit: ws.head,
     outcome: 'pending' as const
@@ -427,7 +443,7 @@ export function decide(ws: Workspace, id: string, input: DecisionInput, rev?: nu
     return saved
   }
 
-  const reason = input.instruction ?? option?.description ?? badInput('a reason (instruction) is required')
+  const reason = instruction as string
   iteration.endedAt = ws.now
   if (kind === 'acknowledge') {
     iteration.outcome = 'acknowledged'

@@ -7,6 +7,7 @@ import { closeDeferral, findDeferral, listDeferrals, pickUpDeferral, reopenDefer
 import { EXIT_CODE, pause, rebind, resume, start, status, type Context, type StatusReport } from './docket.ts'
 import { DocketError } from './errors.ts'
 import {
+  acceptRecommended,
   addDiscussionEntry,
   addFinding,
   attachPr,
@@ -33,6 +34,8 @@ import type { OptionKind, Origin } from './types.ts'
 import { brief, listFindings, panelSnapshot } from './view.ts'
 import { withWorkspace, type Workspace } from './workspace.ts'
 import { DEFAULT_PORT, runUi } from './ui-server.ts'
+import { action, finding, plan, snapshot, worktrees, type ActionName, type PlanKind } from './api.ts'
+import { resolve } from 'node:path'
 
 const USAGE = `Usage: docket [-C <path>] <command> [args] [options]
 
@@ -59,7 +62,7 @@ Ingest
 Research and discussion
   research <id> --data <json>         Write research and triage (lane is computed)
   stale <id> --reason <text> | unstale <id>
-  discuss start <id> [--session-id <s>] [--terminal <t>]
+  discuss start <id> [--session-id <s>]
   discuss entry <id> --data <json>
   discuss end <id>
 
@@ -67,7 +70,7 @@ Decisions and apply
   decide <id> --option <A-F|custom> [--kind fix|acknowledge|defer] [--instruction <text>] [--origin panel|quick|session]
   accept <id>...                      Take the recommended option (origin quick)
   reopen <id> --reason <text>
-  apply next [--terminal <t>] | apply queue
+  apply next [--session-id <s>] | apply queue
   apply commit <id> <sha> | apply verify <id> --data <json>
   apply complete <id> --summary <text> [--also <id,id>] | apply bounce <id> --reason <text>
   record <id> --data <json>           Record work an ad-hoc session already committed
@@ -78,7 +81,10 @@ Replies
 
 UI
   ui [--open] [--port <n>]            Serve the Docket web UI on 127.0.0.1 (default port 4747);
-                                      --open starts it in the background and opens this worktree in Orca's browser
+                                      --open starts it in the background and opens this worktree in the browser
+  api snapshot | api worktrees | api finding <id>
+  api action <name> --data <json> | api plan <kind> --data <json>
+                                      The UI action layer as JSON: always {"ok":true,"result"} or {"ok":false,"error"}
 
 Deferrals (any directory)
   deferrals list [--all] | deferrals show <id>
@@ -110,7 +116,6 @@ function parse(argv: string[]) {
       reason: { type: 'string' },
       summary: { type: 'string' },
       also: { type: 'string' },
-      terminal: { type: 'string' },
       'session-id': { type: 'string' },
       text: { type: 'string' },
       target: { type: 'string' },
@@ -252,7 +257,7 @@ function run(ctx: Context, values: Values, args: string[]): { output: unknown; h
       return { output: write((ws) => clearStale(ws, need(id, 'finding id'))) }
     case 'discuss': {
       const target = need(rest[0], 'finding id')
-      if (sub === 'start') return { output: write((ws) => startDiscussion(ws, target, { sessionId: values['session-id'], terminalHandle: values.terminal })) }
+      if (sub === 'start') return { output: write((ws) => startDiscussion(ws, target, { sessionId: values['session-id'] })) }
       if (sub === 'entry') return { output: write((ws) => addDiscussionEntry(ws, target, readData(values), rev(values))) }
       if (sub === 'end') return { output: write((ws) => endDiscussion(ws, target)) }
       break
@@ -279,21 +284,13 @@ function run(ctx: Context, values: Values, args: string[]): { output: unknown; h
     case 'accept': {
       const ids = [sub, ...rest].filter((x): x is string => Boolean(x))
       if (ids.length === 0) badInput('accept needs at least one finding id')
-      return {
-        output: write((ws) =>
-          ids.map((fid) => {
-            const finding = ws.readFinding(fid)
-            const optionId = finding.research?.recommendedOptionId ?? badInput(`${fid} has no recommendation; research it first`)
-            return decide(ws, fid, { optionId, origin: 'quick' })
-          })
-        )
-      }
+      return { output: write((ws) => acceptRecommended(ws, ids)) }
     }
     case 'reopen':
       return { output: write((ws) => reopen(ws, need(id, 'finding id'), need(values.reason, '--reason'))) }
     case 'apply': {
       const target = rest[0]
-      if (sub === 'next') return { output: write((ws) => nextTask(ws, values.terminal)) }
+      if (sub === 'next') return { output: write((ws) => nextTask(ws, values['session-id'])) }
       if (sub === 'queue') return { output: read(queueSummary) }
       if (sub === 'commit') return { output: write((ws) => addCommit(ws, need(target, 'finding id'), need(rest[1], 'commit sha'))) }
       if (sub === 'verify') return { output: write((ws) => writeVerification(ws, need(target, 'finding id'), readData(values))) }
@@ -340,6 +337,29 @@ function run(ctx: Context, values: Values, args: string[]): { output: unknown; h
   badInput(`unknown command: ${args.join(' ')}`)
 }
 
+/** `docket api`: one envelope for every outcome, so a caller parses stdout only. */
+function runApi(path: string, args: string[], values: Values): number {
+  const [op, arg] = args
+  const data = () => (values.data === undefined ? {} : readData(values))
+  try {
+    let result: unknown
+    if (op === 'snapshot') result = snapshot(path)
+    else if (op === 'worktrees') result = worktrees(path)
+    else if (op === 'finding') result = finding(path, need(arg, 'finding id'))
+    else if (op === 'action') result = action(path, need(arg, 'action name') as ActionName, data())
+    else if (op === 'plan') result = plan(path, need(arg, 'plan kind') as PlanKind, data())
+    else badInput(`unknown api call: ${args.join(' ') || '(none)'}`)
+    console.log(JSON.stringify({ ok: true, result: result ?? null }))
+  } catch (error) {
+    if (!(error instanceof DocketError)) {
+      console.log(JSON.stringify({ ok: false, error: { code: 'internal', message: (error as Error).message } }))
+      return 1
+    }
+    console.log(JSON.stringify({ ok: false, error: { code: error.code, message: error.message } }))
+  }
+  return 0
+}
+
 function main(argv: string[]): number {
   let values: Values
   let positionals: string[]
@@ -359,6 +379,8 @@ function main(argv: string[]): number {
     now: () => process.env.DOCKET_NOW ?? new Date().toISOString(),
     prLookup: !values['no-pr'] && process.env.DOCKET_NO_GH !== '1'
   }
+
+  if (name === 'api') return runApi(resolve(ctx.cwd), positionals.slice(1), values)
 
   if (name === 'ui') {
     const port = values.port ? Number(values.port) : DEFAULT_PORT

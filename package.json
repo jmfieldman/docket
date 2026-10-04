@@ -1,9 +1,9 @@
 {
-  "name": "orca-docket",
+  "name": "docket",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Reviewer-agnostic findings resolution for coding agents, with an Orca panel.",
+  "description": "Reviewer-agnostic findings resolution for Claude Code: a docket CLI, skills, and a pane.",
   "scripts": {
     "gen": "node scripts/gen-assets.mjs",
     "build": "pnpm run gen && tsc -p tsconfig.json && pnpm run bundle",
@@ -11,9 +11,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test 'test/**/*.test.ts'",
     "spec:validate": "node spec/validate.mjs",
-    "check": "pnpm run gen && pnpm run typecheck && pnpm test && pnpm run spec:validate && pnpm run bundle && pnpm run test:bundle && claude plugin validate ./plugin && claude plugin validate . && git diff --exit-code -- src/schemas.generated.ts src/ui.generated.ts plugin/bin/docket.cjs orca-plugin/docket.cjs orca-plugin/docket-lib.cjs orca-plugin/panel.html",
+    "check": "pnpm run gen && pnpm run typecheck && pnpm test && pnpm run spec:validate && pnpm run bundle && pnpm run test:bundle && pnpm run test:plugin && claude plugin validate --strict ./plugin && claude plugin validate . && git diff --exit-code -- src/schemas.generated.ts src/ui.generated.ts plugin/bin/docket.cjs",
     "test:bundle": "DOCKET_CLI=plugin/bin/docket.cjs node --test 'test/**/*.test.ts'",
-    "demo": "node scripts/demo.mjs"
+    "demo": "node scripts/demo.mjs",
+    "test:plugin": "claude plugin test ./plugin"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

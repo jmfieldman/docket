@@ -69,7 +69,7 @@ export function listFindings(ws: Workspace, which: 'open' | 'closed' | 'all') {
   return { unit: ws.unit, counts, findings }
 }
 
-/** A snapshot for the Orca panel: unit, summaries, full open findings, applier and unpushed commit count. */
+/** A full snapshot for scripts: unit, summaries, full open findings, applier and unpushed commit count. */
 export function panelSnapshot(ws: Workspace, unpushed: number | null) {
   const findings = ws.allFindings()
   return {

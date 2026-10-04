@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/jmfieldman/orca-docket/spec/schema/unit.schema.json",
+  "$id": "https://github.com/jmfieldman/docket/spec/schema/unit.schema.json",
   "title": "Docket unit",
   "description": "One docket per git worktree. Stored at $(git rev-parse --git-dir)/docket/unit.json.",
   "type": "object",
@@ -167,8 +167,9 @@
             "running"
           ]
         },
-        "terminalHandle": {
-          "type": "string"
+        "sessionId": {
+          "type": "string",
+          "description": "The Claude Code session the applier runs in."
         },
         "since": {
           "$ref": "common.schema.json#/$defs/timestamp"

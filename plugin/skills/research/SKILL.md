@@ -99,4 +99,4 @@ If it fails with exit code 13, the finding changed; read it again and retry once
 
 ## 5. Report
 
-List each finding with its lane (quick, decide, scope, dig) and recommendation, quick lanes first. Remind the user that the Docket panel, or `docket accept <id>` and `docket decide <id> --option X`, records decisions, and `/docket:apply` implements queued fixes.
+List each finding with its lane (quick, decide, scope, dig) and recommendation, quick lanes first. Remind the user that the Docket pane (`/docket`), or `docket accept <id>` and `docket decide <id> --option X`, records decisions, and `/docket:apply` implements queued fixes.
