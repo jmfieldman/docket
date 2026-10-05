@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Reviewer-agnostic findings resolution for Claude Code: a docket CLI, skills, and a pane.",
+  "description": "Reviewer-agnostic findings resolution for Claude Code and Paseo: a docket CLI, skills, a Claude Code pane, and a Paseo panel.",
   "scripts": {
     "gen": "node scripts/gen-assets.mjs",
     "build": "pnpm run gen && tsc -p tsconfig.json && pnpm run bundle",
@@ -11,10 +11,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test 'test/**/*.test.ts'",
     "spec:validate": "node spec/validate.mjs",
-    "check": "pnpm run gen && pnpm run typecheck && pnpm test && pnpm run spec:validate && pnpm run bundle && pnpm run test:bundle && pnpm run test:plugin && claude plugin validate --strict ./plugin && claude plugin validate . && git diff --exit-code -- src/schemas.generated.ts src/ui.generated.ts plugin/bin/docket.cjs",
+    "check": "pnpm run gen && pnpm run typecheck && pnpm test && pnpm run spec:validate && pnpm run bundle && pnpm run test:bundle && pnpm run test:plugin && pnpm run test:paseo && claude plugin validate --strict ./plugin && claude plugin validate . && git diff --exit-code -- src/schemas.generated.ts src/ui.generated.ts plugin/bin/docket.cjs paseo/server/docket-api.cjs",
     "test:bundle": "DOCKET_CLI=plugin/bin/docket.cjs node --test 'test/**/*.test.ts'",
     "demo": "node scripts/demo.mjs",
-    "test:plugin": "claude plugin test ./plugin"
+    "test:plugin": "claude plugin test ./plugin",
+    "test:paseo": "npm --prefix paseo test && npm --prefix paseo run typecheck"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

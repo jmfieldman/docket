@@ -1,6 +1,6 @@
 # Docket data model — v1
 
-This document defines the docket data model. Every docket component reads and writes this model: the ingest, research, discuss, apply, reply and deferrals skills, the `docket` CLI, the Docket pane in Claude Code, and the Docket web view.
+This document defines the docket data model. Every docket component reads and writes this model: the ingest, research, discuss, apply, reply and deferrals skills, the `docket` CLI, the Docket pane in Claude Code, the Docket web view, and the Docket panel in Paseo.
 
 ## Scope
 
@@ -298,7 +298,7 @@ The applier commits. It never pushes. The user pushes.
 
 ## Surfaces
 
-Docket is a Claude Code plugin. It has no dependency on a particular terminal or workspace manager.
+Docket is a Claude Code plugin. It has no dependency on a particular terminal or workspace manager. An optional Paseo plugin (`paseo/`) is one more surface on the same action layer.
 
 | Surface | What it does |
 |---|---|
@@ -307,8 +307,9 @@ Docket is a Claude Code plugin. It has no dependency on a particular terminal or
 | Docket pane (`/docket`) | A Claude Code mod. It draws findings by lane in a pane beside the transcript, records decisions through `docket api`, and runs skills in its own session with `$.command.run`. While a turn runs, it holds a skill run and starts it when the turn ends. |
 | `docket api` | The action layer as JSON for the pane: `snapshot`, `worktrees`, `finding`, `action`, `plan`. Each call prints one envelope, `{"ok":true,"result"}` or `{"ok":false,"error"}`. |
 | Docket web view (`docket ui --open`) | The same action layer over HTTP on `127.0.0.1`, for a browser. It records decisions. For agent work, it shows the skill command to run in Claude Code. |
+| Docket panel in Paseo | A Paseo plugin. A workspace panel draws findings by lane and records decisions through the action layer, bundled into the plugin's daemon subprocess. It sends a plan's `prompt` to the workspace's Claude agent. While that agent works, the daemon holds the prompt and sends it when the turn ends. A sidebar overview lists the docket in every workspace. |
 
-A **plan** names the skill for one piece of agent work: `command` (such as `docket:apply`), `args`, `prompt` (what the user types), an optional `warning`, and for a discussion an optional `resumeSessionId`. The pane runs a plan. The web view shows it.
+A **plan** names the skill for one piece of agent work: `command` (such as `docket:apply`), `args`, `prompt` (what the user types), an optional `warning`, and for a discussion an optional `resumeSessionId`. The pane and the Paseo panel run a plan. The web view shows it.
 
 The pane draws in the Claude Code CLI and in the Code tab of the Claude Desktop app. Its hooks run but draw nothing in the VS Code extension, in `claude -p`, and in cloud sessions. On those surfaces the skills and the web view still work.
 

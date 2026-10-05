@@ -1,6 +1,6 @@
 # docket
 
-Docket is a Claude Code plugin. It collects the review findings on a branch and helps you resolve each one. It works with any review agent or reviewer.
+Docket is a Claude Code plugin. It collects the review findings on a branch and helps you resolve each one. It works with any review agent or reviewer. A Paseo plugin in `paseo/` adds the same controls to [Paseo](https://paseo.sh) workspaces.
 
 Reviewers post findings in many formats: inline code comments, one large PR comment, review bodies, or a local report file. Docket converts all of them into one data model. Each finding then moves through research, decision and fix on its own, so easy findings do not wait for hard ones.
 
@@ -51,6 +51,10 @@ Tab moves between controls, and Esc returns to the prompt. The pane draws in the
 
 `docket ui --open` starts a local web app on `127.0.0.1:4747` (in the background, if it is not already running) and opens the current worktree in your browser. It records decisions like the pane. For agent work, it shows the skill command to run in Claude Code and copies it. Writes need a custom header and a same-origin request, so other web pages cannot drive it.
 
+### Paseo panel
+
+In Paseo, the Docket panel is a workspace tab beside agents, terminals and files. It has the same findings, lanes and controls as the pane. A sidebar overview lists every workspace with a docket. The skills run in the workspace's Claude agent, which loads the docket Claude Code plugin from your Claude settings. To install it, read [paseo/README.md](paseo/README.md).
+
 ## Workflow
 
 1. Review your change with any tool, in a Claude Code session in the worktree, or on the PR.
@@ -73,7 +77,8 @@ In any ordinary session in a worktree where docket is active, a session-start br
 | `plugin/hooks/pane.js` | The Docket pane and the `/docket` command (a Claude Code mod) |
 | `plugin/hooks/hooks.json` | Loads the pane, and a `SessionStart` brief that is empty unless docket is active |
 | `plugin/tests/` | Pane tests, run with `claude plugin test ./plugin` |
-| `src/api.ts` | The action layer behind the pane (`docket api`) and the browser view |
+| `paseo/` | The Paseo plugin: the Docket panel, the sidebar overview, `/docket` and ⌘K items. Read [paseo/README.md](paseo/README.md). |
+| `src/api.ts` → `paseo/server/docket-api.cjs` | The action layer behind the pane (`docket api`), the browser view and the Paseo panel |
 | `ui/index.html`, `src/ui-server.ts` | The browser view and its local HTTP server (`docket ui`) |
 | `scripts/demo.mjs` | `pnpm run demo`: a throwaway repo with findings in every lane, served on port 4848 |
 
@@ -113,6 +118,6 @@ pnpm install
 pnpm run check
 ```
 
-`check` regenerates the embedded schemas, typechecks, runs the tests against the TypeScript sources and against the bundle, runs the pane tests, validates the spec examples and the plugin, and fails if the committed bundle is stale. Tests use temporary git repos and a temporary `DOCKET_HOME`.
+`check` regenerates the embedded schemas, typechecks, runs the tests against the TypeScript sources and against the bundle, runs the pane tests and the Paseo plugin tests, validates the spec examples and the plugin, and fails if a committed bundle is stale. Tests use temporary git repos and a temporary `DOCKET_HOME`. Before the first `check`, install the Paseo plugin's type dependencies with `npm install --prefix paseo`.
 
 To work on the pane, start Claude Code with `claude --plugin-dir ./plugin`. Claude Code reloads the pane when you save `plugin/hooks/pane.js`. Tested with Claude Code 2.1.289.
