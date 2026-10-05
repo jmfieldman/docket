@@ -6,7 +6,7 @@ This directory is a [Paseo](https://paseo.sh) plugin. It adds the Docket panel t
 
 | Contribution | Where | What it does |
 |---|---|---|
-| Docket panel | A workspace tab, beside agents, terminals and files | Findings by lane, the full finding, and the controls to decide, queue, quick-fix, leave as is, discuss, approve replies, reopen, pause and resume |
+| Docket panel | The Explorer (Paseo's right-hand pane), or a center tab beside agents, terminals and files | Findings by lane, the full finding, and the controls to decide, queue, quick-fix, leave as is, discuss, approve replies, reopen, pause and resume |
 | Docket overview | The sidebar | Every workspace with a docket, with open findings per lane. Press a workspace to open its panel. |
 | `/docket` | The composer of a Claude agent | Opens the panel and makes this agent the one that runs docket skills |
 | ⌘K items | The Command Center | Open the panel, open the overview, ingest, research, apply, replies |
@@ -45,7 +45,7 @@ Paseo runs plugins only when **Settings → Plugins → Enable plugins** is on. 
    paseo plugin ls
    ```
 
-4. Open a workspace, then open the **Docket** tab, or press ⌘K and select **Docket: Open panel**.
+4. Open a workspace, then press ⌘K and select **Docket: Open panel**, or type `/docket` in a Claude agent. The panel opens in the Explorer, on the right. It is also available as a center tab.
 
 ## Develop
 

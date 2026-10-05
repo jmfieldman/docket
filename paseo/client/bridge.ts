@@ -9,5 +9,5 @@ export function setClient(client: PluginClientContext | null): void {
 }
 
 export function openDocketPanel(panelId: string, workspaceId: string): void {
-  current?.openPanel(panelId, { workspaceId });
+  current?.openPanel(panelId, { workspaceId, location: "explorer" });
 }

@@ -53,7 +53,7 @@ Tab moves between controls, and Esc returns to the prompt. The pane draws in the
 
 ### Paseo panel
 
-In Paseo, the Docket panel is a workspace tab beside agents, terminals and files. It has the same findings, lanes and controls as the pane. A sidebar overview lists every workspace with a docket. The skills run in the workspace's Claude agent, which loads the docket Claude Code plugin from your Claude settings. To install it, read [paseo/README.md](paseo/README.md).
+In Paseo, the Docket panel opens in the Explorer, the right-hand pane, and is also available as a center tab. It has the same findings, lanes and controls as the pane. A sidebar overview lists every workspace with a docket. The skills run in the workspace's Claude agent, which loads the docket Claude Code plugin from your Claude settings. To install it, read [paseo/README.md](paseo/README.md).
 
 ## Workflow
 

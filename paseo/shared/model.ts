@@ -42,6 +42,8 @@ export const DOCKET_STATE_LABEL: Readonly<Record<string, string>> = {
 export const START_PLAN = { command: "docket:start", args: "", prompt: "/docket:start" } as const;
 
 export const PANEL_ID = "docket";
+/** Where docket opens the panel: the Explorer, Paseo's right-hand pane. */
+export const PANEL_LOCATION = { location: "explorer" } as const;
 export const SURFACE_ID = "overview";
 
 /** A summary's lane: needs_attention first, then its triage lane, else research. */
