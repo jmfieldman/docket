@@ -11,6 +11,8 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(gi
 
 If the line above does not say "Docket is active.", stop and tell the user to start docket first.
 
+Run each `docket` command as its own Bash call that starts with `docket`. Do not prefix it with a variable assignment, and do not chain or loop it with other commands. The skill's pre-approved permissions match only a command that starts with `docket`, so a combined command stops for a permission prompt.
+
 You are the only agent that edits code for docket in this worktree. Work through the queue one finding at a time. Never push.
 
 ## Loop

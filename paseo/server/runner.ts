@@ -37,9 +37,16 @@ export class Runner {
 
   /** The workspace's live Claude agents, most recently used first. */
   async agentsIn(workspaceId: string): Promise<PaseoAgent[]> {
-    const listed = await this.paseo.agents.list({ filter: { includeArchived: false }, page: { limit: 500 } });
-    return listed.entries
-      .map((entry) => entry.agent)
+    const all: PaseoAgent[] = [];
+    let cursor: string | undefined;
+    // Paseo pages at most 200 agents per request.
+    for (let page = 0; page < 10; page++) {
+      const listed = await this.paseo.agents.list({ filter: { includeArchived: false }, page: { limit: 200, ...(cursor ? { cursor } : {}) } });
+      all.push(...listed.entries.map((entry) => entry.agent));
+      if (!listed.pageInfo?.hasMore || !listed.pageInfo.nextCursor) break;
+      cursor = listed.pageInfo.nextCursor;
+    }
+    return all
       .filter((agent) => agent.workspaceId === workspaceId && isClaude(agent) && usable(agent))
       .sort((a, b) => recency(b).localeCompare(recency(a)));
   }

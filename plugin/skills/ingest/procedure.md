@@ -2,6 +2,8 @@
 
 Docket is reviewer-agnostic. Reviewers post findings as inline threads, one large PR comment, review bodies, a report in this conversation, or a local report file. You convert each of them into findings. Never change code while you ingest.
 
+Run each `docket` command as its own Bash call that starts with `docket`. Do not prefix it with a variable assignment, and do not chain or loop it with other commands. The skill's pre-approved permissions match only a command that starts with `docket`, so a combined command stops for a permission prompt.
+
 Check the three places below in order. Skip a place that has nothing; never stop because one place is empty. Keep a tally for the report: per place, sources new, changed and unchanged, and findings added, merged, marked stale and closed.
 
 ## 1. This conversation

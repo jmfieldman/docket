@@ -10,6 +10,8 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/docket *), Bash(docket *), Bash(gi
 
 If the line above does not say "Docket is active.", do nothing more with docket in this session.
 
+Run each `docket` command as its own Bash call that starts with `docket`. Do not prefix it with a variable assignment, and do not chain or loop it with other commands. The skill's pre-approved permissions match only a command that starts with `docket`, so a combined command stops for a permission prompt.
+
 Use this when the user and you fixed a tracked finding in an ordinary session, outside the docket applier.
 
 1. Identify the finding. Run `docket list --state open --json` and `docket show <id>`. If you are not sure the work resolves that exact finding, ask the user. Never create a finding.
