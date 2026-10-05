@@ -299,21 +299,25 @@ export function DocketPanel({ theme, layout, workspaceId }: PluginWorkspacePanel
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={s.id + ": " + s.title} onPress={() => setExpanded(open ? null : s.id)}>
           {({ pressed }) => (
             <View style={{ gap: 2, opacity: pressed ? 0.7 : 1 }}>
-              <T kit={kit}>
-                <T kit={kit} muted>{(open ? "▾ " : "▸ ") + s.id + "  "}</T>
-                {s.title}
-                {flags.length ? <T kit={kit} muted size={12}>{"  [" + flags.join(", ") + "]"}</T> : null}
-              </T>
-              <View style={{ paddingLeft: 18 }}>
+              {/* id and severity in fixed columns; the title wraps in its own column */}
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <T kit={kit} muted style={{ width: 72 }}>{(open ? "▾ " : "▸ ") + s.id}</T>
                 {s.open ? (
-                  <T kit={kit} size={13}>
-                    <T kit={kit} size={13} bold={s.severity === "critical"} color={severityColor(kit, s.severity)}>{s.severity ?? "unknown"}</T>
-                    {s.recommended ? <T kit={kit} muted size={13}>{"  → " + s.recommended.id + " " + s.recommended.title}</T> : null}
+                  <T kit={kit} bold={s.severity === "critical"} color={severityColor(kit, s.severity)} style={{ width: 62 }}>
+                    {s.severity ?? "unknown"}
                   </T>
-                ) : (
-                  <T kit={kit} muted size={13}>{(OUTCOME[s.state] ?? s.state) + (s.resolutionSummary ? " — " + s.resolutionSummary : "")}</T>
-                )}
+                ) : null}
+                <T kit={kit} style={{ flex: 1 }}>
+                  {s.title}
+                  {flags.length ? <T kit={kit} muted size={12}>{"  [" + flags.join(", ") + "]"}</T> : null}
+                </T>
               </View>
+              {s.open && s.recommended ? (
+                <T kit={kit} muted size={13} style={{ paddingLeft: 150 }}>{"→ " + s.recommended.id + " " + s.recommended.title}</T>
+              ) : null}
+              {!s.open ? (
+                <T kit={kit} muted size={13} style={{ paddingLeft: 80 }}>{(OUTCOME[s.state] ?? s.state) + (s.resolutionSummary ? " — " + s.resolutionSummary : "")}</T>
+              ) : null}
             </View>
           )}
         </Pressable>
